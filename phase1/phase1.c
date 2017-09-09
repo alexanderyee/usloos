@@ -21,7 +21,13 @@ void dispatcher(void);
 void launch();
 static void checkDeadlock();
 void clockHandler(int, int);
+void clearProcess(int);
+void enableInterrupts();
+void disableInterrupts();
+int isEmpty();
 procPtr pop();
+procPtr popPriority(int);
+procPtr peek();
 int insert(procPtr);
 /* -------------------------- Globals ------------------------------------- */
 
@@ -67,7 +73,7 @@ void startup(int argc, char *argv[])
         USLOSS_Console("startup(): initializing the Ready list\n");
     
     // Initialize the clock interrupt handler
-    USLOSS_IntVec[USLOSS_CLOCK_INT] = clockHandler;
+    USLOSS_IntVec[USLOSS_CLOCK_INT] = (void (*) (int, void *)) clockHandler;
 	// startup a sentinel process
 	if (DEBUG && debugflag)
         USLOSS_Console("startup(): calling fork1() for sentinel\n");
@@ -198,10 +204,8 @@ int fork1(char *name, int (*startFunc)(char *), char *arg,
     }
     // PSR. Saved previousPSRValue; set new PSR value withh current mode =1 && current 
     // interrupt mode = 1; 
-    int previousPSRValue = USLOSS_PsrGet();
-    int newPSRValue = (previousPSRValue << 2) | 3;
-    USLOSS_PsrSet(newPSRValue);
-    // Initialize context for this process, but use launch function pointer for
+    enableInterrupts();
+	// Initialize context for this process, but use launch function pointer for
     // the initial value of the process's program counter (PC)
     
     USLOSS_ContextInit(&(ProcTable[procSlot].state),
@@ -235,10 +239,9 @@ void launch()
         USLOSS_Console("launch(): started\n");
 
     // Enable interrupts
-    int previousPSRValue = USLOSS_PsrGet();
-    int newPSRValue = (previousPSRValue << 2) | 3;
-    USLOSS_PsrSet(newPSRValue);
-    printf("launch(): calling startFunc of pid %d with psr: %d\n", Current->pid, newPSRValue); 
+	enableInterrupts();
+
+	printf("launch(): calling startFunc of pid %d\n", Current->pid); 
     // Call the function passed to fork1, and capture its return value
     result = Current->startFunc(Current->startArg);
 
@@ -272,11 +275,18 @@ int join(int *status)
 	else {
 		procPtr temp = Current->childProcPtr;
 		while (temp != NULL) {
-				if (temp->status == 2) {// a child has quit case
-					*status = temp->pid; // where to store the termination code? i guess in procslot field... but what if join is called before child quit?
-					return temp->pid;
-				}
+			if (temp->status == 2) {// a child has quit case
+				*status = temp->terminationCode;
+				int deadChildPid = temp->pid;
+				// reset all the fields
+				clearProcess(deadChildPid);
+				return deadChildPid;
+			}
+			temp = temp->nextProcPtr;
 		}
+		// no child has quit, change status to blockedOnJoin,  run dispatcher
+		Current->status = 3;
+		dispatcher();
 	}
     return -1;  // -1 is not correct! Here to prevent warning.
 } /* join */
@@ -298,33 +308,20 @@ void quit(int status)
 	
 	// check if parent is stuck on join
     if (Current->parentProcPtr != NULL) { 
+		//the code to return to the sad, grieving parental guardian :^(
+		Current->terminationCode = status;
+		Current->status = 2; //quit code 
 		if (Current->parentProcPtr->status == 3) {
-			Current->parentProcPtr->status == 0;
+			Current->parentProcPtr->status = 0;
 			insert(Current->parentProcPtr); 
 		}
 	}
-	// begin resetting child fields in ProcTable
-	Current->nextProcPtr = NULL;
-    Current->childProcPtr = NULL;
-	Current->nextSiblingPtr = NULL;
-	Current->parentProcPtr = NULL;
-	int i;
-	for (i=0; i<MAXNAME; i++) {
-		Current->name[i] = '\0';
+	int cPid = Current->pid; 
+	if (Current->parentProcPtr == NULL) {
+		clearProcess(cPid);
 	}
-	for (i=0; i<MAXARG; i++) {
-         Current->startArg[i] = '\0';
-    }
-	Current->state = NULL; // check valgrind l8r
-    Current->pid = 0;
-	Current->priority = 0; 
-	Current->startFunc = NULL;
-	Current->stack = NULL;
-	Current->stackSize = 0;
-	Current->status = 0;
-	Current->isZapped = 0;
-
-    p1_quit(Current->pid);
+    p1_quit(cPid);
+	dispatcher();
 } /* quit */
 
 
@@ -342,6 +339,13 @@ void dispatcher(void)
 {
     disableInterrupts();
     procPtr tempCurrent = Current;
+	// if current process' status has changed to blocked/quit, remove it from RL
+	if (Current != NULL) {
+		if (Current->status <= 3 && Current->status >= 1) 
+		{ // remove the current proc from the readylist
+			popPriority(Current->priority);
+		}
+	} 
 	if (!isEmpty()) {
         ReadyList = peek();
         Current = ReadyList;
@@ -389,34 +393,44 @@ static void checkDeadlock()
  */
 void enableInterrupts()
 {
-     // turn the interrupts ON iff we are in kernel mode
-     // if not in kernel mode, print an error message and
-     // halt USLOSS
-     int previousPSRValue = USLOSS_PsrGet();
-     if (previousPSRValue & 1) {
-         USLOSS_Console("disableInterrupts(): Not in kernel mode :-(");
-         USLOSS_Halt(1);
-     }   
-     int newPSRValue = (previousPSRValue << 2) | 3;
-     USLOSS_PsrSet(newPSRValue);
+    // turn the interrupts ON iff we are in kernel mode
+    // if not in kernel mode, print an error message and
+    // halt USLOSS
+    unsigned int previousPSRValue = USLOSS_PsrGet();
+    
+	if (!(previousPSRValue & 1)) {
+        USLOSS_Console("enableInterrupts(): Not in kernel mode :-(\n");
+        USLOSS_Halt(1);
+    }   
+    
+	unsigned int newPSRValue = ((previousPSRValue << 2) & 12) | 3;
+	// left shifting by 2 to shift the previous psr bits to the left two bits
+	// then logical and by 12 to mask all the other bits except the previous mode bits
+	// then a logical or by 3 to set the first two bits to 11 
+	if (USLOSS_PsrSet(newPSRValue) == USLOSS_ERR_INVALID_PSR)
+		USLOSS_Console("ERROR: Invalid PSR value set! was: %u\n", newPSRValue);
+	USLOSS_Console("enable:PSR value set. was: %u\n", newPSRValue);
 } /* disableInterrupts */
 
 /*
- * Disables the interrupts.
+ * Disables the interrupts and also turns kernel mode on
  */
 void disableInterrupts()
 {
     // turn the interrupts OFF iff we are in kernel mode
     // if not in kernel mode, print an error message and
     // halt USLOSS
-    int previousPSRValue = USLOSS_PsrGet();
-    if (previousPSRValue & 1) {
-		USLOSS_Console("disableInterrupts(): Not in kernel mode :-(");
+    unsigned int previousPSRValue = USLOSS_PsrGet();
+	
+    if (!(previousPSRValue & 1)) {
+		USLOSS_Console("disableInterrupts(): Not in kernel mode :-(\n");
 		USLOSS_Halt(1);
 	}
-    int newPSRValue = (previousPSRValue << 2) | 1;
-    USLOSS_PsrSet(newPSRValue);
-
+	
+    unsigned int newPSRValue = ((previousPSRValue << 2) & 12) | 1;
+	if (USLOSS_PsrSet(newPSRValue) == USLOSS_ERR_INVALID_PSR)
+		USLOSS_Console("ERROR: Invalid PSR value set! was: %u\n", newPSRValue);
+	USLOSS_Console("disable: PSR value set! was: %u\n", newPSRValue);
 } /* disableInterrupts */
 
 /*
@@ -424,6 +438,40 @@ void disableInterrupts()
  */
 void clockHandler(int dev, int unit)
 {
+}
+
+/*
+ * Clears the fields for the slot of the process at ProcTable[pid]
+ * This should execute after the parent joined with its dead child,
+ * or when a process with no parent quits. 
+ * @param int pid -- the process id of the process to clear or reset
+ * 
+ * @return void
+ */
+void clearProcess(int pid)
+{
+	Current->nextProcPtr = NULL;
+    Current->childProcPtr = NULL;
+    Current->nextSiblingPtr = NULL;
+    Current->parentProcPtr = NULL;
+    int i;
+    for (i=0; i<MAXNAME; i++) {
+        Current->name[i] = '\0';
+    }
+    for (i=0; i<MAXARG; i++) {
+         Current->startArg[i] = '\0';
+    }
+    // what do with state when quit huh???????????
+	//Current->state = NULL; // check valgrind l8r
+    Current->pid = 0;
+    Current->priority = 0;
+    Current->startFunc = NULL;
+    Current->stack = NULL;
+    Current->stackSize = 0;
+    Current->status = 0;
+    Current->isZapped = 0;
+	Current->terminationCode = 0;
+	return;
 }
 
 /*
@@ -448,6 +496,27 @@ procPtr pop()
    return result;
 }
 
+/*
+ * 
+ */
+procPtr popPriority(int priority)
+{
+   int j;
+   priority--;
+   procPtr result;
+   if (pQueues[priority][0] != NULL){
+       result = pQueues[priority][0];
+   }
+   // begin shift
+   j=0;
+   while (j < (MAXPROC-1) && pQueues[priority][j] != NULL) {
+      pQueues[priority][j] = pQueues[priority][j+1];
+      j++;
+   }
+   return result;
+}
+
+
 int insert(procPtr p){
    int priority = (*p).priority;
    int i = 0;
@@ -468,7 +537,7 @@ int insert(procPtr p){
  */
 procPtr peek()
 {
-    int i, j;
+    int i;
     procPtr result;
     for (i=0; i < 5; i++) {
        if (pQueues[i][0] != NULL){
@@ -485,7 +554,7 @@ procPtr peek()
 int isEmpty()
 {
    int flag = 1;
-   int i,j;
+   int i;
    for(i = 0; i < 5; i++){
    	if(pQueues[i][0] != NULL){
  		flag = 0;

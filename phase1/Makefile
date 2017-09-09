@@ -1,5 +1,5 @@
 
-PREFIX = ${HOME}/CSC452
+PREFIX = ${HOME}
 
 TARGET = libphase1.a
 ASSIGNMENT = 452phase1

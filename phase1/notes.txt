@@ -17,4 +17,6 @@ when quitting a child, dont free, reset fields to 0 or something and make sure t
 
 dispatcher is the heart. a lot of cases to acc for
 
-if a child calls quit before a parent calls join/quit, then we should keep the child process entry in the proctable and change its status, and once the parent calls quit/join it'll know the child has quit.  
+if a child calls quit before a parent calls join/quit, then we should keep the child process entry in the proctable and change its status, and once the parent calls quit/join it'll know the child has quit. 
+
+-//TODO: first two lines of every function: check for kernel mode and disable interoopts
