@@ -1,0 +1,20 @@
+currently, sentinel is running.
+what should sentinel be doing (how to write checkDeadlock)? should this process be running in startup in the first place?
+when to quit the process?
+how to quit a process?
+how to write clock handler?
+tips on join?
+what is zap
+
+dispatcher
+get current time, proc with highest priority is scheduled to run.
+disable interr, do stuff, p1 switch, enable interr. then do a context switch
+    -should not be called for sentinel (accounted for now, case might be modified later)
+
+quitting a process: child should know parent pid. see example from tuesday lecture
+clock handler: have process have a time field so we can check if it exceeded its time slice
+when quitting a child, dont free, reset fields to 0 or something and make sure to account for that when finding a free procslot
+
+dispatcher is the heart. a lot of cases to acc for
+
+if a child calls quit before a parent calls join/quit, then we should keep the child process entry in the proctable and change its status, and once the parent calls quit/join it'll know the child has quit.  
