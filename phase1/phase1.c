@@ -59,7 +59,10 @@ unsigned int nextPid = SENTINELPID;
 void startup(int argc, char *argv[])
 {
     int result; /* value returned by call to fork1() */
-    
+	int i;
+	for (i = 0; i < 50; i++) {
+		ProcTable[i].isNull = 1;
+	}    
     /* initialize the process table */
     if (DEBUG && debugflag)
         USLOSS_Console("startup(): initializing process table, ProcTable[]\n");
@@ -133,8 +136,8 @@ int fork1(char *name, int (*startFunc)(char *), char *arg,
           int stacksize, int priority)
 {
     // test if in kernel mode; halt if in user mode
-    if (USLOSS_PsrGet() & 1) 
-        printf("yo we in kernel mode\n");
+    if (!(USLOSS_PsrGet() & 1)) 
+        printf("yo we ain't in kernel mode\n");
    
     // Return if stack size is too small
     if (stacksize < USLOSS_MIN_STACK) {
@@ -145,7 +148,7 @@ int fork1(char *name, int (*startFunc)(char *), char *arg,
     int procSlot = nextPid % MAXPROC;
 	nextPid++;
 	int count = 0;
-    while (*ProcTable[procSlot].name != '\0' && ProcTable[procSlot].stack != NULL && ProcTable[procSlot].stackSize != 0) {
+	while (!ProcTable[procSlot].isNull) {
 		procSlot = nextPid % MAXPROC; 
 		nextPid++;
 		if (count++ == MAXPROC) {
@@ -161,12 +164,12 @@ int fork1(char *name, int (*startFunc)(char *), char *arg,
     } 
 
     ProcTable[procSlot].stack = malloc(stacksize);
-    
+   
     // Return if stack size is too small (again :^) )
     if(ProcTable[procSlot].stack == NULL){
     	printf("yo dude. u got a null for your ProcTable[procSlot].stack. that malloc aint kool");
     }
-
+	ProcTable[procSlot].isNull = 0;
     ProcTable[procSlot].stackSize = stacksize;
     ProcTable[procSlot].priority = priority;
     ProcTable[procSlot].pid = procSlot;
@@ -216,8 +219,10 @@ int fork1(char *name, int (*startFunc)(char *), char *arg,
     // for future phase(s)
     p1_fork(ProcTable[procSlot].pid);
     // More stuff to do here...
-    dispatcher();
-	
+    if (ProcTable[procSlot].priority != 6) 
+		dispatcher();
+	else
+		Current = &ProcTable[procSlot];	
     printf("%d\n",  ProcTable[procSlot].pid);
     
     return ProcTable[procSlot].pid;  // -1 is not correct! Here to prevent warning.
@@ -317,6 +322,7 @@ void quit(int status)
 		}
 	}
 	int cPid = Current->pid; 
+	popPriority(Current->priority);
 	if (Current->parentProcPtr == NULL) {
 		clearProcess(cPid);
 	}
@@ -345,17 +351,13 @@ void dispatcher(void)
 		{ // remove the current proc from the readylist
 			popPriority(Current->priority);
 		}
-	} 
-	if (!isEmpty()) {
-        ReadyList = peek();
-        Current = ReadyList;
-        // need to check if tempCurrent has a higher priority? should higher priority run over the peekd process priority
-        p1_switch(tempCurrent->pid, Current->pid);
-	    enableInterrupts();
-		USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
-    } else { // sentinel case, currently not implemented yet
-        Current = pQueues[5][0];
-    }
+	}
+    ReadyList = peek();
+    Current = ReadyList;
+	// need to check if tempCurrent has a higher priority? should higher priority run over the peekd process priority
+    p1_switch(tempCurrent->pid, Current->pid);
+	enableInterrupts();
+	USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
 } /* dispatcher */
 
 
@@ -385,7 +387,21 @@ int sentinel (char *dummy)
 
 /* check to determine if deadlock has occurred... */
 static void checkDeadlock()
-{
+{ 
+	USLOSS_Console("checkDeadlock(): hullo");
+	int i;
+	int isNoMoreProcs = 0;
+	for (i = 0; i <= 50; i++) {
+		if (!ProcTable[i].isNull) {
+			// check if blocked (probs in later phases)
+		} else {
+			isNoMoreProcs = 1;
+		}
+	}
+	if (isNoMoreProcs) {
+		USLOSS_Console("All processes completed");
+		USLOSS_Halt(0);
+	}
 } /* checkDeadlock */
 
 /*
@@ -410,7 +426,7 @@ void enableInterrupts()
 	if (USLOSS_PsrSet(newPSRValue) == USLOSS_ERR_INVALID_PSR)
 		USLOSS_Console("ERROR: Invalid PSR value set! was: %u\n", newPSRValue);
 	USLOSS_Console("enable:PSR value set. was: %u\n", newPSRValue);
-} /* disableInterrupts */
+} /* enableInterrupts */
 
 /*
  * Disables the interrupts and also turns kernel mode on
@@ -420,7 +436,7 @@ void disableInterrupts()
     // turn the interrupts OFF iff we are in kernel mode
     // if not in kernel mode, print an error message and
     // halt USLOSS
-    unsigned int previousPSRValue = USLOSS_PsrGet();
+	unsigned int previousPSRValue = USLOSS_PsrGet();
 	
     if (!(previousPSRValue & 1)) {
 		USLOSS_Console("disableInterrupts(): Not in kernel mode :-(\n");
@@ -471,6 +487,7 @@ void clearProcess(int pid)
     Current->status = 0;
     Current->isZapped = 0;
 	Current->terminationCode = 0;
+	Current->isNull = 1;
 	return;
 }
 

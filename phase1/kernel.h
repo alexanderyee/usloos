@@ -21,7 +21,8 @@ struct procStruct {
    int             status;            /* READY=0, BLOCKED=1, QUIT=2, JOIN_BLOCKED = 3, etc. maybe have statuses for why it's blocked?*/
    int             isZapped;          /* is it zapped or is it not zapped. that is the question teehee :^) */
    /* other fields as needed... */
-   int	     	   terminationCode;   /* termination code of when the child quit */
+   int	     	   terminationCode;   /* termination code of when the child quit */	
+   int 		   isNull;	      /* determines whether or not there is a process in this slot. */
 };
 
 struct psrBits {
