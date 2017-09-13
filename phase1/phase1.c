@@ -295,7 +295,7 @@ int join(int *status)
 		Current->status = 3;
 		dispatcher();
 	}
-    return -1;  // -1 is not correct! Here to prevent warning.
+    return Current->pid;  // -1 is not correct! Here to prevent warning.
 } /* join */
 
 
@@ -321,12 +321,15 @@ void quit(int status)
 		if (Current->parentProcPtr->status == 3) {
 			Current->parentProcPtr->status = 0;
 			insert(Current->parentProcPtr); 
+		} else if (Current->isZapped) {
+			// to be implemented in the future @TODO
 		}
 	}
 	int cPid = Current->pid; 
 	popPriority(Current->priority);
 	if (Current->parentProcPtr == NULL) {
 		clearProcess(cPid);
+		printf("quit(): Process cleared\n");
 	}
     p1_quit(cPid);
 	dispatcher();
@@ -347,19 +350,23 @@ void dispatcher(void)
 {
     disableInterrupts();
     procPtr tempCurrent = Current;
-	// if current process' status has changed to blocked/quit, remove it from RL
-	if (Current != NULL) {
-		if (Current->status <= 3 && Current->status >= 1) 
-		{ // remove the current proc from the readylist
-			popPriority(Current->priority);
-		}
-	}
+	printf("dispatcher() tempCurrent isNull: %d\n", tempCurrent->isNull);
     ReadyList = peek();
     Current = ReadyList;
-	// need to check if tempCurrent has a higher priority? should higher priority run over the peekd process priority
-    p1_switch(tempCurrent->pid, Current->pid);
 	enableInterrupts();
-	USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
+	// if current process' status has changed to blocked/quit, remove it from RL
+	if (!tempCurrent->isNull) {
+		if (tempCurrent->status <= 4 && tempCurrent->status >= 1) 
+		{ // remove the current proc from the readylist
+			popPriority(tempCurrent->priority);
+            USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
+
+		}
+	} else {
+		USLOSS_ContextSwitch(NULL, &(Current->state));
+	}
+	// need to check if tempCurrent has a higher priority? should higher priority run over the peekd process priority
+	p1_switch(tempCurrent->pid, Current->pid);
 } /* dispatcher */
 
 
@@ -392,12 +399,12 @@ static void checkDeadlock()
 { 
 	USLOSS_Console("checkDeadlock(): hullo");
 	int i;
-	int isNoMoreProcs = 0;
+	int isNoMoreProcs = 1;
 	for (i = 0; i <= 50; i++) {
 		if (!ProcTable[i].isNull) {
+			isNoMoreProcs = 0;
 			// check if blocked (probs in later phases)
 		} else {
-			isNoMoreProcs = 1;
 		}
 	}
 	if (isNoMoreProcs) {
@@ -507,7 +514,6 @@ void clearProcess(int pid)
     }
     // what do with state when quit huh???????????
 	//Current->state = NULL; // check valgrind l8r
-    Current->pid = 0;
     Current->priority = 0;
     Current->startFunc = NULL;
     Current->stack = NULL;
@@ -516,6 +522,8 @@ void clearProcess(int pid)
     Current->isZapped = 0;
 	Current->terminationCode = 0;
 	Current->isNull = 1;
+	Current->zapHead = NULL;
+	
 	return;
 }
 
