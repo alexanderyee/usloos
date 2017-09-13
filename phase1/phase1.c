@@ -294,6 +294,7 @@ int join(int *status)
 		// no child has quit, change status to blockedOnJoin,  run dispatcher
 		Current->status = 3;
 		dispatcher();
+		*status = Current->childProcPtr->terminationCode;
 	}
     return Current->pid;  // -1 is not correct! Here to prevent warning.
 } /* join */
@@ -317,7 +318,8 @@ void quit(int status)
     if (Current->parentProcPtr != NULL) { 
 		//the code to return to the sad, grieving parental guardian :^(
 		Current->terminationCode = status;
-		Current->status = 2; //quit code 
+		Current->status = 2; //quit code
+		// @TODO adjust child and parent pointers 
 		if (Current->parentProcPtr->status == 3) {
 			Current->parentProcPtr->status = 0;
 			insert(Current->parentProcPtr); 
@@ -326,8 +328,8 @@ void quit(int status)
 		}
 	}
 	int cPid = Current->pid; 
-	popPriority(Current->priority);
 	if (Current->parentProcPtr == NULL) {
+		popPriority(Current->priority);
 		clearProcess(cPid);
 		printf("quit(): Process cleared\n");
 	}
@@ -351,19 +353,24 @@ void dispatcher(void)
     disableInterrupts();
     procPtr tempCurrent = Current;
 	printf("dispatcher() tempCurrent isNull: %d\n", tempCurrent->isNull);
-    ReadyList = peek();
-    Current = ReadyList;
 	enableInterrupts();
 	// if current process' status has changed to blocked/quit, remove it from RL
 	if (!tempCurrent->isNull) {
 		if (tempCurrent->status <= 4 && tempCurrent->status >= 1) 
 		{ // remove the current proc from the readylist
 			popPriority(tempCurrent->priority);
-            USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
-
 		}
+		ReadyList = peek();
+        Current = ReadyList;
+		printf("dispatcher switch: %d\n", tempCurrent->pid);
+		printf("dispatcher switch2: %d\n", Current->pid);
+		USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
+		
 	} else {
-		USLOSS_ContextSwitch(NULL, &(Current->state));
+		ReadyList = peek();
+        Current = ReadyList;
+		printf("dispatcher(): current is %d\n", Current->pid);
+		USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
 	}
 	// need to check if tempCurrent has a higher priority? should higher priority run over the peekd process priority
 	p1_switch(tempCurrent->pid, Current->pid);
@@ -546,6 +553,7 @@ procPtr pop()
       pQueues[i][j] = pQueues[i][j+1];
       j++; 
    }
+   printf("popPriority(): popped %d\n", result->pid);
    return result;
 }
 
@@ -566,6 +574,7 @@ procPtr popPriority(int priority)
       pQueues[priority][j] = pQueues[priority][j+1];
       j++;
    }
+   printf("popPriority(): popped %d\n", result->pid);
    return result;
 }
 
@@ -592,7 +601,7 @@ procPtr peek()
 {
     int i;
     procPtr result;
-    for (i=0; i < 5; i++) {
+    for (i=0; i < 6; i++) {
        if (pQueues[i][0] != NULL){
           result = pQueues[i][0];
           break;
