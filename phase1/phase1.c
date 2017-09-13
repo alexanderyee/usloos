@@ -67,10 +67,8 @@ void startup(int argc, char *argv[])
     if (DEBUG && debugflag)
         USLOSS_Console("startup(): initializing process table, ProcTable[]\n");
 
-    /* PsrGet */
-    if (DEBUG && debugflag)
-	printf("startup's PSR: %u \n", USLOSS_PsrGet());
-    
+    /* disable interrupts and check for kernel mode */
+	disableInterrupts(); 
     // Initialize the Ready list, etc.
     if (DEBUG && debugflag)
         USLOSS_Console("startup(): initializing the Ready list\n");
@@ -136,9 +134,8 @@ int fork1(char *name, int (*startFunc)(char *), char *arg,
           int stacksize, int priority)
 {
     // test if in kernel mode; halt if in user mode
-    if (!(USLOSS_PsrGet() & 1)) 
-        printf("yo we ain't in kernel mode\n");
-   
+    /* disable interrupts and check for kernel mode */
+    disableInterrupts(); 
     // Return if stack size is too small
     if (stacksize < USLOSS_MIN_STACK) {
         printf("yo i don't think the stack size is enuf dood");
@@ -271,6 +268,8 @@ void launch()
    ------------------------------------------------------------------------ */
 int join(int *status)
 {
+	// check if in kernel mode and disable interrupts
+	disableInterrupts();
     if (Current->childProcPtr == NULL) {
         return -2;  
     } 
@@ -310,7 +309,7 @@ void quit(int status)
 {
 
 // from lecture on thurs. do i have a parent? is it blocked on join? if yes, then change parent status to unblock, put em bakc on rdylist, dispatcher should run parent eventually, then free proctable for child's slot (this current process slot)
-	
+	disableInterrupts();
 	// check if parent is stuck on join
     if (Current->parentProcPtr != NULL) { 
 		//the code to return to the sad, grieving parental guardian :^(
@@ -449,6 +448,22 @@ void disableInterrupts()
 	USLOSS_Console("disable: PSR value set! was: %u\n", newPSRValue);
 } /* disableInterrupts */
 
+/*
+ *
+ */ 
+int zap(int pid) 
+{
+	if (Current->isZapped) {
+		return -1;
+	} else if (Current->pid == pid || ProcTable[pid % MAXPROC].isNull) { 
+		USLOSS_Console("zap error d(^-^)b");
+		USLOSS_Halt(1);
+		return -1;
+	} else {
+		ProcTable[pid]->isZapped = 1;
+		Current->status = 
+	}
+}
 /*
  * The clock interrupt handler for our OS baby
  */
