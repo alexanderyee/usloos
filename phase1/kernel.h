@@ -2,9 +2,9 @@
 #define DEBUG 1
 
 typedef struct procStruct procStruct;
-
 typedef struct procStruct * procPtr;
 
+typedef struct zapNode zapNode;
 struct procStruct {
    procPtr         nextProcPtr;
    procPtr         childProcPtr;

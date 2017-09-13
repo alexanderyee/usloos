@@ -29,6 +29,9 @@ procPtr pop();
 procPtr popPriority(int);
 procPtr peek();
 int insert(procPtr);
+int zap(int);
+int isZapped(void);
+void zapAdd(procPtr);
 /* -------------------------- Globals ------------------------------------- */
 
 // Patrick's debugging global variable...
@@ -424,7 +427,6 @@ void enableInterrupts()
 	// then a logical or by 3 to set the first two bits to 11 
 	if (USLOSS_PsrSet(newPSRValue) == USLOSS_ERR_INVALID_PSR)
 		USLOSS_Console("ERROR: Invalid PSR value set! was: %u\n", newPSRValue);
-	USLOSS_Console("enable:PSR value set. was: %u\n", newPSRValue);
 } /* enableInterrupts */
 
 /*
@@ -445,7 +447,6 @@ void disableInterrupts()
     unsigned int newPSRValue = ((previousPSRValue << 2) & 12) | 1;
 	if (USLOSS_PsrSet(newPSRValue) == USLOSS_ERR_INVALID_PSR)
 		USLOSS_Console("ERROR: Invalid PSR value set! was: %u\n", newPSRValue);
-	USLOSS_Console("disable: PSR value set! was: %u\n", newPSRValue);
 } /* disableInterrupts */
 
 /*
@@ -460,10 +461,22 @@ int zap(int pid)
 		USLOSS_Halt(1);
 		return -1;
 	} else {
-		ProcTable[pid]->isZapped = 1;
-		Current->status = 
+		ProcTable[pid].isZapped = 1;
+		zapAdd(&ProcTable[pid]);	
+		Current->status = ZAP_BLOCKED;
+		dispatcher(); 
 	}
+	return 0;
 }
+
+/*
+ *
+ */
+int isZapped(void)
+{
+	return Current->isZapped;
+}
+
 /*
  * The clock interrupt handler for our OS baby
  */
@@ -595,4 +608,15 @@ int isEmpty()
    }
 
    return flag;
+}
+
+/*
+ * pronounced: zuh-PAD
+ */
+void zapAdd(procPtr zapped)
+{
+	zapNode tempNode;
+	tempNode.zapper = Current;
+	tempNode.next = zapped->zapHead;
+	zapped->zapHead = &tempNode;
 }
