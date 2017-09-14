@@ -24,6 +24,8 @@ struct procStruct {
    int	     	   terminationCode;   /* termination code of when the child quit */	
    int 		   isNull;	      /* determines whether or not there is a process in this slot. */
    zapNode *       zapHead;           /* head of the linked list of zappers */
+   int 		   timeMaster5000;
+   int             timeMaster5000Start;
 };
 
 struct psrBits {
@@ -54,3 +56,4 @@ struct zapNode {
 #define QUIT 2
 #define JOIN_BLOCKED 3
 #define ZAP_BLOCKED 4
+#define TIME_SLICE 80

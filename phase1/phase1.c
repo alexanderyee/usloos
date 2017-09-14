@@ -32,6 +32,7 @@ int insert(procPtr);
 int zap(int);
 int isZapped(void);
 void zapAdd(procPtr);
+void unZap(void);
 /* -------------------------- Globals ------------------------------------- */
 
 // Patrick's debugging global variable...
@@ -292,6 +293,7 @@ int join(int *status)
 		}
 		// no child has quit, change status to blockedOnJoin,  run dispatcher
 		Current->status = 3;
+		readtime();
 		dispatcher();
 		*status = Current->childProcPtr->terminationCode;
 	}
@@ -321,6 +323,7 @@ void quit(int status)
 		//the code to return to the sad, grieving parental guardian :^(
 		Current->terminationCode = status;
 		Current->status = 2; //quit code
+		readtime();
 		// @TODO adjust child and parent pointers 
 		if (Current->parentProcPtr->status == 3) {
 			Current->parentProcPtr->status = 0;
@@ -334,6 +337,7 @@ void quit(int status)
 		popPriority(Current->priority);
 		clearProcess(cPid);
 	}
+	unZap();
     p1_quit(cPid);
 	dispatcher();
 } /* quit */
@@ -363,17 +367,20 @@ void dispatcher(void)
 		ReadyList = peek();
         Current = ReadyList;
 		p1_switch(tempCurrent->pid, Current->pid);
+		readtime();
 		USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
 	} else {
 		ReadyList = peek();
         Current = ReadyList;
 		if (Current->priority == 6){ 
 			p1_switch(tempCurrent->pid, Current->pid);
+			readtime();
 			launch();
 			USLOSS_ContextSwitch(NULL, &(ProcTable[Current->pid].state));
 		}
 		else {
 			p1_switch(tempCurrent->pid, Current->pid);
+			readtime();
 			USLOSS_ContextSwitch(NULL, &(Current->state));	
 		}
 	}
@@ -502,6 +509,7 @@ int isZapped(void)
  */
 void clockHandler(int dev, int unit)
 {
+	
 }
 
 /*
@@ -536,7 +544,7 @@ void clearProcess(int pid)
 	ProcTable[pid].terminationCode = 0;
 	ProcTable[pid].isNull = 1;
 	ProcTable[pid].zapHead = NULL;
-	
+	ProcTable[pid].timeMaster5000Start = 0;
 	return;
 }
 
@@ -643,6 +651,20 @@ void zapAdd(procPtr zapped)
 }
 
 /*
+ *
+ */
+void unZap(void)
+{
+	Current->isZapped = 0;
+	zapNode * zapNodePtr = Current->zapHead;
+	while (zapNodePtr != NULL) {
+		zapNodePtr->zapper->status = 0;
+		insert(zapNodePtr->zapper);
+		zapNodePtr = zapNodePtr->next;
+	}
+}
+
+/*
  * dumps all the procs everywhere (nasty)
  */
 void dumpProcesses(void)
@@ -697,14 +719,16 @@ void dumpReadyList(void)
 /*
  *
  */
-int getpid(void) {
+int getpid(void) 
+{
 	return Current->pid;
 }
 
 /*
  *
  */
-int blockMe (int newStatus) {
+int blockMe (int newStatus) 
+{
 	if (newStatus <= 10) {
 		USLOSS_Console("blockMe(): newStatus param must be greater than 10");
 		USLOSS_Halt(1);
@@ -718,7 +742,8 @@ int blockMe (int newStatus) {
 /*
  *
  */
-int unblockProc(int pid) {
+int unblockProc(int pid)
+{
 	procStruct proc = ProcTable[pid];
 	if (proc.status <= 10 || proc.isNull || Current->pid == pid)
 		return -2;
@@ -730,10 +755,46 @@ int unblockProc(int pid) {
 	dispatcher();
 	return 0;
 }
-
 /*
  *
  */
-void timeSlice(void) {
-	
+int readtime(void)
+{
+	if (Current->timeMaster5000Start == 0) { // @TODO fix this? should we start time slice clock start here?
+		Current->timeMaster5000Start = readCurStartTime()/1000;
+	} else if (Current->status == 1) { // still running case
+		(Current->timeMaster5000) += ((readCurStartTime()/1000) - Current->timeMaster5000Start);
+		Current->timeMaster5000Start = readCurStartTime()/1000;
+		timeSlice();
+	} else { // became blocked/quit, just pause the timer
+		(Current->timeMaster5000) += ((readCurStartTime()/1000) - Current->timeMaster5000Start);
+		Current->timeMaster5000Start = 0;
+	}
+	return Current->timeMaster5000; 
+}
+/*
+ *
+ */
+void timeSlice(void) 
+{
+	if (Current->timeMaster5000 >= TIME_SLICE) {
+		Current->timeMaster5000 = 0;
+		Current->timeMaster5000Start = 0;
+		popPriority(Current->priority);
+		insert(Current);
+		dispatcher(); 
+	}
+}
+
+/*
+ * returns the time (in microseconds, 1000us = 1ms
+ */
+int readCurStartTime(void) {
+	int status;
+	int errCode = USLOSS_DeviceInput(USLOSS_CLOCK_DEV, 0, &status);
+	if (errCode == USLOSS_DEV_INVALID) {
+		USLOSS_Console("readCurStartTime(): Device and unit invalid\n");
+		USLOSS_Halt(1);
+	}
+	return status;
 }
