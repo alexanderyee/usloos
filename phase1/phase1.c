@@ -101,7 +101,7 @@ void startup(int argc, char *argv[])
         USLOSS_Halt(1);
     }
     
-    dispatcher(); // need to delete other dispatcher. (dispatcher should be here? from lect on thurs) should also be at end of quit. should still be at fork1 tho
+//`    dispatcher(); // need to delete other dispatcher. (dispatcher should be here? from lect on thurs) should also be at end of quit. should still be at fork1 tho
     USLOSS_Console("startup(): Should not see this message! ");
     USLOSS_Console("Returned from fork1 call that created start1\n");
 
@@ -296,7 +296,9 @@ int join(int *status)
 		dispatcher();
 		*status = Current->childProcPtr->terminationCode;
 	}
-    return Current->childProcPtr->pid;  // -1 is not correct! Here to prevent warning.
+	int deadChildPid = Current->childProcPtr->pid;
+	clearProcess(deadChildPid);
+    return deadChildPid;  // -1 is not correct! Here to prevent warning.
 } /* join */
 
 
@@ -362,20 +364,20 @@ void dispatcher(void)
 		}
 		ReadyList = peek();
         Current = ReadyList;
-		printf("dispatcher switch: %d\n", tempCurrent->pid);
-		printf("dispatcher switch2: %d\n", Current->pid);
+	//	printf("dispatcher switch: %d\n", tempCurrent->pid);
+	//	printf("dispatcher switch2: %d\n", Current->pid);
 		USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
-		
+		dumpProcesses();	
 	} else {
 		ReadyList = peek();
         Current = ReadyList;
-		printf("dispatcher(): current priority is %d\n", Current->priority);
-		printf("dispatcher(): current is %d\n", Current->pid);
+		//printf("dispatcher(): current priority is %d\n", Current->priority);
+		//printf("dispatcher(): current is %d\n", Current->pid);
 		if (Current->priority == 6){ 
-			printf("dispatcher(): current is %d\n", Current->pid);
+		//	printf("dispatcher(): current is %d\n", Current->pid);
 			USLOSS_ContextSwitch(NULL, &(ProcTable[Current->pid].state));
-			printf("dispatcher(): current is %d\n", Current->pid);
-			
+		//	printf("dispatcher(): current is %d\n", Current->pid);
+			dumpProcesses();	
 		}
 		else 
 			USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
@@ -516,28 +518,28 @@ void clockHandler(int dev, int unit)
  */
 void clearProcess(int pid)
 {
-	Current->nextProcPtr = NULL;
-    Current->childProcPtr = NULL;
-    Current->nextSiblingPtr = NULL;
-    Current->parentProcPtr = NULL;
+	ProcTable[pid].nextProcPtr = NULL;
+    ProcTable[pid].childProcPtr = NULL;
+    ProcTable[pid].nextSiblingPtr = NULL;
+    ProcTable[pid].parentProcPtr = NULL;
     int i;
     for (i=0; i<MAXNAME; i++) {
-        Current->name[i] = '\0';
+        ProcTable[pid].name[i] = '\0';
     }
     for (i=0; i<MAXARG; i++) {
-         Current->startArg[i] = '\0';
+         ProcTable[pid].startArg[i] = '\0';
     }
     // what do with state when quit huh???????????
 	//Current->state = NULL; // check valgrind l8r
-    Current->priority = 0;
-    Current->startFunc = NULL;
-    Current->stack = NULL;
-    Current->stackSize = 0;
-    Current->status = 0;
-    Current->isZapped = 0;
-	Current->terminationCode = 0;
-	Current->isNull = 1;
-	Current->zapHead = NULL;
+    ProcTable[pid].priority = 0;
+    ProcTable[pid].startFunc = NULL;
+    ProcTable[pid].stack = NULL;
+    ProcTable[pid].stackSize = 0;
+    ProcTable[pid].status = 0;
+    ProcTable[pid].isZapped = 0;
+	ProcTable[pid].terminationCode = 0;
+	ProcTable[pid].isNull = 1;
+	ProcTable[pid].zapHead = NULL;
 	
 	return;
 }
@@ -644,4 +646,38 @@ void zapAdd(procPtr zapped)
 	tempNode.zapper = Current;
 	tempNode.next = zapped->zapHead;
 	zapped->zapHead = &tempNode;
+}
+
+/*
+ * dumps all the procs everywhere (nasty)
+ */
+void dumpProcesses(void)
+{
+	USLOSS_Console("~                Process Dump (nasty)                ~\n");
+	USLOSS_Console("%10s%10s%10s%10s%10s%10s%10s\n", "Name", "PID", "parentPID", "Priority", "Status", "#Children", "CPU Time");
+	int i, numProcs = 0;
+	for (i = 0; i < MAXPROC; i++) {
+		if (!ProcTable[i].isNull) {
+			numProcs++;
+			procStruct p = ProcTable[i];
+			procPtr pChild = p.childProcPtr;
+			int pChildCount = 0;
+			while(pChild != NULL) {
+				pChildCount++;
+				pChild = pChild->nextProcPtr;
+			}
+			char * stateus;
+			if (p.status == 0)
+				stateus = "READY";
+			else if (p.status == 1)
+                stateus = "BLOCKED";
+			else if (p.status == 2)
+                 stateus = "QUIT";
+			else if (p.status == 3)
+                 stateus = "JOIN_BLOCKED";
+			else if (p.status == 4)
+                 stateus = "ZAP_BLOCKED";
+			USLOSS_Console("%10s%10d%10d%10d%10s%10d%10d\n", p.name, p.pid, ((p.parentProcPtr == NULL) ? -1 : p.parentProcPtr->pid), p.priority, stateus, pChildCount, -2); 
+		}
+	} 	
 }
