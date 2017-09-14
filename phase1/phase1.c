@@ -369,8 +369,12 @@ void dispatcher(void)
 	} else {
 		ReadyList = peek();
         Current = ReadyList;
+		printf("dispatcher(): current priority is %d\n", Current->priority);
 		printf("dispatcher(): current is %d\n", Current->pid);
-		USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
+		if (Current->priority == 6) 
+			USLOSS_ContextSwitch(NULL, &(Current->state));
+		else 
+			USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
 	}
 	// need to check if tempCurrent has a higher priority? should higher priority run over the peekd process priority
 	p1_switch(tempCurrent->pid, Current->pid);
