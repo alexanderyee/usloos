@@ -146,6 +146,7 @@ int fork1(char *name, int (*startFunc)(char *), char *arg,
   
     // Is there room in the process table? What is the next PID?
     int procSlot = nextPid % MAXPROC;
+	printf("ProcSlot: %d\n", procSlot);
 	nextPid++;
 	int count = 0;
 	while (!ProcTable[procSlot].isNull) {
@@ -156,12 +157,6 @@ int fork1(char *name, int (*startFunc)(char *), char *arg,
 			USLOSS_Halt(1);
 		}
 	}
-
-    if (!procSlot) // change this later to account for more than 50 procs.
-    {
-        USLOSS_Console("No more room in the process table. Halting...\n");
-        USLOSS_Halt(1);
-    } 
 
     ProcTable[procSlot].stack = malloc(stacksize);
    
@@ -376,7 +371,6 @@ void dispatcher(void)
 	//	printf("dispatcher switch2: %d\n", Current->pid);
 		p1_switch(tempCurrent->pid, Current->pid);
 		USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
-		dumpProcesses();	
 	} else {
 		dumpReadyList();
 		ReadyList = peek();
@@ -389,7 +383,6 @@ void dispatcher(void)
 			launch();
 			USLOSS_ContextSwitch(NULL, &(ProcTable[Current->pid].state));
 		//	printf("dispatcher(): current is %d\n", Current->pid);
-			dumpProcesses();	
 		}
 		else {
 			p1_switch(tempCurrent->pid, Current->pid);
