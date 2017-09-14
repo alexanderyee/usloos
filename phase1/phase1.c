@@ -35,7 +35,7 @@ void zapAdd(procPtr);
 /* -------------------------- Globals ------------------------------------- */
 
 // Patrick's debugging global variable...
-int debugflag = 1;
+int debugflag = 0;
 
 // the process table
 procStruct ProcTable[MAXPROC];
@@ -141,12 +141,11 @@ int fork1(char *name, int (*startFunc)(char *), char *arg,
     disableInterrupts(); 
     // Return if stack size is too small
     if (stacksize < USLOSS_MIN_STACK) {
-        printf("yo i don't think the stack size is enuf dood");
+        USLOSS_Console("yo i don't think the stack size is enuf dood");
     }
   
     // Is there room in the process table? What is the next PID?
     int procSlot = nextPid % MAXPROC;
-	printf("ProcSlot: %d\n", procSlot);
 	nextPid++;
 	int count = 0;
 	while (!ProcTable[procSlot].isNull) {
@@ -162,7 +161,7 @@ int fork1(char *name, int (*startFunc)(char *), char *arg,
    
     // Return if stack size is too small (again :^) )
     if(ProcTable[procSlot].stack == NULL){
-    	printf("yo dude. u got a null for your ProcTable[procSlot].stack. that malloc aint kool");
+    	USLOSS_Console("yo dude. u got a null for your ProcTable[procSlot].stack. that malloc aint kool");
     }
 	ProcTable[procSlot].isNull = 0;
     ProcTable[procSlot].stackSize = stacksize;
@@ -224,8 +223,7 @@ int fork1(char *name, int (*startFunc)(char *), char *arg,
 		dispatcher();
 	else
 		Current = &ProcTable[procSlot];	
-    printf("%d\n",  ProcTable[procSlot].pid);
-    
+     
     return ProcTable[procSlot].pid;  // -1 is not correct! Here to prevent warning.
 } /* fork1 */
 
@@ -247,7 +245,6 @@ void launch()
     // Enable interrupts
 	enableInterrupts();
 
-	printf("launch(): calling startFunc of pid %d\n", Current->pid); 
     // Call the function passed to fork1, and capture its return value
     result = Current->startFunc(Current->startArg);
 
@@ -336,7 +333,6 @@ void quit(int status)
 	if (Current->parentProcPtr == NULL) {
 		popPriority(Current->priority);
 		clearProcess(cPid);
-		printf("quit(): Process cleared\n");
 	}
     p1_quit(cPid);
 	dispatcher();
@@ -357,7 +353,6 @@ void dispatcher(void)
 {
     disableInterrupts();
     procPtr tempCurrent = Current;
-	printf("dispatcher() tempCurrent isNull: %d\n", tempCurrent->isNull);
 	enableInterrupts();
 	// if current process' status has changed to blocked/quit, remove it from RL
 	if (!tempCurrent->isNull) {
@@ -367,22 +362,15 @@ void dispatcher(void)
 		}
 		ReadyList = peek();
         Current = ReadyList;
-	//	printf("dispatcher switch: %d\n", tempCurrent->pid);
-	//	printf("dispatcher switch2: %d\n", Current->pid);
 		p1_switch(tempCurrent->pid, Current->pid);
 		USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
 	} else {
-		dumpReadyList();
 		ReadyList = peek();
         Current = ReadyList;
-		//printf("dispatcher(): current priority is %d\n", Current->priority);
-		//printf("dispatcher(): current is %d\n", Current->pid);
 		if (Current->priority == 6){ 
-		//	printf("dispatcher(): current is %d\n", Current->pid);
 			p1_switch(tempCurrent->pid, Current->pid);
 			launch();
 			USLOSS_ContextSwitch(NULL, &(ProcTable[Current->pid].state));
-		//	printf("dispatcher(): current is %d\n", Current->pid);
 		}
 		else {
 			p1_switch(tempCurrent->pid, Current->pid);
@@ -390,7 +378,6 @@ void dispatcher(void)
 		}
 	}
 	// need to check if tempCurrent has a higher priority? should higher priority run over the peekd process priority
-	p1_switch(tempCurrent->pid, Current->pid);
 } /* dispatcher */
 
 
@@ -410,7 +397,6 @@ int sentinel (char *dummy)
 {
     if (DEBUG && debugflag)
         USLOSS_Console("sentinel(): called\n");
-    dumpProcesses();
 	while (1)
     {
         checkDeadlock();
@@ -435,7 +421,7 @@ static void checkDeadlock()
 		}
 	}
 	if (isNoMoreProcs == 1) {
-		USLOSS_Console("All processes completed");
+		USLOSS_Console("All processes completed.\n");
 		USLOSS_Halt(0);
 	}
 } /* checkDeadlock */
@@ -573,7 +559,6 @@ procPtr pop()
       pQueues[i][j] = pQueues[i][j+1];
       j++; 
    }
-   printf("popPriority(): popped %d\n", result->pid);
    return result;
 }
 
@@ -594,7 +579,6 @@ procPtr popPriority(int priority)
       pQueues[priority][j] = pQueues[priority][j+1];
       j++;
    }
-   printf("popPriority(): popped %d\n", result->pid);
    return result;
 }
 
@@ -745,4 +729,11 @@ int unblockProc(int pid) {
 	insert(&(ProcTable[pid]));
 	dispatcher();
 	return 0;
+}
+
+/*
+ *
+ */
+void timeSlice(void) {
+	
 }
