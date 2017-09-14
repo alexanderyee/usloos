@@ -198,13 +198,19 @@ int fork1(char *name, int (*startFunc)(char *), char *arg,
     insert(&ProcTable[procSlot]); // inserts into the readylist
     //check is parent pointer isn't null and the priority of parent isn't 6 (sential process)
     if (Current != NULL && Current->priority != 6) {
-        procPtr temp = Current;
-        while (temp->nextProcPtr != NULL) // iterate through children if there are any, place child ptr there
-            temp = temp->nextProcPtr;
-        temp->childProcPtr = &ProcTable[procSlot];
-        temp->childProcPtr->parentProcPtr = Current;
-        USLOSS_Console("link between parent %d and child %d estab.\n", Current->pid, ProcTable[procSlot].pid);
-    }
+        procPtr temp = Current->childProcPtr;
+		// case where parent has no child
+		if (temp == NULL) {
+			Current->childProcPtr = &ProcTable[procSlot];
+			Current->childProcPtr->parentProcPtr = Current;
+		} else {
+       		while (temp->nextProcPtr != NULL) // iterate through children if there are any, place child ptr there
+            	temp = temp->nextProcPtr;
+        	temp->nextProcPtr = &ProcTable[procSlot];
+        	temp->nextProcPtr->parentProcPtr = Current;
+        //USLOSS_Console("link between parent %d and child %d estab.\n", Current->pid, ProcTable[procSlot].pid);
+    	}
+	}
     // PSR. Saved previousPSRValue; set new PSR value withh current mode =1 && current 
     // interrupt mode = 1; 
     enableInterrupts();
@@ -285,6 +291,7 @@ int join(int *status)
 			if (temp->status == 2) {// a child has quit case
 				*status = temp->terminationCode;
 				int deadChildPid = temp->pid;
+				Current->childProcPtr = Current->childProcPtr->nextProcPtr;
 				// reset all the fields
 				clearProcess(deadChildPid);
 				return deadChildPid;
@@ -297,8 +304,9 @@ int join(int *status)
 		*status = Current->childProcPtr->terminationCode;
 	}
 	int deadChildPid = Current->childProcPtr->pid;
+	Current->childProcPtr = Current->childProcPtr->nextProcPtr;
 	clearProcess(deadChildPid);
-    return deadChildPid;  // -1 is not correct! Here to prevent warning.
+	return deadChildPid;  // -1 is not correct! Here to prevent warning.
 } /* join */
 
 
@@ -366,21 +374,27 @@ void dispatcher(void)
         Current = ReadyList;
 	//	printf("dispatcher switch: %d\n", tempCurrent->pid);
 	//	printf("dispatcher switch2: %d\n", Current->pid);
+		p1_switch(tempCurrent->pid, Current->pid);
 		USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
 		dumpProcesses();	
 	} else {
+		dumpReadyList();
 		ReadyList = peek();
         Current = ReadyList;
 		//printf("dispatcher(): current priority is %d\n", Current->priority);
 		//printf("dispatcher(): current is %d\n", Current->pid);
 		if (Current->priority == 6){ 
 		//	printf("dispatcher(): current is %d\n", Current->pid);
+			p1_switch(tempCurrent->pid, Current->pid);
+			launch();
 			USLOSS_ContextSwitch(NULL, &(ProcTable[Current->pid].state));
 		//	printf("dispatcher(): current is %d\n", Current->pid);
 			dumpProcesses();	
 		}
-		else 
-			USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
+		else {
+			p1_switch(tempCurrent->pid, Current->pid);
+			USLOSS_ContextSwitch(NULL, &(Current->state));	
+		}
 	}
 	// need to check if tempCurrent has a higher priority? should higher priority run over the peekd process priority
 	p1_switch(tempCurrent->pid, Current->pid);
@@ -403,7 +417,8 @@ int sentinel (char *dummy)
 {
     if (DEBUG && debugflag)
         USLOSS_Console("sentinel(): called\n");
-    while (1)
+    dumpProcesses();
+	while (1)
     {
         checkDeadlock();
         USLOSS_WaitInt();
@@ -414,17 +429,19 @@ int sentinel (char *dummy)
 /* check to determine if deadlock has occurred... */
 static void checkDeadlock()
 { 
-	USLOSS_Console("checkDeadlock(): hullo");
+	//USLOSS_Console("checkDeadlock(): hullo");
 	int i;
 	int isNoMoreProcs = 1;
-	for (i = 0; i <= 50; i++) {
-		if (!ProcTable[i].isNull) {
+	for (i = 0; i < MAXPROC; i++) {
+		if (!ProcTable[i].isNull && ProcTable[i].priority != 6) {
 			isNoMoreProcs = 0;
-			// check if blocked (probs in later phases)
+			USLOSS_Console("checkDeadlock(): hullo %d \n", i);
+			break;
+		// check if blocked (probs in later phases)
 		} else {
 		}
 	}
-	if (isNoMoreProcs) {
+	if (isNoMoreProcs == 1) {
 		USLOSS_Console("All processes completed");
 		USLOSS_Halt(0);
 	}
@@ -680,4 +697,59 @@ void dumpProcesses(void)
 			USLOSS_Console("%10s%10d%10d%10d%10s%10d%10d\n", p.name, p.pid, ((p.parentProcPtr == NULL) ? -1 : p.parentProcPtr->pid), p.priority, stateus, pChildCount, -2); 
 		}
 	} 	
+}
+
+/*
+ *
+ */
+void dumpReadyList(void)
+{
+	USLOSS_Console("<|o.o|>        RDYLIS        <|o.o|>\n");
+	USLOSS_Console("%10s%10s%15s\n", "Priority", "PID", "Name");
+	int i, j;
+	for (i = 0; i < 6; i++) {
+		for (j = 0; j < MAXPROC; j++) {	
+			if (pQueues[i][j] != NULL) {
+				procPtr p = pQueues[i][j];
+				USLOSS_Console("%10d%10d%15s\n", p->priority, p->pid, p->name);  
+			}
+		}
+	}	
+}
+
+/*
+ *
+ */
+int getpid(void) {
+	return Current->pid;
+}
+
+/*
+ *
+ */
+int blockMe (int newStatus) {
+	if (newStatus <= 10) {
+		USLOSS_Console("blockMe(): newStatus param must be greater than 10");
+		USLOSS_Halt(1);
+	} else if (Current->isZapped) {
+		return -1;
+	}
+	Current->status = newStatus;
+	return 0;
+}
+
+/*
+ *
+ */
+int unblockProc(int pid) {
+	procStruct proc = ProcTable[pid];
+	if (proc.status <= 10 || proc.isNull || Current->pid == pid)
+		return -2;
+	else if (proc.isZapped)
+		return -1;
+	
+	ProcTable[pid].status = 0;
+	insert(&(ProcTable[pid]));
+	dispatcher();
+	return 0;
 }
