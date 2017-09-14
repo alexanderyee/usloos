@@ -187,7 +187,7 @@ int fork1(char *name, int (*startFunc)(char *), char *arg,
     ProcTable[procSlot].startFunc = startFunc;
 
     if ( arg == NULL )
-        ProcTable[procSlot].startArg[0] = '\0';
+    	ProcTable[procSlot].startArg[0] = '\0';
     else if ( strlen(arg) >= (MAXARG - 1) ) {
         USLOSS_Console("fork1(): argument too long.  Halting...\n");
         USLOSS_Halt(1);
@@ -296,7 +296,7 @@ int join(int *status)
 		dispatcher();
 		*status = Current->childProcPtr->terminationCode;
 	}
-    return Current->pid;  // -1 is not correct! Here to prevent warning.
+    return Current->childProcPtr->pid;  // -1 is not correct! Here to prevent warning.
 } /* join */
 
 
@@ -371,8 +371,12 @@ void dispatcher(void)
         Current = ReadyList;
 		printf("dispatcher(): current priority is %d\n", Current->priority);
 		printf("dispatcher(): current is %d\n", Current->pid);
-		if (Current->priority == 6) 
-			USLOSS_ContextSwitch(NULL, &(Current->state));
+		if (Current->priority == 6){ 
+			printf("dispatcher(): current is %d\n", Current->pid);
+			USLOSS_ContextSwitch(NULL, &(ProcTable[Current->pid].state));
+			printf("dispatcher(): current is %d\n", Current->pid);
+			
+		}
 		else 
 			USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
 	}
