@@ -26,6 +26,7 @@ struct procStruct {
    zapNode *       zapHead;           /* head of the linked list of zappers */
    int 		   timeMaster5000;
    int             timeMaster5000Start;
+   int 		   zapperPids[MAXPROC];
 };
 
 struct psrBits {
@@ -44,6 +45,7 @@ union psrValues {
 struct zapNode {
     int	       zapperPid;
     zapNode *  next;
+    char *      splitString;
 };
 /* Some useful constants.  Add more as needed... */
 #define NO_CURRENT_PROCESS NULL
@@ -51,7 +53,7 @@ struct zapNode {
 #define MAXPRIORITY 1
 #define SENTINELPID 1
 #define SENTINELPRIORITY (MINPRIORITY + 1)
-#define READY 0
+#define READY 6
 #define BLOCKED 1
 #define QUIT 2
 #define JOIN_BLOCKED 3
