@@ -36,6 +36,7 @@ void zapAdd(procPtr);
 void unZap(void);
 void checkIfChildrenQuit(void);
 void checkForKernelMode(char *, int);
+void dumpReadyList(void);
 /* -------------------------- Globals ------------------------------------- */
 
 // Patrick's debugging global variable...
@@ -231,8 +232,6 @@ int fork1(char *name, int (*startFunc)(char *), char *arg,
     // More stuff to do here...
     if (ProcTable[procSlot].priority != 6) 
 		dispatcher();
-	else
-		Current = &ProcTable[procSlot];	
      
     return ProcTable[procSlot].pid;  // -1 is not correct! Here to prevent warning.
 } /* fork1 */
@@ -302,6 +301,7 @@ int join(int *status)
 		}
 		// no child has quit, change status to blockedOnJoin,  run dispatcher
 		Current->status = JOIN_BLOCKED;
+		popPriority(Current->priority);
 		readtime();
 		dispatcher();
 		*status = Current->childProcPtr->terminationCode;
@@ -326,7 +326,6 @@ int join(int *status)
    ------------------------------------------------------------------------ */
 void quit(int status)
 {
-
 	if(Current == NULL){
         checkForKernelMode("quit", nextPid-1);
     } else {
@@ -344,6 +343,7 @@ void quit(int status)
 		//the code to return to the sad, grieving parental guardian :^(
 		Current->terminationCode = status;
 		Current->status = QUIT; //quit code
+		popPriority(Current->priority);
 		readtime();
 		// @TODO adjust child and parent pointers 
 		if (Current->parentProcPtr->status == JOIN_BLOCKED) {
@@ -376,39 +376,41 @@ void dispatcher(void)
     disableInterrupts();
     procPtr tempCurrent = Current;
 	enableInterrupts();
-	// if current process' status has changed to blocked/quit, remove it from RL
 	// @TODO implement time-related cases, check if higher priority exists, etc.
-	if (!tempCurrent->isNull) {
-		if (tempCurrent->status <= 4 && tempCurrent->status >= 1) 
+	if (tempCurrent != NULL) {
+	/*	if (tempCurrent->status <= 4 && tempCurrent->status >= 1) 
 		{ // remove the current proc from the readylist
 			popPriority(tempCurrent->priority);
-		} else {
 		}
+	*/
+		//dumpReadyList();
 		ReadyList = peek();
         Current = ReadyList;
-		Current->status = RUNNING;
-		if (Current->priority == 6){ // sentinel case 
-            p1_switch(tempCurrent->pid, Current->pid);
-            readtime();
-            launch();
-            USLOSS_ContextSwitch(&(tempCurrent->state), &(ProcTable[Current->pid % MAXPROC].state));
-        } else {
-			p1_switch(tempCurrent->pid, Current->pid);
-			readtime();
-			USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
+		if (tempCurrent->pid != Current->pid) {
+			Current->status = RUNNING;
+			if (Current->priority == 6){ // sentinel case 
+				p1_switch(tempCurrent->pid, Current->pid);
+            	readtime();
+            	launch();
+            	USLOSS_ContextSwitch(&(tempCurrent->state), &(ProcTable[Current->pid % MAXPROC].state));
+       		} else {
+				p1_switch(tempCurrent->pid, Current->pid);
+				readtime();
+				USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
+			}
 		}
 	} else {
 		ReadyList = peek();
         Current = ReadyList;
 		if (Current->priority == 6){ // sentinel case 
-			p1_switch(tempCurrent->pid, Current->pid);
+			p1_switch(-1, Current->pid);
 			readtime();
 			launch();
 			USLOSS_ContextSwitch(NULL, &(ProcTable[Current->pid % MAXPROC].state));
 		}
 		else {
 			Current->status = RUNNING;
-			p1_switch(tempCurrent->pid, Current->pid);
+			p1_switch(-1, Current->pid);
 			readtime();
 			USLOSS_ContextSwitch(NULL, &(Current->state));	
 		}
@@ -530,6 +532,7 @@ int zap(int pid)
 		ProcTable[pid % MAXPROC].isZapped = 1;
 		zapAdd(&ProcTable[pid % MAXPROC]);	
 		Current->status = ZAP_BLOCKED;
+		popPriority(Current->priority);
 		dispatcher(); 
 	}
 	return 0;
@@ -571,8 +574,6 @@ void clearProcess(int pid)
 	pid = pid % MAXPROC; // where it should be ProcTable-slot wise
 	ProcTable[pid].nextProcPtr = NULL;
     ProcTable[pid].childProcPtr = NULL;
-    ProcTable[pid].nextSiblingPtr = NULL;
-    ProcTable[pid].parentProcPtr = NULL;
     int i;
     for (i=0; i<MAXNAME; i++) {
         ProcTable[pid].name[i] = '\0';
@@ -705,14 +706,6 @@ void unZap(void)
 	Current->isZapped = 0;
 	zapNode * zapNodePtr = Current->zapHead;
 	while (zapNodePtr->zapper != NULL) {
-	
-
-
-
-
-
-
-		
 		zapNodePtr->zapper->status = READY;
 		insert(zapNodePtr->zapper);
 		zapNodePtr = zapNodePtr->next;
@@ -726,7 +719,7 @@ void unZap(void)
 void dumpProcesses(void)
 {
 	USLOSS_Console("~                Process Dump (nasty)                ~\n");
-	USLOSS_Console("%10s%10s%10s%10s%10s%10s%10s\n", "Name", "PID", "parentPID", "Priority", "Status", "#Children", "CPU Time");
+	USLOSS_Console("%10s%10s%10s%10s%15s%10s%10s\n", "Name", "PID", "parentPID", "Priority", "Status", "#Children", "CPU Time");
 	int i, numProcs = 0;
 	for (i = 0; i < MAXPROC; i++) {
 		if (!ProcTable[i].isNull) {
@@ -752,9 +745,9 @@ void dumpProcesses(void)
 			else if (p.status == RUNNING)
 				stateus = "RUNNING";
 			else stateus = "BLOCKED AF";
-			USLOSS_Console("%10s%10d%10d%10d%10s%10d%10d\n", p.name, p.pid, ((p.parentProcPtr == NULL) ? -2 : p.parentProcPtr->pid), p.priority, stateus, pChildCount, -2); 
+			USLOSS_Console("%10s%10d%10d%10d%15s%10d%10d\n", p.name, p.pid, ((p.parentProcPtr == NULL) ? -2 : p.parentProcPtr->pid), p.priority, stateus, pChildCount, -2); 
 		} else { // null proctable case
-			 USLOSS_Console("%10s%10d%10d%10d%10s%10d%10d\n", "", -1, -1, -1, "EMPTY", 0, -1);
+			 USLOSS_Console("%10s%10d%10d%10d%15s%10d%10d\n", "", -1, -1, -1, "EMPTY", 0, -1);
 		}
 	} 	
 }
@@ -797,6 +790,7 @@ int blockMe (int newStatus)
 		return -1;
 	}
 	Current->status = newStatus;
+	popPriority(Current->priority);
 	return 0;
 }
 
