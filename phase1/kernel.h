@@ -56,4 +56,5 @@ struct zapNode {
 #define QUIT 2
 #define JOIN_BLOCKED 3
 #define ZAP_BLOCKED 4
+#define RUNNING 5	
 #define TIME_SLICE 80
