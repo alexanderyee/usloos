@@ -42,7 +42,7 @@ union psrValues {
 };
 
 struct zapNode {
-    procPtr    zapper;
+    int	       zapperPid;
     zapNode *  next;
 };
 /* Some useful constants.  Add more as needed... */

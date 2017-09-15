@@ -179,6 +179,11 @@ int fork1(char *name, int (*startFunc)(char *), char *arg,
     ProcTable[procSlot].priority = priority;
     ProcTable[procSlot].pid = nextPid-1;
 
+	zapNode z;
+	z.zapperPid = -1;
+	z.next = NULL;
+	ProcTable[procSlot].zapHead = &z;
+
     if (DEBUG && debugflag)
         USLOSS_Console("fork1(): creating process %s\n", name);
 
@@ -281,10 +286,10 @@ int join(int *status)
 	// check if in kernel mode and disable interrupts
 	disableInterrupts();
     if (Current->childProcPtr == NULL) {
-        return -2;  
+		return -2;  
     } 
     else if (Current->isZapped) {
-        return -1;
+		return -1;
     }
 	else {
 		procPtr temp = Current->childProcPtr;
@@ -327,7 +332,7 @@ int join(int *status)
 void quit(int status)
 {
 	if(Current == NULL){
-        checkForKernelMode("quit", nextPid-1);
+		checkForKernelMode("quit", nextPid-1);
     } else {
         checkForKernelMode("quit", Current->pid);
     }
@@ -336,8 +341,10 @@ void quit(int status)
 	// check if all children quit
     checkIfChildrenQuit();
 	// check if it was zapped, if so unblock and enqueue those who zapped it
-	if (Current->isZapped)
+	if (Current->isZapped){
 		unZap();
+		dumpProcesses();
+	}
 	// now check if any parents are stuck on a join
 	if (Current->parentProcPtr != NULL) { 
 		//the code to return to the sad, grieving parental guardian :^(
@@ -693,7 +700,7 @@ int isEmpty()
 void zapAdd(procPtr zapped)
 {
 	zapNode tempNode;
-	tempNode.zapper = Current;
+	tempNode.zapperPid = Current->pid;
 	tempNode.next = zapped->zapHead;
 	zapped->zapHead = &tempNode;
 }
@@ -705,9 +712,9 @@ void unZap(void)
 {
 	Current->isZapped = 0;
 	zapNode * zapNodePtr = Current->zapHead;
-	while (zapNodePtr->zapper != NULL) {
-		zapNodePtr->zapper->status = READY;
-		insert(zapNodePtr->zapper);
+	while (zapNodePtr != NULL) {
+		ProcTable[zapNodePtr->zapperPid % MAXPROC].status = READY;
+		insert(&ProcTable[zapNodePtr->zapperPid % MAXPROC]);
 		zapNodePtr = zapNodePtr->next;
 	}
 
