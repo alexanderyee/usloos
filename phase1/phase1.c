@@ -50,7 +50,7 @@ static procPtr ReadyList;
 static procPtr pQueues[6][MAXPROC];
 // current process ID
 procPtr Current;
-
+int curPid; // used for readtime
 // the next pid to be assigned
 unsigned int nextPid = SENTINELPID;
 
@@ -73,6 +73,7 @@ void startup(int argc, char *argv[])
 		for (j = 0; j < MAXPROC; j++) {
 			 ProcTable[i].zapperPids[j] = -1;
 		}
+		ProcTable[i].timeMaster5000Start = -1;
 	}
 	
     /* initialize the process table */
@@ -293,32 +294,44 @@ int join(int *status)
     if (Current->childProcPtr == NULL) {
 		return -2;  
     } 
-    else if (Current->isZapped) {
-		return -1;
-    }
-	else {
-		procPtr temp = Current->childProcPtr;
-		while (temp != NULL) {
-			if (temp->status == QUIT) {// a child has quit case
-				*status = temp->terminationCode;
-				int deadChildPid = temp->pid;
-				Current->childProcPtr = Current->childProcPtr->nextProcPtr;
-				// reset all the fields
-				clearProcess(deadChildPid);
-				return deadChildPid;
-			}
-			temp = temp->nextProcPtr;
+	procPtr temp = Current->childProcPtr;
+	while (temp != NULL) {
+		if (temp->status == QUIT) {// a child has quit case
+			*status = temp->terminationCode;
+			int deadChildPid = temp->pid;
+			Current->childProcPtr = Current->childProcPtr->nextProcPtr;
+			// reset all the fields
+			clearProcess(deadChildPid);
+			if (isZapped()) 
+	         	return -1;   
+			return deadChildPid;
 		}
-		// no child has quit, change status to blockedOnJoin,  run dispatcher
-		Current->status = JOIN_BLOCKED;
-		popPriority(Current->priority);
-		readtime();
-		dispatcher();
-		*status = Current->childProcPtr->terminationCode;
+		temp = temp->nextProcPtr;
 	}
-	int deadChildPid = Current->childProcPtr->pid;
-	Current->childProcPtr = Current->childProcPtr->nextProcPtr;
-	clearProcess(deadChildPid);
+	// no child has quit, change status to blockedOnJoin,  run dispatcher
+	Current->status = JOIN_BLOCKED;
+	popPriority(Current->priority);
+	dispatcher();
+	// a child has quit, find out who
+	procPtr quitChild = Current->childProcPtr->nextProcPtr;
+	temp = Current->childProcPtr; // will hold prev
+	int deadChildPid;
+
+	if (temp->status == QUIT) { // special case where first child has quit
+		*status = temp->terminationCode;
+		deadChildPid = temp->pid;
+	    Current->childProcPtr = Current->childProcPtr->nextProcPtr;
+    	clearProcess(deadChildPid);
+	} else {
+		while (quitChild->status != QUIT) {
+			temp = temp->nextProcPtr;
+			quitChild = quitChild->nextProcPtr;
+		}
+		*status = quitChild->terminationCode;
+		deadChildPid = quitChild->pid;
+		temp->nextProcPtr = quitChild->nextProcPtr;
+		clearProcess(deadChildPid);
+	}
 	if (isZapped())
 		return -1;
 	return deadChildPid;  // -1 is not correct! Here to prevent warning.
@@ -355,7 +368,6 @@ void quit(int status)
 		Current->terminationCode = status;
 		Current->status = QUIT; //quit code
 		popPriority(Current->priority);
-		readtime();
 		// @TODO adjust child and parent pointers 
 		if (Current->parentProcPtr->status == JOIN_BLOCKED) {
 			Current->parentProcPtr->status = READY;
@@ -402,11 +414,17 @@ void dispatcher(void)
 			} 
 			if (Current->priority == 6){ // sentinel case 
 				p1_switch(tempCurrent->pid, Current->pid);
-            	readtime();
+            	curPid = tempCurrent->pid;
+				readtime();
+				curPid = Current->pid;
+				readtime();
             	launch();
             	USLOSS_ContextSwitch(&(tempCurrent->state), &(ProcTable[Current->pid % MAXPROC].state));
        		} else {
 				p1_switch(tempCurrent->pid, Current->pid);
+				curPid = tempCurrent->pid;
+				readtime();
+				curPid = Current->pid;
 				readtime();
 				USLOSS_ContextSwitch(&(tempCurrent->state), &(Current->state));
 			}
@@ -414,18 +432,21 @@ void dispatcher(void)
 	} else { // first context switch case or quit case
 		ReadyList = peek();
         Current = ReadyList;
+		Current->status = RUNNING;
 		if (Current->priority == 6){ // sentinel case 
 			p1_switch(-1, Current->pid);
+			curPid = Current->pid;
 			readtime();
 			launch();
 			USLOSS_ContextSwitch(NULL, &(ProcTable[Current->pid % MAXPROC].state));
 		} else {
-			Current->status = RUNNING;
 			p1_switch(-1, Current->pid);
+			curPid = Current->pid;
 			readtime();
 			USLOSS_ContextSwitch(NULL, &(Current->state));	
 		}
 	}
+	//}
 	// need to check if tempCurrent has a higher priority? should higher priority run over the peekd process priority
 } /* dispatcher */
 
@@ -534,12 +555,15 @@ void disableInterrupts()
 int zap(int pid) 
 {
 	if (Current->pid == pid){
-		USLOSS_Console("zap(): process %d tried to zap itself.  Halting...\n", pid );
+		USLOSS_Console("zap(): process %d tried to zap itself.  Halting...\n", pid);
 		USLOSS_Halt(1);
-	}
-	else if(ProcTable[pid % MAXPROC].isNull) { 
-		
-		return -1;
+	} else if(ProcTable[pid % MAXPROC].isNull || pid != ProcTable[pid % MAXPROC].pid) { 
+		USLOSS_Console("zap(): process being zapped does not exist.  Halting...\n");
+        USLOSS_Halt(1);
+	} else if (ProcTable[pid % MAXPROC].status == QUIT) { // case where zapped proc has already quit
+		if (isZapped())
+			return -1;
+		return 0;
 	} else {
 		ProcTable[pid % MAXPROC].isZapped = 1;
 		zapAdd(&ProcTable[pid % MAXPROC]);	
@@ -565,7 +589,9 @@ int isZapped(void)
  */
 void clockHandler(int dev, int unit)
 {
-	
+//	printf("clockHandler\n");
+	readtime();
+	timeSlice();
 }
 
 /*
@@ -606,7 +632,8 @@ void clearProcess(int pid)
 	ProcTable[pid].terminationCode = 0;
 	ProcTable[pid].isNull = 1;
 	ProcTable[pid].zapHead = NULL;
-	ProcTable[pid].timeMaster5000Start = 0;
+	ProcTable[pid].timeMaster5000Start = -1;
+	ProcTable[pid].timeMaster5000 = 0;
 	return;
 }
 
@@ -779,9 +806,9 @@ void dumpProcesses(void)
 			else if (p.status == RUNNING)
 				stateus = "RUNNING";
 			else stateus = "?";
-			USLOSS_Console("%10s%10d%10d%10d%15s%10d%10d\n", p.name, p.pid, ((p.parentProcPtr == NULL) ? -2 : p.parentProcPtr->pid), p.priority, stateus, pChildCount, -2); 
+			USLOSS_Console("%10s%10d%10d%10d%15s%10d%10d\n", p.name, p.pid, ((p.parentProcPtr == NULL) ? -2 : p.parentProcPtr->pid), p.priority, stateus, pChildCount, p.timeMaster5000/1000); 
 		} else { // null proctable case
-			 USLOSS_Console("%10s%10d%10d%10d%15s%10d%10d\n", "", -1, -1, -1, "EMPTY", 0, -1);
+			 USLOSS_Console("%10s%10d%10d%10d%15s%10d%10d\n", "", -1, -1, -1, "EMPTY", 0, 0);
 		}
 	} 	
 }
@@ -848,33 +875,36 @@ int unblockProc(int pid)
 	return 0;
 }
 /*
- *
+ * either starts the timer or stops the timer and initializes the startTime if needed.
  */
 int readtime(void)
 {
-	if (Current->timeMaster5000Start == 0) { // @TODO fix this? should we start time slice clock start here?
-		Current->timeMaster5000Start = readCurStartTime()/1000;
-	} else if (Current->status == RUNNING) { // still running case
-		(Current->timeMaster5000) += ((readCurStartTime()/1000) - Current->timeMaster5000Start);
-		Current->timeMaster5000Start = readCurStartTime()/1000;
-		timeSlice();
+	procPtr p = &ProcTable[curPid % MAXPROC];
+	if (p->timeMaster5000Start == -1) { // @TODO fix this? should we start time slice clock start here?
+		p->timeMaster5000Start = readCurStartTime();
+	} else if (p->status == RUNNING) { // still running case
+		p->timeMaster5000 = ((readCurStartTime()) - p->timeMaster5000Start) + p->timeMaster5000;
+		p->timeMaster5000Start = readCurStartTime();
+	//	timeSlice();
 	} else { // became blocked/quit, just pause the timer
-		(Current->timeMaster5000) += ((readCurStartTime()/1000) - Current->timeMaster5000Start);
-		Current->timeMaster5000Start = 0;
+		p->timeMaster5000 = ((readCurStartTime()) - p->timeMaster5000Start) + p->timeMaster5000;
+		p->timeMaster5000Start = -1;
 	}
-	return Current->timeMaster5000; 
+	//printf("readtime on %d, with %d ms started at %d ms\n", curPid, p->timeMaster5000, p->timeMaster5000Start);
+	return p->timeMaster5000; 
 }
+
 /*
  *
  */
 void timeSlice(void) 
 {
-	if (Current->timeMaster5000 >= TIME_SLICE) {
+	if (Current->timeMaster5000/1000 >= TIME_SLICE) {
 		Current->timeMaster5000 = 0;
-		Current->timeMaster5000Start = 0;
+		Current->timeMaster5000Start = -1;
 		popPriority(Current->priority);
 		insert(Current);
-		dispatcher(); 
+	//	dispatcher(); 
 	}
 }
 
