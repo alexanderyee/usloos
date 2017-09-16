@@ -26,6 +26,7 @@ struct procStruct {
    zapNode *       zapHead;           /* head of the linked list of zappers */
    int 		   timeMaster5000;
    int             timeMaster5000Start;
+   int 	           timeMaster5000Slice;
    int 		   zapperPids[MAXPROC];
 };
 

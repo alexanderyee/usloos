@@ -590,7 +590,7 @@ int isZapped(void)
 void clockHandler(int dev, int unit)
 {
 //	printf("clockHandler\n");
-	readtime();
+	readtime(); // add to the current process
 	timeSlice();
 }
 
@@ -634,6 +634,7 @@ void clearProcess(int pid)
 	ProcTable[pid].zapHead = NULL;
 	ProcTable[pid].timeMaster5000Start = -1;
 	ProcTable[pid].timeMaster5000 = 0;
+	ProcTable[pid].timeMaster5000Slice = 0;
 	return;
 }
 
@@ -806,7 +807,7 @@ void dumpProcesses(void)
 			else if (p.status == RUNNING)
 				stateus = "RUNNING";
 			else stateus = "?";
-			USLOSS_Console("%10s%10d%10d%10d%15s%10d%10d\n", p.name, p.pid, ((p.parentProcPtr == NULL) ? -2 : p.parentProcPtr->pid), p.priority, stateus, pChildCount, p.timeMaster5000/1000); 
+			USLOSS_Console("%10s%10d%10d%10d%15s%10d%10d\n", p.name, p.pid, ((p.parentProcPtr == NULL) ? -2 : p.parentProcPtr->pid), p.priority, stateus, pChildCount, ((p.timeMaster5000 / 1000) <= 0 ? p.timeMaster5000 : p.timeMaster5000 / 1000)); 
 		} else { // null proctable case
 			 USLOSS_Console("%10s%10d%10d%10d%15s%10d%10d\n", "", -1, -1, -1, "EMPTY", 0, 0);
 		}
@@ -885,12 +886,12 @@ int readtime(void)
 	} else if (p->status == RUNNING) { // still running case
 		p->timeMaster5000 = ((readCurStartTime()) - p->timeMaster5000Start) + p->timeMaster5000;
 		p->timeMaster5000Start = readCurStartTime();
-	//	timeSlice();
 	} else { // became blocked/quit, just pause the timer
 		p->timeMaster5000 = ((readCurStartTime()) - p->timeMaster5000Start) + p->timeMaster5000;
 		p->timeMaster5000Start = -1;
 	}
-	//printf("readtime on %d, with %d ms started at %d ms\n", curPid, p->timeMaster5000, p->timeMaster5000Start);
+	if (debugflag)
+		printf("readtime on %d, with %d ms started at %d ms\n", curPid, p->timeMaster5000, p->timeMaster5000Start);
 	return p->timeMaster5000; 
 }
 
@@ -899,12 +900,12 @@ int readtime(void)
  */
 void timeSlice(void) 
 {
-	if (Current->timeMaster5000/1000 >= TIME_SLICE) {
-		Current->timeMaster5000 = 0;
+	if ((Current->timeMaster5000 - (Current->timeMaster5000Slice * 80000)) /1000 >= TIME_SLICE) {
+		Current->timeMaster5000Slice++;
 		Current->timeMaster5000Start = -1;
 		popPriority(Current->priority);
 		insert(Current);
-	//	dispatcher(); 
+		dispatcher(); 
 	}
 }
 
