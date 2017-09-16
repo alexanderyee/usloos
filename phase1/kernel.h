@@ -4,7 +4,6 @@
 typedef struct procStruct procStruct;
 typedef struct procStruct * procPtr;
 
-typedef struct zapNode zapNode;
 struct procStruct {
    procPtr         nextProcPtr;
    procPtr         childProcPtr;
@@ -23,7 +22,6 @@ struct procStruct {
    /* other fields as needed... */
    int	     	   terminationCode;   /* termination code of when the child quit */	
    int 		   isNull;	      /* determines whether or not there is a process in this slot. */
-   zapNode *       zapHead;           /* head of the linked list of zappers */
    int 		   timeMaster5000;
    int             timeMaster5000Start;
    int 	           timeMaster5000Slice;
@@ -43,11 +41,6 @@ union psrValues {
    unsigned int integerPart;
 };
 
-struct zapNode {
-    int	       zapperPid;
-    zapNode *  next;
-    char *      splitString;
-};
 /* Some useful constants.  Add more as needed... */
 #define NO_CURRENT_PROCESS NULL
 #define MINPRIORITY 5

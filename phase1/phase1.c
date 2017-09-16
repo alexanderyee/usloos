@@ -185,10 +185,6 @@ int fork1(char *name, int (*startFunc)(char *), char *arg,
     ProcTable[procSlot].priority = priority;
     ProcTable[procSlot].pid = nextPid-1;
 
-	zapNode z;
-	z.zapperPid = -1;
-	z.next = NULL;
-	ProcTable[procSlot].zapHead = &z;
 
     if (DEBUG && debugflag)
         USLOSS_Console("fork1(): creating process %s\n", name);
@@ -631,7 +627,6 @@ void clearProcess(int pid)
     ProcTable[pid].isZapped = 0;
 	ProcTable[pid].terminationCode = 0;
 	ProcTable[pid].isNull = 1;
-	ProcTable[pid].zapHead = NULL;
 	ProcTable[pid].timeMaster5000Start = -1;
 	ProcTable[pid].timeMaster5000 = 0;
 	ProcTable[pid].timeMaster5000Slice = 0;
@@ -734,8 +729,6 @@ int isEmpty()
  */
 void zapAdd(procPtr zapped)
 {
-	zapNode tempNode;
-	tempNode.zapperPid = Current->pid;
 	int i;
 	for (i = 0; i < MAXPROC; i++) {
 		if (zapped->zapperPids[i] == -1) {
@@ -743,7 +736,6 @@ void zapAdd(procPtr zapped)
 			break;
 		}
 	}
-	zapped->zapHead = &tempNode;
 	
 }
 
@@ -754,8 +746,6 @@ void unZap(void)
 {
 	Current->isZapped = 0;
 	
-	//zapNode * zapNodePtr = Current->zapHead;
-	//while (zapNodePtr != NULL) {
 	int i;
 	for (i = 0; i < MAXPROC; i++) {
         if (Current->zapperPids[i] != -1) {
@@ -765,9 +755,6 @@ void unZap(void)
 		} else break;
         
     }
-		//zapNodePtr = zapNodePtr->next;
-	//}
-
 }
 
 /*
