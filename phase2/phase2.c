@@ -149,6 +149,8 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
             }
             currentMbox->childSlots[i] = &MailSlotTable[j];
             currentMbox->childSlots[i]->status = FULL;
+            char dataStuff[currentMbox->maxLength];
+            currentMbox->childSlots[i]->data = &dataStuff;
             memcpy(currentMbox->childSlots[i]->data, msg_ptr, msg_size);
             currentMbox->childSlots[i]->mboxID = mbox_id;
             return 0;
