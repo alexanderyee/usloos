@@ -4,6 +4,7 @@
 typedef struct mailSlot *slotPtr;
 typedef struct mailbox   mailbox;
 typedef struct mboxProc *mboxProcPtr;
+typedef struct mailSlot  mailSlot;
 
 struct mailbox {
     int       mboxID;

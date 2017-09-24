@@ -32,7 +32,7 @@ mailSlot MailSlotTable[MAXSLOTS];
 // handlers, ...
 
 // the process table
-procStruct ProcTable[MAXPROC];
+//procStruct ProcTable[MAXPROC];
 
 
 
@@ -59,7 +59,7 @@ int start1(char *arg)
     // Initialize the mail box table, slots, & other data structures.
     // Initialize USLOSS_IntVec and system call handlers,
     // allocate mailboxes for interrupt handlers.  Etc...
-	currentMailboxId = 0;
+	  currentMboxId = 0;
 
     enableInterrupts();
 
@@ -88,7 +88,7 @@ int start1(char *arg)
    ----------------------------------------------------------------------- */
 int MboxCreate(int slots, int slot_size)
 {
-  check_kernel_mode();
+  check_kernel_mode("MboxCreate");
   int i = 0;
 	while (MailBoxTable[currentMboxId % MAXMBOX].isUsed) {
 		currentMboxId++;
