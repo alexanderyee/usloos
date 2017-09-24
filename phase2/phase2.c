@@ -3,7 +3,7 @@
 
    University of Arizona
    Computer Science 452
-   
+
    Alex Yee & Katie Pan
    ------------------------------------------------------------------------ */
 
@@ -24,11 +24,11 @@ void check_kernel_mode(char *);
 
 int debugflag2 = 0;
 
-// the mail boxes 
+// the mail boxes
 mailbox MailBoxTable[MAXMBOX];
 int currentMboxId;
 mailSlot MailSlotTable[MAXSLOTS];
-// also need array of mail slots, array of function ptrs to system call 
+// also need array of mail slots, array of function ptrs to system call
 // handlers, ...
 
 // the process table
@@ -58,16 +58,16 @@ int start1(char *arg)
 
     // Initialize the mail box table, slots, & other data structures.
     // Initialize USLOSS_IntVec and system call handlers,
-    // allocate mailboxes for interrupt handlers.  Etc... 
+    // allocate mailboxes for interrupt handlers.  Etc...
 	currentMailboxId = 0;
-	
+
     enableInterrupts();
 
     // Create a process for start2, then block on a join until start2 quits
     if (DEBUG2 && debugflag2)
         USLOSS_Console("start1(): fork'ing start2 process\n");
 	int kid_pid = fork1("start2", start2, 0, 4 * USLOSS_MIN_STACK, 1);
-   	int status; 
+   	int status;
 	if ( join(&status) != kid_pid ) {
         USLOSS_Console("start2(): join returned something other than ");
         USLOSS_Console("start2's pid\n");
@@ -79,25 +79,32 @@ int start1(char *arg)
 
 /* ------------------------------------------------------------------------
    Name - MboxCreate
-   Purpose - gets a free mailbox from the table of mailboxes and initializes it 
+   Purpose - gets a free mailbox from the table of mailboxes and initializes it
    Parameters - maximum number of slots in the mailbox and the max size of a msg
                 sent to the mailbox.
    Returns - -1 to indicate that no mailbox was created, or a value >= 0 as the
              mailbox id.
-   Side Effects - initializes one element of the mail box array. 
+   Side Effects - initializes one element of the mail box array.
    ----------------------------------------------------------------------- */
 int MboxCreate(int slots, int slot_size)
 {
-	int i = 0;
-	while (MailBoxTable[i].isUsed) {
-		i++;
+  check_kernel_mode();
+  int i = 0;
+	while (MailBoxTable[currentMboxId % MAXMBOX].isUsed) {
+		currentMboxId++;
+    i++;
 		if (i >= MAXMBOX) {
 			USLOSS_Console("no more free mailboxes :(");
-		}
+      return -1;
+    }
 	}
 	MailBoxTable[i].isUsed = 1;
 	MailBoxTable[i].mboxID = currentMboxId;
-	
+  MailBoxTable[i].numSlots = slots;
+  MailBoxTable[i].maxLength = slot_size;
+  currentMboxId++;
+  return currentMboxId-1;
+
 } /* MboxCreate */
 
 
@@ -133,16 +140,16 @@ void enableInterrupts()
     // if not in kernel mode, print an error message and
     // halt USLOSS
     unsigned int previousPSRValue = USLOSS_PsrGet();
-    
+
     if (!(previousPSRValue & 1)) {
         USLOSS_Console("enableInterrupts(): Not in kernel mode :-(\n");
         USLOSS_Halt(1);
-    }   
-    
+    }
+
     unsigned int newPSRValue = ((previousPSRValue << 2) & 12) | 3;
     // left shifting by 2 to shift the previous psr bits to the left two bits
     // then logical and by 12 to mask all the other bits except the previous mode bits
-    // then a logical or by 3 to set the first two bits to 11 
+    // then a logical or by 3 to set the first two bits to 11
     if (USLOSS_PsrSet(newPSRValue) == USLOSS_ERR_INVALID_PSR)
         USLOSS_Console("ERROR: Invalid PSR value set! was: %u\n", newPSRValue);
 } /* enableInterrupts */
@@ -173,8 +180,7 @@ void check_kernel_mode(char * funcName)
 {
     if (!(USLOSS_PsrGet() & 1)) {
         USLOSS_Console(
-             "%s(): called while in user mode, by process %d. Halting...\n", funcName, 69); // need to change this to current pid? 
+             "%s(): called while in user mode, by process %d. Halting...\n", funcName, 69); // need to change this to current pid?
          USLOSS_Halt(1);
     }
 }
-

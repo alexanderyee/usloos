@@ -8,10 +8,11 @@ typedef struct mboxProc *mboxProcPtr;
 struct mailbox {
     int       mboxID;
     int       isUsed;
-    int       numSlots;	
+    int       numSlots;
     slotPtr   childSlots[MAXSLOTS];
+    int       maxLength;
     // other items as needed...
-	
+
 };
 
 struct mailSlot {
