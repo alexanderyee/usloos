@@ -149,8 +149,6 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
             }
             currentMbox->childSlots[i] = &MailSlotTable[j];
             currentMbox->childSlots[i]->status = FULL;
-            char dataStuff[currentMbox->maxLength];
-            currentMbox->childSlots[i]->data = &dataStuff;
             memcpy(currentMbox->childSlots[i]->data, msg_ptr, msg_size);
             currentMbox->childSlots[i]->mboxID = mbox_id;
             return 0;
@@ -180,7 +178,7 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     if (currentMbox->childSlots[0]->status == FULL) {
         memcpy(msg_ptr, currentMbox->childSlots[0]->data, msg_size);
-        free(currentMbox->childSlots[0]->data);
+        free(&currentMbox->childSlots[0]->data);
         currentMbox->childSlots[0]->status = EMPTY;
         int i = 0;
         while (i < currentMbox->numSlots - 1 && currentMbox->childSlots[i] != NULL) {

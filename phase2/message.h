@@ -19,7 +19,7 @@ struct mailbox {
 struct mailSlot {
     int       mboxID;
     int       status;
-    void      *data;
+    char      data[MAX_MESSAGE];
     // other items as needed...
 };
 
