@@ -1,0 +1,210 @@
+12,62c12,63
+< PID	Parent	Priority	Status		# Kids	CPUtime	Name
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  1	  -2	   6		READY		  0	   -1	sentinel
+<  2	  -2	   1		JOIN_BLOCK	  2	   37	start1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  4	  2	   3		RUNNING		  0	   -1	XXp1
+<  5	  2	   3		READY		  0	   -1	XXp1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+---
+> ~                Process Dump (nasty)                ~
+>       Name       PID parentPID  Priority         Status #Children  CPU Time
+>                   -1        -1        -1          EMPTY         0         0
+>   sentinel         1        -2         6          READY         0         0
+>     start1         2        -2         1   JOIN_BLOCKED         2        12
+>                   -1        -1        -1          EMPTY         0         0
+>       XXp1         4         2         3        RUNNING         0        29
+>       XXp1         5         2         3          READY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+78,128c79,130
+< PID	Parent	Priority	Status		# Kids	CPUtime	Name
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  1	  -2	   6		READY		  0	   -1	sentinel
+<  2	  -2	   1		JOIN_BLOCK	  2	   76	start1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  7	  2	   3		RUNNING		  0	   -1	XXp1
+<  8	  2	   3		READY		  0	   -1	XXp1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+---
+> ~                Process Dump (nasty)                ~
+>       Name       PID parentPID  Priority         Status #Children  CPU Time
+>                   -1        -1        -1          EMPTY         0         0
+>   sentinel         1        -2         6          READY         0         0
+>     start1         2        -2         1   JOIN_BLOCKED         2        31
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>       XXp1         7         2         3        RUNNING         0        19
+>       XXp1         8         2         3          READY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0

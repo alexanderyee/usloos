@@ -1,0 +1,15 @@
+startup(): initializing process table, ProcTable[]
+startup(): initializing the Ready list
+startup(): calling fork1() for sentinel
+fork1(): creating process sentinel
+p1_fork() called: pid = 1
+1
+startup(): calling fork1() for start1
+fork1(): creating process start1
+p1_fork() called: pid = 2
+dispatcher() tempCurrent isNull: 0
+p1_switch() called: old = 1, new = 2
+2
+dispatcher() tempCurrent isNull: 0
+p1_switch() called: old = 2, new = 2
+startup(): Should not see this message! Returned from fork1 call that created start1

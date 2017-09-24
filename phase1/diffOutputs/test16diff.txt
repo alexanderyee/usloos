@@ -1,0 +1,105 @@
+13,63c13,64
+< PID	Parent	Priority	Status		# Kids	CPUtime	Name
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  1	  -2	   6		READY		  0	   -1	sentinel
+<  2	  -2	   1		JOIN_BLOCK	  2	   24	start1
+<  3	  2	   3		ZAP_BLOCK	  1	   11	XXp1
+<  4	  2	   4		ZAP_BLOCK	  0	   8	XXp2
+<  5	  3	   5		RUNNING		  0	   -1	XXp3
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+<  -1	  -1	   -1		EMPTY		  0	   -1
+---
+> ~                Process Dump (nasty)                ~
+>       Name       PID parentPID  Priority         Status #Children  CPU Time
+>                   -1        -1        -1          EMPTY         0         0
+>   sentinel         1        -2         6          READY         0         0
+>     start1         2        -2         1   JOIN_BLOCKED         2         6
+>       XXp1         3         2         3    ZAP_BLOCKED         1         5
+>       XXp2         4         2         4    ZAP_BLOCKED         0         5
+>       XXp3         5         3         5        RUNNING         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
+>                   -1        -1        -1          EMPTY         0         0
