@@ -175,7 +175,7 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
     if (!MailBoxTable[mbox_id % MAXMBOX].isUsed) {
         return -1;
     }
-    mailbox *currentMbox = MailBoxTable[mbox_id % MAXMBOX];
+    mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     if (currentMbox->childSlots[0]->status == FULL) {
         memcpy(msg_ptr, currentMbox->childSlots[0]->data, msg_size);
         free(currentMbox->childSlots[0]->data);
