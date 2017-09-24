@@ -59,7 +59,14 @@ int start1(char *arg)
     // Initialize the mail box table, slots, & other data structures.
     // Initialize USLOSS_IntVec and system call handlers,
     // allocate mailboxes for interrupt handlers.  Etc...
-	  currentMboxId = 0;
+	
+	// NOTE: FOLLOWING FOR LOOP FOR DUMMY INIT OF INT HANDLERS
+	int i;
+	for (i = 0; i < 7; i++) {
+		MailBoxTable[i].isUsed = 1;
+	}
+	
+	currentMboxId = 7;
 
     enableInterrupts();
 
@@ -88,22 +95,21 @@ int start1(char *arg)
    ----------------------------------------------------------------------- */
 int MboxCreate(int slots, int slot_size)
 {
-  check_kernel_mode("MboxCreate");
-  int i = 0;
+    check_kernel_mode("MboxCreate");
+    int i = 0;
 	while (MailBoxTable[currentMboxId % MAXMBOX].isUsed) {
 		currentMboxId++;
-    i++;
+	    i++;
 		if (i >= MAXMBOX) {
-			USLOSS_Console("no more free mailboxes :(");
-      return -1;
-    }
+	        return -1;
+    	}
 	}
-	MailBoxTable[i].isUsed = 1;
-	MailBoxTable[i].mboxID = currentMboxId;
-  MailBoxTable[i].numSlots = slots;
-  MailBoxTable[i].maxLength = slot_size;
-  currentMboxId++;
-  return currentMboxId-1;
+	MailBoxTable[currentMboxId % MAXMBOX].isUsed = 1;
+	MailBoxTable[currentMboxId % MAXMBOX].mboxID = currentMboxId;
+    MailBoxTable[currentMboxId % MAXMBOX].numSlots = slots;
+    MailBoxTable[currentMboxId % MAXMBOX].maxLength = slot_size;
+    currentMboxId++;
+    return currentMboxId-1;
 
 } /* MboxCreate */
 
