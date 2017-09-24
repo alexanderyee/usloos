@@ -139,7 +139,7 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     // find a childslot in the mailbox to insert
     for (i = 0; i < currentMbox->numSlots; i++) {
-        if (currentMbox->childSlots[i]->status == EMPTY) {
+        if (currentMbox->childSlots[i] == NULL) {
             // find a slot in the slot table to insert
             int j;
             while (j < MAXSLOTS && MailSlotTable[j].status == FULL)
