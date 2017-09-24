@@ -35,3 +35,6 @@ union psrValues {
     struct psrBits bits;
     unsigned int integerPart;
 };
+
+#define FULL 1
+#define EMPTY 0

@@ -59,13 +59,13 @@ int start1(char *arg)
     // Initialize the mail box table, slots, & other data structures.
     // Initialize USLOSS_IntVec and system call handlers,
     // allocate mailboxes for interrupt handlers.  Etc...
-	
-	// NOTE: FOLLOWING FOR LOOP FOR DUMMY INIT OF INT HANDLERS
+
+	// @TODO: FOLLOWING FOR LOOP FOR DUMMY INIT OF INT HANDLERS
 	int i;
 	for (i = 0; i < 7; i++) {
 		MailBoxTable[i].isUsed = 1;
 	}
-	
+
 	currentMboxId = 7;
 
     enableInterrupts();
@@ -109,7 +109,7 @@ int MboxCreate(int slots, int slot_size)
     MailBoxTable[currentMboxId % MAXMBOX].numSlots = slots;
     MailBoxTable[currentMboxId % MAXMBOX].maxLength = slot_size;
     currentMboxId++;
-    return currentMboxId-1;
+    return currentMboxId - 1;
 
 } /* MboxCreate */
 
@@ -124,6 +124,39 @@ int MboxCreate(int slots, int slot_size)
    ----------------------------------------------------------------------- */
 int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
 {
+    check_kernel_mode("MboxSend");
+    if (!MailBoxTable[mbox_id % MAXMBOX].isUsed) {
+        return -1;
+    }
+    if (msg_size > MailBoxTable[mbox_id % MAXMBOX].maxLength) {
+        return -1;
+    }
+    if (msg_ptr == NULL) {
+        return -1;
+    }
+
+    int i;
+    mailbox *currentMbox = MailBoxTable[mbox_id % MAXMBOX];
+    // find a childslot in the mailbox to insert
+    for (i = 0; i < currentMbox->numSlots; i++) {
+        if (currentMbox->childSlots[i]->status == EMPTY) {
+            // find a slot in the slot table to insert
+            int j;
+            while (j < MAXSLOTS && MailSlotTable[j].status == FULL)
+                j++;
+            if (j == MAXSLOTS) {
+                USLOSS_Halt(1);
+            }
+            currentMbox->childSlots[i] = &MailSlotTable[j];
+            currentMbox->childSlots[i]->status = FULL;
+            memcpy(currentMbox->childSlots[i]->data, msg_ptr, msg_size);
+            currentMbox->childSlots[i]->mboxID = mbox_id;
+            return 0;
+        }
+    }
+    // @TODO supposed to block, let's return -1 for now
+    return -1;
+
 } /* MboxSend */
 
 
@@ -138,6 +171,27 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
    ----------------------------------------------------------------------- */
 int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
 {
+    check_kernel_mode("MboxReceive");
+    if (!MailBoxTable[mbox_id % MAXMBOX].isUsed) {
+        return -1;
+    }
+    mailbox *currentMbox = MailBoxTable[mbox_id % MAXMBOX];
+    if (currentMbox->childSlots[0]->status == FULL) {
+        memcpy(msg_ptr, currentMbox->childSlots[0]->data, msg_size);
+        free(currentMbox->childSlots[0]->data);
+        currentMbox->childSlots[0]->status = EMPTY;
+        int i = 0;
+        while (i < currentMbox->numSlots - 1 && currentMbox->childSlots[i] != NULL) {
+            currentMbox->childSlots[i] = currentMbox->childSlots[i+1];
+            i++;
+        }
+        if (isZapped()) return -3;
+        return sizeof(*msg_ptr);
+    } else {
+    // TODO block receiver if there are no messages in this mailbox
+        if (isZapped()) return -3;
+        return -1;
+    }
 } /* MboxReceive */
 
 void enableInterrupts()
