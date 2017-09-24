@@ -38,3 +38,4 @@ union psrValues {
 
 #define FULL 1
 #define EMPTY 0
+#define NULL 0
