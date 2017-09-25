@@ -19,7 +19,7 @@ extern int start2 (char *);
 void disableInterrupts(void);
 void enableInterrupts(void);
 void check_kernel_mode(char *);
-
+void freeSlot(slotPtr);
 /* -------------------------- Globals ------------------------------------- */
 
 int debugflag2 = 0;
@@ -185,7 +185,7 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
             i++;
         }
         for(i = 0; i < MAX_MESSAGE; i++){
-            if(msg_ptr[i] == '\0')
+            if((char) msg_ptr[i] == '\0')
                 break;
         }
 
