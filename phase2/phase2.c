@@ -184,13 +184,8 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
             currentMbox->childSlots[i] = currentMbox->childSlots[i+1];
             i++;
         }
-        for(i = 0; i < MAX_MESSAGE; i++){
-            if((char) msg_ptr[i] == '\0')
-                break;
-        }
-
         if (isZapped()) return -3;
-        return i;
+        return msg_size < currentMbox->maxLength ? msg_size : currentMbox->maxLength;
     } else {
     // TODO block receiver if there are no messages in this mailbox
         if (isZapped()) return -3;
