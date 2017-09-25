@@ -20,6 +20,7 @@ struct mailSlot {
     int       mboxID;
     int       status;
     char      data[MAX_MESSAGE];
+    int       msgSize;
     // other items as needed...
 };
 

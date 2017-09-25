@@ -149,6 +149,7 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
             }
             currentMbox->childSlots[i] = &MailSlotTable[j];
             currentMbox->childSlots[i]->status = FULL;
+            currentMbox->childSlots[i]->msgSize = msg_size;
             memcpy(currentMbox->childSlots[i]->data, msg_ptr, msg_size);
             currentMbox->childSlots[i]->mboxID = mbox_id;
             return 0;
@@ -178,6 +179,7 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     if (currentMbox->childSlots[0]->status == FULL) {
         memcpy(msg_ptr, currentMbox->childSlots[0]->data, msg_size);
+        int size = currentMbox->childSlots[0]->msgSize;
         freeSlot(currentMbox->childSlots[0]);
         int i = 0;
         while (i < currentMbox->numSlots - 1 && currentMbox->childSlots[i] != NULL) {
@@ -185,8 +187,7 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
             i++;
         }
         if (isZapped()) return -3;
-        printf("msg: %d   mboxmax: %d\n", msg_size, currentMbox->maxLength);
-        return msg_size < currentMbox->maxLength ? msg_size : currentMbox->maxLength;
+        return size;
     } else {
     // TODO block receiver if there are no messages in this mailbox
         if (isZapped()) return -3;
@@ -253,6 +254,7 @@ void check_kernel_mode(char * funcName)
      slot->mboxID = 0;
      slot->status = EMPTY;
      int i;
+     slot->msgSize = 0;
      for (i = 0; i < MAX_MESSAGE; i++)
         slot->data[i] = '\0';
  }
