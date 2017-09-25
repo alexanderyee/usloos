@@ -178,8 +178,7 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     if (currentMbox->childSlots[0]->status == FULL) {
         memcpy(msg_ptr, currentMbox->childSlots[0]->data, msg_size);
-        free(currentMbox->childSlots[0]->data);
-        currentMbox->childSlots[0]->status = EMPTY;
+        freeSlot(currentMbox->childSlots[0]);
         int i = 0;
         while (i < currentMbox->numSlots - 1 && currentMbox->childSlots[i] != NULL) {
             currentMbox->childSlots[i] = currentMbox->childSlots[i+1];
@@ -244,3 +243,15 @@ void check_kernel_mode(char * funcName)
          USLOSS_Halt(1);
     }
 }
+
+/*
+ * freeSlot - resets the fields of the mailbox slot
+ */
+ void freeSlot(slotPtr slot)
+ {
+     slot->mboxID = 0;
+     slot->status = EMPTY;
+     int i;
+     for (i = 0; i < MAX_MESSAGE; i++)
+        slot->data[i] = '\0';
+ }
