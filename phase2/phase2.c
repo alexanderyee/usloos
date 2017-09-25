@@ -185,6 +185,7 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
             i++;
         }
         if (isZapped()) return -3;
+        printf("msg: %d   mboxmax: %d\n", msg_size, currentMbox->maxLength);
         return msg_size < currentMbox->maxLength ? msg_size : currentMbox->maxLength;
     } else {
     // TODO block receiver if there are no messages in this mailbox
