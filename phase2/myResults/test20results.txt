@@ -1,0 +1,1 @@
+./runtests.sh: line 28: test20: command not found

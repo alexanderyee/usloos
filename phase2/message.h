@@ -21,6 +21,7 @@ struct mailSlot {
     int       status;
     char      data[MAX_MESSAGE];
     int       msgSize;
+    int       reservedPid;
     // other items as needed...
 };
 
@@ -39,4 +40,5 @@ union psrValues {
 
 #define FULL 1
 #define EMPTY 0
+#define RSVD 2
 #define NULL 0

@@ -1,0 +1,12 @@
+14a15,16
+> XXp1(): after send of message #5, result = -1
+> start2(): joined with kid 4, status = -3
+17,18d18
+< XXp1(): after send of message #5, result = 0
+< start2(): joined with kid 4, status = -3
+34,35c34,35
+< XXp2(): after receipt of message #5, result = 16
+<         message = `hello there, #5'
+---
+> XXp2(): after receipt of message #5, result = -1
+>         message = `hello there, #4'

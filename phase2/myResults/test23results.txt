@@ -1,0 +1,10 @@
+start2(): started
+
+start2(): MboxCreate returned id = 7
+
+XXp3(): started
+
+XXp3(): fork'ing XXp2 at priority 4
+XXp2(): started
+XXp2(): priority 4, receiving message from mailbox 7
+./runtests.sh: line 28: 11993 Segmentation fault      (core dumped) test23

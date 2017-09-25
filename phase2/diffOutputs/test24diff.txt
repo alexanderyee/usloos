@@ -1,0 +1,25 @@
+13a14
+> XXp2(): priority 4, after sending message, result = -1
+17a19
+> XXp2(): priority 3, after sending message, result = -1
+21a24
+> XXp2(): priority 2, after sending message, result = -1
+30,32c33,35
+< XXp1(): received message #6 containing: Sixth message
+< XXp1(): received message #7 containing: Seventh message
+< XXp1(): received message #8 containing: Eighth message
+---
+> XXp1(): received message #6 containing: Fifth message
+> XXp1(): received message #7 containing: Fifth message
+> XXp1(): received message #8 containing: Fifth message
+35,40d37
+< XXp2(): priority 2, after sending message, result = 0
+< XXp2(): priority 3, after sending message, result = 0
+< XXp2(): priority 4, after sending message, result = 0
+< XXp3(): join'd with child 8 whose status is -1
+< XXp3(): join'd with child 7 whose status is -2
+< XXp3(): join'd with child 6 whose status is -3
+41a39,41
+> XXp3(): join'd with child 6 whose status is -3
+> XXp3(): join'd with child 7 whose status is -2
+> XXp3(): join'd with child 8 whose status is -1

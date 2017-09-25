@@ -141,19 +141,25 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
     for (i = 0; i < currentMbox->numSlots; i++) {
         if (currentMbox->childSlots[i] == NULL) {
             // find a slot in the slot table to insert
-            int j;
+            int j=0;
             while (j < MAXSLOTS && MailSlotTable[j].status == FULL)
                 j++;
             if (j == MAXSLOTS) {
                 USLOSS_Halt(1);
             }
             currentMbox->childSlots[i] = &MailSlotTable[j];
-            currentMbox->childSlots[i]->status = FULL;
+			currentMbox->childSlots[i]->status = FULL;
             currentMbox->childSlots[i]->msgSize = msg_size;
             memcpy(currentMbox->childSlots[i]->data, msg_ptr, msg_size);
             currentMbox->childSlots[i]->mboxID = mbox_id;
+				
             return 0;
-        }
+        } else if (currentMbox->childSlots[i]->status == RSVD) {
+    	    currentMbox->childSlots[i]->status = FULL;
+            currentMbox->childSlots[i]->msgSize = msg_size;
+            memcpy(currentMbox->childSlots[i]->data, msg_ptr, msg_size);
+			unblockProc(currentMbox->childSlots[i]->reservedPid);	
+		}
     }
     // @TODO supposed to block, let's return -1 for now
     return -1;
@@ -177,21 +183,25 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
         return -1;
     }
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
-    if (currentMbox->childSlots[0]->status == FULL) {
-        memcpy(msg_ptr, currentMbox->childSlots[0]->data, msg_size);
-        int size = currentMbox->childSlots[0]->msgSize;
-        freeSlot(currentMbox->childSlots[0]);
-        int i = 0;
-        while (i < currentMbox->numSlots - 1 && currentMbox->childSlots[i] != NULL) {
-            currentMbox->childSlots[i] = currentMbox->childSlots[i+1];
-            i++;
-        }
-        if (isZapped()) return -3;
-        return size;
+    if (currentMbox->childSlots[0] != NULL && currentMbox->childSlots[0]->status == FULL) {
+        return receive(currentMbox, msg_ptr, msg_size);
     } else {
     // TODO block receiver if there are no messages in this mailbox
+		// reserve the mailbox slot
+		// find a slot in the slot table to insert
+        int j=0;
+        while (j < MAXSLOTS && (MailSlotTable[j].status == FULL || MailSlotTable[j].status == RSVD))
+            j++;
+        if (j == MAXSLOTS) {
+            USLOSS_Halt(1);
+        }
+        // change its status to RSVD (reserved)
+		currentMbox->childSlots[0] = &MailSlotTable[j];
+        currentMbox->childSlots[0]->status = RSVD;
+		currentMbox->childSlots[0]->reservedPid = getpid();
+		blockMe(11);
         if (isZapped()) return -3;
-        return -1;
+        return receive(currentMbox, msg_ptr, msg_size);;
     }
 } /* MboxReceive */
 
@@ -258,3 +268,21 @@ void check_kernel_mode(char * funcName)
      for (i = 0; i < MAX_MESSAGE; i++)
         slot->data[i] = '\0';
  }
+
+/*
+ * receive -- just a function that tries to receive a message at the mailbox currentMbox's
+ * 				child slot at 0, then returns the size of the actual message. 
+ */ 
+int receive(mailbox *currentMbox, void *msg_ptr, int msg_size)
+{
+	memcpy(msg_ptr, currentMbox->childSlots[0]->data, msg_size);
+    int size = currentMbox->childSlots[0]->msgSize;
+    freeSlot(currentMbox->childSlots[0]);
+    int i = 0;
+    while (i < currentMbox->numSlots - 1 && currentMbox->childSlots[i] != NULL) {
+    	currentMbox->childSlots[i] = currentMbox->childSlots[i+1];
+        i++;
+    }
+    if (isZapped()) return -3;
+    return size;
+}
