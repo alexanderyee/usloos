@@ -175,9 +175,9 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
     if (!MailBoxTable[mbox_id % MAXMBOX].isUsed) {
         return -1;
     }
-    if (msg_size > MailBoxTable[mbox_id % MAXMBOX].maxLength) {
+    /*if (msg_size > MailBoxTable[mbox_id % MAXMBOX].maxLength) {
         return -1;
-    }
+    } */
     if (msg_ptr == NULL) {
         return -1;
     }
@@ -185,6 +185,8 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     if (currentMbox->childSlots[0] != NULL && currentMbox->childSlots[0]->status == FULL) {
         int retval = receive(currentMbox, msg_ptr, msg_size);
+        if (retval == -1)
+            return -1;
 		int waitingPid = -1;
 		if ((waitingPid = dequeue(currentMbox)) != -1) {
 			unblockProc(waitingPid);
@@ -399,11 +401,16 @@ void check_kernel_mode(char * funcName)
 /*
  * receive -- just a function that tries to receive a message at the mailbox currentMbox's
  * 				child slot at 0, then returns the size of the actual message.
+ *              also returns -1 if the buffer is too small.
  */
 int receive(mailbox *currentMbox, void *msg_ptr, int msg_size)
 {
-	memcpy(msg_ptr, currentMbox->childSlots[0]->data, msg_size);
+
     int size = currentMbox->childSlots[0]->msgSize;
+    if (size > msg_size) {
+        return -1;
+    }
+    memcpy(msg_ptr, currentMbox->childSlots[0]->data, msg_size);
     freeSlot(currentMbox->childSlots[0]);
     int i = 0;
     while (i < currentMbox->numSlots - 1 && currentMbox->childSlots[i] != NULL) {
@@ -411,7 +418,6 @@ int receive(mailbox *currentMbox, void *msg_ptr, int msg_size)
         i++;
     }
 	currentMbox->childSlots[i] = NULL;
-    if (isZapped()) return -3;
     return size;
 }
 /*
