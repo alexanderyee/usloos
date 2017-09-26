@@ -319,6 +319,9 @@ int MboxCondSend(int mbox_id, void *msg_ptr, int msg_size)
     if (!MailBoxTable[mbox_id % MAXMBOX].isUsed) {
         return -1;
     }
+    if (msg_size > MailBoxTable[mbox_id % MAXMBOX].maxLength) {
+        return -1;
+    }
     if (msg_ptr == NULL) {
         return -1;
     }
@@ -344,9 +347,6 @@ int MboxCondReceive(int mbox_id, void *msg_ptr, int msg_size)
 {
     check_kernel_mode("MboxCondReceive");
     if (!MailBoxTable[mbox_id % MAXMBOX].isUsed) {
-        return -1;
-    }
-    if (msg_size > MailBoxTable[mbox_id % MAXMBOX].maxLength) {
         return -1;
     }
     if (msg_ptr == NULL) {
