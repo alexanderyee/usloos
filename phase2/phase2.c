@@ -319,9 +319,6 @@ int MboxCondSend(int mbox_id, void *msg_ptr, int msg_size)
     if (!MailBoxTable[mbox_id % MAXMBOX].isUsed) {
         return -1;
     }
-    if (msg_size > MailBoxTable[mbox_id % MAXMBOX].maxLength) {
-        return -1;
-    }
     if (msg_ptr == NULL) {
         return -1;
     }
