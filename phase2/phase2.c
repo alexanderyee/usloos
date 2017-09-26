@@ -132,14 +132,36 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
     if (!MailBoxTable[mbox_id % MAXMBOX].isUsed) {
         return -1;
     }
-    if (msg_size > MailBoxTable[mbox_id % MAXMBOX].maxLength) {
+
+    mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
+    // zero-slot mailbox case
+    if (currentMbox->numSlots == 0) {
+        int waitingPid = -1;
+        // case 1: recv hasn't been called on the 0-slot mailbox yet, enqueue a
+        // sendqueue message then block me
+        if ((waitingPid = dequeue(currentMbox)) == -1) {
+            enqueue(currentMbox);
+            blockMe(11);
+        // case 2: recv has been called on this 0-slot mailbox,
+        } else {
+            unblockProc(waitingPid);
+        }
+        if(!currentMbox->isUsed){
+            return -3;
+        }
+        if(isZapped()){
+    		return -3;
+    	}
+        return 0;
+    }
+    if (msg_size > currentMbox.maxLength) {
         return -1;
     }
     if (msg_ptr == NULL) {
         return -1;
     }
 
-    mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
+
     // find a childslot in the mailbox to insert,
     // if none are available, send block and continue trying
 	while (send(currentMbox, msg_ptr, msg_size) != 0) {
@@ -175,14 +197,30 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
     if (!MailBoxTable[mbox_id % MAXMBOX].isUsed) {
         return -1;
     }
-    /*if (msg_size > MailBoxTable[mbox_id % MAXMBOX].maxLength) {
-        return -1;
-    } */
+
+    mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
+    // zero-slot mailbox case
+    if (currentMbox->numSlots == 0) {
+        // case 1: sender is blocked, receive the message and unblock sender
+        // check if there is a message in sendqueue there
+        int waitingPid = -1;
+		if ((waitingPid = dequeue(currentMbox)) != -1) {
+			unblockProc(waitingPid);
+            if (isZapped()) return -3;
+            return 0;
+        // case 2: no message, reserve block receiver
+		} else {
+            enqueue(currentMbox);
+            blockMe(12);
+            if (isZapped()) return -3;
+            return 0;
+        }
+    }
+
     if (msg_ptr == NULL) {
         return -1;
     }
 
-    mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     if (currentMbox->childSlots[0] != NULL && currentMbox->childSlots[0]->status == FULL) {
         int retval = receive(currentMbox, msg_ptr, msg_size);
         if (retval == -1)
