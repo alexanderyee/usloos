@@ -182,7 +182,6 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
         return -1;
     }
 
-    if
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     if (currentMbox->childSlots[0] != NULL && currentMbox->childSlots[0]->status == FULL) {
         int retval = receive(currentMbox, msg_ptr, msg_size);
@@ -209,9 +208,10 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
 		if(!currentMbox->isUsed){
 			return -3;
 		}
-        if (isZapped()) return -3;
-        return receive(currentMbox, msg_ptr, msg_size);
     }
+    if (isZapped()) return -3;
+    return receive(currentMbox, msg_ptr, msg_size);
+
 } /* MboxReceive */
 
 /* ------------------------------------------------------------------------
