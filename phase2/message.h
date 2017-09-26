@@ -12,6 +12,7 @@ struct mailbox {
     int       numSlots;
     slotPtr   childSlots[MAXSLOTS];
     int       maxLength;
+    int       sendQueuePids[MAXSLOTS];
     // other items as needed...
 
 };

@@ -1,12 +1,4 @@
-1,21c1
-< start2(): started
-< 
-< start2(): MboxCreate returned id = 7
-< XXp4(): started and quitting
-< XXp3(): started
-< XXp3(): MboxRelease returned 0
-< 
-< start2(): joined with kid 8, status = -4
+9,21c9
 < XXp2a(): after recv of message '', result = -3
 < XXp2a(): zap'd by MboxReceive() call
 < 
@@ -21,4 +13,4 @@
 < start2(): joined with kid 6, status = -3
 < All processes completed.
 ---
-> ./runtests.sh: line 28: test18: command not found
+> checkDeadlock(): numProc = 6. Only Sentinel should be left. Halting...

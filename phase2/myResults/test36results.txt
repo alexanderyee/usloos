@@ -1,0 +1,5 @@
+start2(): putting itself into user mode
+start2(): calling USLOSS_Syscall executing syscall 0, this should halt
+SIMULATOR TRAP: USLOSS_IntVec[USLOSS_SYSCALL_INT] is NULL!
+
+./runtests.sh: line 28: 13593 Aborted                 (core dumped) test36

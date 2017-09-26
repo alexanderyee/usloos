@@ -1,14 +1,4 @@
-1,47c1
-< start2(): started
-< start2(): MboxCreate returned id = 7
-< 
-< XXp1(): started
-< XXp1(): receiving message #0 from mailbox 7
-< XXp2a(): receive message from mailbox 7, msg_size = 20
-< XXp2c(): receive message from mailbox 7, msg_size = 20
-< XXp2b(): receive message from mailbox 7, msg_size = 20
-< 
-< XXp3(): started
+11,39d10
 < XXp1(): after receive of message #0, result = -3
 < XXp1(): receiving message #1 from mailbox 7
 < XXp1(): after receive of message #1, result = -1
@@ -38,13 +28,10 @@
 < XXp2c(): zap'd by MboxReceive() call
 < 
 < start2(): joined with kid 7, status = -3
-< XXp2b(): after receive of message result = -3
-< XXp2b(): zap'd by MboxReceive() call
-< 
-< start2(): joined with kid 6, status = -3
+44,47c15
 < XXp3(): MboxRelease returned 0
 < 
 < start2(): joined with kid 8, status = -4
 < All processes completed.
 ---
-> ./runtests.sh: line 28: test26: command not found
+> ./runtests.sh: line 28: 13432 Segmentation fault      (core dumped) test26

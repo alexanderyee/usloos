@@ -1,0 +1,6 @@
+3c3,5
+< syscallHandler(): sys number 50 is wrong.  Halting...
+---
+> SIMULATOR TRAP: USLOSS_IntVec[USLOSS_SYSCALL_INT] is NULL!
+> 
+> ./runtests.sh: line 28: 13627 Aborted                 (core dumped) test38

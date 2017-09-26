@@ -1,8 +1,4 @@
-1,24c1
-< start2(): started, trying to create too many mailboxes...
-< start2(): MailBoxCreate returned id less than zero, id = -1
-< start2(): MailBoxCreate returned id less than zero, id = -1
-< start2(): calling MboxRelease(0)
+5,24c5
 < start2(): calling MboxRelease(0) returned 0
 < start2(): calling MboxRelease(1)
 < start2(): calling MboxRelease(1) returned 0
@@ -24,4 +20,4 @@
 < start2(): MailBoxCreate for i = 7 returned id less than zero, id = -1
 < All processes completed.
 ---
-> ./runtests.sh: line 28: test25: command not found
+> ./runtests.sh: line 28: 13415 Segmentation fault      (core dumped) test25

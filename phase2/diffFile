@@ -13,15 +13,21 @@ XXp1(): sending message #4 to mailbox 7
 XXp1(): after send of message #4, result = 0
 start2(): joined with kid 4, status = -3
 XXp2a(): sending message 'hello from XXp2a' to mailbox 7, msg_size = 17
+oh god. awex is twird
 XXp2b(): sending message 'hello from XXp2b' to mailbox 7, msg_size = 17
+oh god. awex is twird
 XXp2c(): sending message 'hello from XXp2c' to mailbox 7, msg_size = 17
+oh god. awex is twird
 XXp3(): started
+heyyyy :^) 5
 XXp2a(): after send of message 'hello from XXp2a', result = -3
 XXp2a(): zap'd by MboxSend() call
 start2(): joined with kid 5, status = -3
+heyyyy :^) 6
 XXp2b(): after send of message 'hello from XXp2b', result = -3
 XXp2b(): zap'd by MboxSend() call
 start2(): joined with kid 6, status = -3
+heyyyy :^) 7
 XXp2c(): after send of message 'hello from XXp2c', result = -3
 XXp2c(): zap'd by MboxSend() call
 start2(): joined with kid 7, status = -3

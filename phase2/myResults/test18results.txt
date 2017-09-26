@@ -1,1 +1,9 @@
-./runtests.sh: line 28: test18: command not found
+start2(): started
+
+start2(): MboxCreate returned id = 7
+XXp4(): started and quitting
+XXp3(): started
+XXp3(): MboxRelease returned 0
+
+start2(): joined with kid 8, status = -4
+checkDeadlock(): numProc = 6. Only Sentinel should be left. Halting...

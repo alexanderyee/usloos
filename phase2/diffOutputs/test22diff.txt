@@ -1,6 +1,4 @@
-6,20c6
-< XXp1(): started
-< XXp1(): sending message #0 to mailbox 7
+8,20c8
 < XXp2(): after receipt of message #0, result = 16
 <         message = `hello there, #0'
 < XXp2(): receiving message #1 from mailbox 7
@@ -15,4 +13,4 @@
 < start2(): joined with kid 4, status = -3
 < All processes completed.
 ---
-> ./runtests.sh: line 28: 11976 Segmentation fault      (core dumped) test22
+> checkDeadlock(): numProc = 5. Only Sentinel should be left. Halting...

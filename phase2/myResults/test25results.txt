@@ -1,1 +1,5 @@
-./runtests.sh: line 28: test25: command not found
+start2(): started, trying to create too many mailboxes...
+start2(): MailBoxCreate returned id less than zero, id = -1
+start2(): MailBoxCreate returned id less than zero, id = -1
+start2(): calling MboxRelease(0)
+./runtests.sh: line 28: 13415 Segmentation fault      (core dumped) test25

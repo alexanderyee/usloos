@@ -1,0 +1,6 @@
+4c4,6
+< nullsys(): Invalid syscall 49. Halting...
+---
+> SIMULATOR TRAP: USLOSS_IntVec[USLOSS_SYSCALL_INT] is NULL!
+> 
+> ./runtests.sh: line 28: 13610 Aborted                 (core dumped) test37

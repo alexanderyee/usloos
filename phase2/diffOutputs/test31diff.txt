@@ -1,16 +1,8 @@
-1,13c1
-< start2(): started
-< start2(): MboxCreate returned id = 7
-< start2(): sending message to mailbox 7
-< XXp3(): receiving message from mailbox 7, should block
-< XXp2(): receiving message from mailbox 7 should block
-< XXp1(): receiving message to mailbox 7 should block
-< XXp4(): Releasing Mailbox 7
+8,9d7
 < XXp3(): after send of message, result = -3
 < XXp2(): after send of message, result = -3
-< XXp4(): after release of mailbox, result = 0
-< XXp1(): after send of message, result = -3
+12,13c10
 < start2(): after send of message, result = -3
 < All processes completed.
 ---
-> ./runtests.sh: line 28: test31: command not found
+> checkDeadlock(): numProc = 5. Only Sentinel should be left. Halting...

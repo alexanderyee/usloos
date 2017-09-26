@@ -1,0 +1,4 @@
+start2(): started, creating with size of slot too big
+start2(): MailBoxCreate returned id = 7
+start2(): failed...
+All processes completed.

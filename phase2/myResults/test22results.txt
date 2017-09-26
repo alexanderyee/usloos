@@ -3,4 +3,6 @@ start2(): started
 start2(): MboxCreate returned id = 7
 XXp2(): started
 XXp2(): receiving message #0 from mailbox 7
-./runtests.sh: line 28: 11976 Segmentation fault      (core dumped) test22
+XXp1(): started
+XXp1(): sending message #0 to mailbox 7
+checkDeadlock(): numProc = 5. Only Sentinel should be left. Halting...
