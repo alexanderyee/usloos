@@ -154,7 +154,7 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
     	}
         return 0;
     }
-    if (msg_size > currentMbox.maxLength) {
+    if (msg_size > currentMbox->maxLength) {
         return -1;
     }
     if (msg_ptr == NULL) {
