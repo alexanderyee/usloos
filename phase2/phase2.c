@@ -11,6 +11,7 @@
 #include <phase2.h>
 #include <usloss.h>
 #include "message.h"
+#include <string.h>
 
 /* ------------------------- Prototypes ----------------------------------- */
 int start1 (char *);
@@ -24,15 +25,23 @@ int send(mailbox *, void *, int);
 int enqueue(mailbox *);
 int dequeue(mailbox *);
 int MboxRelease(int);
+int check_io(void);
+void nullsys(int, int);
+void clockHandler2(int, int);
+void diskHandler(int, int);
+void termHandler(int, int);
+void syscallHandler(int, int);
 
 /* -------------------------- Globals ------------------------------------- */
-int debugflag2 = 0;
+int debugflag2 = 1;
 // the mail boxes
 mailbox MailBoxTable[MAXMBOX];
-int currentMboxId;
+int currentMboxId = 0;
 mailSlot MailSlotTable[MAXSLOTS];
+int clockHandlerCycle = 0;
 // also need array of mail slots, array of function ptrs to system call
 // handlers, ...
+void (*SyscallHandlers[MAXSYSCALLS])(int dev, int unit);
 // the process table
 //procStruct ProcTable[MAXPROC];
 /* -------------------------- Functions ----------------------------------- */
@@ -58,14 +67,21 @@ int start1(char *arg)
     // Initialize the mail box table, slots, & other data structures.
     // Initialize USLOSS_IntVec and system call handlers,
     // allocate mailboxes for interrupt handlers.  Etc...
-
-	// @TODO: FOLLOWING FOR LOOP FOR DUMMY INIT OF INT HANDLERS
+	USLOSS_IntVec[USLOSS_CLOCK_INT] = (void (*) (int, void *)) clockHandler2;
+    USLOSS_IntVec[USLOSS_DISK_INT] = (void (*) (int, void *)) diskHandler;
+	USLOSS_IntVec[USLOSS_TERM_INT] = (void (*) (int, void *)) termHandler;
+	USLOSS_IntVec[USLOSS_ILLEGAL_INT] = (void (*) (int, void *)) nullsys;
+	USLOSS_IntVec[USLOSS_SYSCALL_INT] = (void (*) (int, void *)) syscallHandler;
+	// initialize the device i/o mailboxes to be 0 slot mailboxes
 	int i;
 	for (i = 0; i < 7; i++) {
-		MailBoxTable[i].isUsed = 1;
+		MboxCreate(0, sizeof(int));
 	}
-
-	currentMboxId = 7;
+	
+	// initalize the syscall handlers
+	for (i = 0; i < MAXSYSCALLS; i++) {
+		SyscallHandlers[i] = (void (*) (int, int)) nullsys;
+	}
 
     enableInterrupts();
 
@@ -103,6 +119,7 @@ int MboxCreate(int slots, int slot_size)
 	        return -1;
     	}
 	}
+	disableInterrupts();
 	MailBoxTable[currentMboxId % MAXMBOX].isUsed = 1;
 	MailBoxTable[currentMboxId % MAXMBOX].mboxID = currentMboxId;
     MailBoxTable[currentMboxId % MAXMBOX].numSlots = slots;
@@ -113,6 +130,7 @@ int MboxCreate(int slots, int slot_size)
 		MailBoxTable[currentMboxId % MAXMBOX].sendQueuePids[i] = -1;
 	}
     currentMboxId++;
+	enableInterrupts();
     return currentMboxId - 1;
 
 } /* MboxCreate */
@@ -129,10 +147,10 @@ int MboxCreate(int slots, int slot_size)
 int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
 {
     check_kernel_mode("MboxSend");
-    if (!MailBoxTable[mbox_id % MAXMBOX].isUsed) {
+	if (!MailBoxTable[mbox_id % MAXMBOX].isUsed) {
         return -1;
     }
-
+	disableInterrupts();
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     // zero-slot mailbox case
     if (currentMbox->numSlots == 0) {
@@ -141,12 +159,15 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
         // sendqueue message then block me
         if ((waitingPid = dequeue(currentMbox)) == -1) {
             enqueue(currentMbox);
+			enableInterrupts();
             blockMe(11);
+			disableInterrupts();
         // case 2: recv has been called on this 0-slot mailbox,
         } else {
             unblockProc(waitingPid);
         }
-        if(!currentMbox->isUsed){
+        enableInterrupts();
+		if(!currentMbox->isUsed){
             return -3;
         }
         if(isZapped()){
@@ -155,28 +176,29 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
         return 0;
     }
     if (msg_size > currentMbox->maxLength) {
+		enableInterrupts();
         return -1;
     }
     if (msg_ptr == NULL) {
+		enableInterrupts();
         return -1;
     }
-
 
     // find a childslot in the mailbox to insert,
     // if none are available, send block and continue trying
 	while (send(currentMbox, msg_ptr, msg_size) != 0) {
 		enqueue(currentMbox);
+		enableInterrupts();
 		blockMe(11);
 		if(!currentMbox->isUsed){
 			return -3;
 		}
 	}
-
+	enableInterrupts();
     //if it is zapped
 	if(isZapped()){
 		return -3;
 	}
-
 	return 0;
 
 } /* MboxSend */
@@ -197,7 +219,7 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
     if (!MailBoxTable[mbox_id % MAXMBOX].isUsed) {
         return -1;
     }
-
+	disableInterrupts();
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     // zero-slot mailbox case
     if (currentMbox->numSlots == 0) {
@@ -206,11 +228,13 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
         int waitingPid = -1;
 		if ((waitingPid = dequeue(currentMbox)) != -1) {
 			unblockProc(waitingPid);
-            if (isZapped()) return -3;
+    		enableInterrupts();
+	        if (isZapped()) return -3;
             return 0;
         // case 2: no message, reserve block receiver
 		} else {
             enqueue(currentMbox);
+			enableInterrupts();
             blockMe(12);
             if (isZapped()) return -3;
             return 0;
@@ -218,23 +242,28 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
     }
 
     if (msg_ptr == NULL) {
+		enableInterrupts();
         return -1;
     }
 
     if (currentMbox->childSlots[0] != NULL && currentMbox->childSlots[0]->status == FULL) {
         int retval = receive(currentMbox, msg_ptr, msg_size);
-        if (retval == -1)
-            return -1;
+        disableInterrupts(); // receive turns interrupts back on, disable
+		if (retval == -1) {
+         	enableInterrupts(); 
+		    return -1;
+		}
 		int waitingPid = -1;
 		if ((waitingPid = dequeue(currentMbox)) != -1) {
 			unblockProc(waitingPid);
 		}
+		enableInterrupts();
 		return retval;
     } else {
         // block receiver if there are no messages in this mailbox
 		// reserve the mailbox slot
 		// find a slot in the slot table to insert
-        int j=0;
+        int j = 0;
         while (j < MAXSLOTS && (MailSlotTable[j].status == FULL || MailSlotTable[j].status == RSVD))
             j++;
         if (j == MAXSLOTS) {
@@ -244,13 +273,17 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
 		currentMbox->childSlots[0] = &MailSlotTable[j];
         currentMbox->childSlots[0]->status = RSVD;
 		currentMbox->childSlots[0]->reservedPid = getpid();
+		enableInterrupts();
 		blockMe(11);
+		disableInterrupts();
 		if(!currentMbox->isUsed){
+			enableInterrupts();
 			return -3;
 		}
     }
+	int status = receive(currentMbox, msg_ptr, msg_size);
     if (isZapped()) return -3;
-    return receive(currentMbox, msg_ptr, msg_size);
+    return status;
 
 } /* MboxReceive */
 
@@ -268,7 +301,7 @@ int MboxRelease(int mailboxID)
 	//if mailboxId isn't being used
 	if(!MailBoxTable[mailboxID % MAXMBOX].isUsed)
 		return -1;
-
+	disableInterrupts();
 	//unblock the procs in the rsvd slots
 	int i = 0;
 	mailbox *currentMbox = &MailBoxTable[mailboxID % MAXMBOX];
@@ -300,7 +333,7 @@ int MboxRelease(int mailboxID)
 
 	currentMbox->numSlots = 0;
 	currentMbox->maxLength = 0;
-
+	enableInterrupts();
 	//if it is zapped
 	if(isZapped()){
 		return -3;
@@ -325,13 +358,13 @@ int MboxCondSend(int mbox_id, void *msg_ptr, int msg_size)
     if (msg_ptr == NULL) {
         return -1;
     }
-
+	disableInterrupts();
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     //if mailbox is full, message not sent, or no slots available in the system
     if (send(currentMbox, msg_ptr, msg_size) != 0) {
 		return -2;
 	}
-
+	enableInterrupts();
     if(isZapped()){
         return -3;
     }
@@ -352,6 +385,7 @@ int MboxCondReceive(int mbox_id, void *msg_ptr, int msg_size)
     if (msg_ptr == NULL) {
         return -1;
     }
+	disableInterrupts();
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     if (currentMbox->childSlots[0] != NULL && currentMbox->childSlots[0]->status == FULL) {
         int retval = receive(currentMbox, msg_ptr, msg_size);
@@ -365,7 +399,127 @@ int MboxCondReceive(int mbox_id, void *msg_ptr, int msg_size)
         if (isZapped()) return -3;
         return -2;
     }
-} /* MboxReceive */
+} /* MboxCondReceive */
+
+/*
+ * waitDevice -- does a recieve operation on the mailbox with the given type and unit
+ * 					of the device. 1 clock, then 2 disks, then 4 terminals
+ */
+int waitDevice(int type, int unit, int *status)
+{
+	check_kernel_mode("waitDevice");
+	disableInterrupts();
+	int mailboxId = 0; // default to clock
+	if (type == USLOSS_DISK_DEV) {
+		mailboxId = 1;
+    } else if (type == USLOSS_TERM_DEV) {
+		mailboxId = 3;
+    }
+	MboxCondReceive(mailboxId + unit, status, sizeof(int));
+	if (isZapped())
+		return -1;
+	return 0;
+
+}
+
+/* an error method to handle invalid syscalls */
+void nullsys(int dev, int unit)
+{
+    USLOSS_Console("nullsys(): Invalid syscall. Halting...\n");
+    USLOSS_Halt(1);
+} /* nullsys */
+
+/*
+ * The clock interrupt handler for our OS baby
+ * conditionally sends to the clock i/o mailbox every 5th clock interrupt
+ */
+void clockHandler2(int dev, int unit)
+{
+
+    if (DEBUG2 && debugflag2)
+      USLOSS_Console("clockHandler2(): called\n");
+    check_kernel_mode("clockHandler");
+	if (dev != USLOSS_CLOCK_DEV && unit != 0) {
+		USLOSS_Console("clockHandler2(): incorrect device and/or unit number\n");
+	}
+    timeSlice();
+	clockHandlerCycle++;
+	if (clockHandlerCycle % 5 == 0) {
+		int completionStatus; 
+		USLOSS_DeviceInput(dev, unit, &completionStatus); 
+		MboxCondSend(USLOSS_CLOCK_DEV, &completionStatus, sizeof(int));
+	}	
+
+} /* clockHandler */
+
+
+void diskHandler(int dev, int unit)
+{
+
+    if (DEBUG2 && debugflag2)
+        USLOSS_Console("diskHandler(): called\n");
+    check_kernel_mode("diskHandler");
+    // error check: is device the correct device? 
+    // is unit number in correct range? 0-6
+    // read device's status register using USLOSS_DeviceInput
+    // condsend contents of status register to mailbox
+	if (dev != USLOSS_DISK_DEV || unit < 0 || unit >= 2) {
+        USLOSS_Console("diskHandler(): incorrect device and/or unit number\n");
+    }
+	
+	int completionStatus; 
+    USLOSS_DeviceInput(dev, unit, &completionStatus); 
+    MboxCondSend(1 + unit, &completionStatus, sizeof(int));
+
+} /* diskHandler */
+
+
+void termHandler(int dev, int unit)
+{
+
+    if (DEBUG2 && debugflag2)
+       USLOSS_Console("termHandler(): called\n");
+    check_kernel_mode("termHandler");
+	if (dev != USLOSS_DISK_DEV || unit < 0 || unit >= 4) {
+        USLOSS_Console("termHandler(): incorrect device and/or unit number\n");
+    }
+
+    int completionStatus;
+    USLOSS_DeviceInput(dev, unit, &completionStatus);   
+    MboxCondSend(3 + unit, &completionStatus, sizeof(int));
+	printf("termhandler: %d completion status\n", completionStatus);
+} /* termHandler */
+
+
+void syscallHandler(int dev, int unit)
+{
+
+   if (DEBUG2 && debugflag2)
+      USLOSS_Console("syscallHandler(): called\n");
+	// next phase stuff
+	// error check
+	if (dev != USLOSS_SYSCALL_INT || unit < 0 || unit >= MAXSYSCALLS) {
+        USLOSS_Console("termHandler(): incorrect device and/or unit number\n");
+    }	
+	// call nullsys for now (initialized in start2)
+	void (*syscallFunc) (int dev, int unit) = SyscallHandlers[unit];
+	syscallFunc(dev, unit);
+} /* syscallHandler */
+
+
+/*
+ *
+ */
+int check_io() 
+{
+	int i = 0;
+	for (i = 0; i < 7; i++) {
+		if (MailBoxTable[i].sendQueuePids[0] != -1)
+			return 1;
+	}
+	return 0;
+}
+
 /*
  * Enables the interrupts and also turns kernel mode on
  */
@@ -440,10 +594,11 @@ void check_kernel_mode(char * funcName)
  */
 int receive(mailbox *currentMbox, void *msg_ptr, int msg_size)
 {
-
+	disableInterrupts();
     int size = currentMbox->childSlots[0]->msgSize;
     if (size > msg_size) {
-        return -1;
+        enableInterrupts();
+		return -1;
     }
     memcpy(msg_ptr, currentMbox->childSlots[0]->data, msg_size);
     freeSlot(currentMbox->childSlots[0]);
@@ -453,7 +608,8 @@ int receive(mailbox *currentMbox, void *msg_ptr, int msg_size)
         i++;
     }
 	currentMbox->childSlots[i] = NULL;
-    return size;
+    enableInterrupts();
+	return size;
 }
 /*
  * send -- just a function that tries to send a message to the mailbox currentMbox
@@ -463,6 +619,7 @@ int receive(mailbox *currentMbox, void *msg_ptr, int msg_size)
  */
 int send(mailbox *currentMbox, void *msg_ptr, int msg_size)
 {
+	disableInterrupts();
 	int i;
     for (i = 0; i < currentMbox->numSlots; i++) {
         if (currentMbox->childSlots[i] == NULL) {
@@ -478,16 +635,18 @@ int send(mailbox *currentMbox, void *msg_ptr, int msg_size)
             currentMbox->childSlots[i]->msgSize = msg_size;
             memcpy(currentMbox->childSlots[i]->data, msg_ptr, msg_size);
             currentMbox->childSlots[i]->mboxID = currentMbox->mboxID;;
-
+			enableInterrupts();
             return 0;
         } else if (currentMbox->childSlots[i]->status == RSVD) {
             currentMbox->childSlots[i]->status = FULL;
             currentMbox->childSlots[i]->msgSize = msg_size;
             memcpy(currentMbox->childSlots[i]->data, msg_ptr, msg_size);
             unblockProc(currentMbox->childSlots[i]->reservedPid);
-            return 0;
+            enableInterrupts();
+			return 0;
         }
     }
+	enableInterrupts();
 	return 1;
 }
 

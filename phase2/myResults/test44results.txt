@@ -1,1 +1,30 @@
-./runtests.sh: line 28: test44: command not found
+start2(): started.  Creating mailbox.
+
+start2(): calling fork1 for Child1a
+start2(): calling fork1 for Child1b
+start2(): calling fork1 for Child1c
+start2(): calling fork1 for Child2
+
+start2(): Parent done forking.
+
+Child1a(): starting, blocking on a mailbox receive
+
+Child1b(): starting, blocking on a mailbox receive
+Child1b(): result = 0
+
+Child1c(): starting, blocking on a mailbox receive
+Child1c(): result = 0
+Child1a(): result = 0
+Process 5 joined with status: 1
+
+Process 6 joined with status: 1
+
+Process 4 joined with status: 1
+
+
+Child2(): starting, releasing mailbox
+
+Child2(): done
+Process 7 joined with status: 9
+
+All processes completed.

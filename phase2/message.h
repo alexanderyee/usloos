@@ -43,3 +43,4 @@ union psrValues {
 #define EMPTY 0
 #define RSVD 2
 #define NULL 0
+#define IO_BLOCKED 69

@@ -7,7 +7,9 @@ start2(): Attempting to receive message from mailbox 7, but it is blocked
 XXp1(): started
 XXp1(): arg = `'
 
-start2(): after receive of message, result = 12
-          message is `hello there'
-start2(): FAILED!
-quit(): process 3, 'start2', has active children. Halting...
+start2(): after receive of message, result = -1
+          message is `'
+start2(): got that message was too big. PASSED!
+start2(): joining with child
+XXp1(): after send of message, result = 0
+All processes completed.

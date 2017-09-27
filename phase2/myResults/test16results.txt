@@ -1,1 +1,2 @@
-./runtests.sh: line 28: test16: command not found
+start2(): started, trying to exceed mailslots...
+All processes completed.

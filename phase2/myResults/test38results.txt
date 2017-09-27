@@ -1,5 +1,4 @@
 start2(): putting itself into user mode
 start2(): calling USLOSS_Syscall executing syscall 0, this should halt
-SIMULATOR TRAP: USLOSS_IntVec[USLOSS_SYSCALL_INT] is NULL!
-
-./runtests.sh: line 28: 13627 Aborted                 (core dumped) test38
+termHandler(): incorrect device and/or unit number
+./runtests.sh: line 28: 14439 Segmentation fault      (core dumped) test38

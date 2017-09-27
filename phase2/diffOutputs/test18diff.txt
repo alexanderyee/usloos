@@ -1,16 +1,30 @@
-9,21c9
+4c4,7
+< XXp4(): started and quitting
+---
+> XXp2b(): after recv of message '', result = 0
+> 
+> ***Test Failed*** -- join with pausepid failed!
+> 
+9,10c12
 < XXp2a(): after recv of message '', result = -3
 < XXp2a(): zap'd by MboxReceive() call
-< 
+---
+> XXp2c(): after recv of message '', result = -1
+12,14c14,15
 < start2(): joined with kid 4, status = -3
 < XXp2b(): after recv of message '', result = -3
 < XXp2b(): zap'd by MboxReceive() call
-< 
+---
+> start2(): joined with kid 6, status = -3
+> XXp4(): started and quitting
+16,18c17,18
 < start2(): joined with kid 5, status = -3
 < XXp2c(): after recv of message '', result = -3
 < XXp2c(): zap'd by MboxReceive() call
-< 
-< start2(): joined with kid 6, status = -3
-< All processes completed.
 ---
-> checkDeadlock(): numProc = 6. Only Sentinel should be left. Halting...
+> start2(): joined with kid 7, status = -4
+> XXp2a(): after recv of message '', result = 0
+20c20
+< start2(): joined with kid 6, status = -3
+---
+> start2(): joined with kid 4, status = -3

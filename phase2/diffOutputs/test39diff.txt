@@ -1,8 +1,0 @@
-7,9c7,9
-< start2(): after receive of message, result = -1
-<           message is `'
-< start2(): got that message was too big. PASSED!
----
-> start2(): after receive of message, result = 12
->           message is `hell'
-> start2(): FAILED!

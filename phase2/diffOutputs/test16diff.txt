@@ -1,6 +1,2 @@
-1,3c1
-< start2(): started, trying to exceed mailslots...
+2d1
 < No slots available: mailbox 45 and slot 25
-< All processes completed.
----
-> ./runtests.sh: line 28: test16: command not found

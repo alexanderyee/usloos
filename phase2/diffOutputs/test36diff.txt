@@ -1,6 +1,5 @@
-3c3,5
+3c3,4
 < nullsys(): Invalid syscall 0. Halting...
 ---
-> SIMULATOR TRAP: USLOSS_IntVec[USLOSS_SYSCALL_INT] is NULL!
-> 
-> ./runtests.sh: line 28: 13593 Aborted                 (core dumped) test36
+> termHandler(): incorrect device and/or unit number
+> ./runtests.sh: line 28: 14403 Segmentation fault      (core dumped) test36

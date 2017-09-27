@@ -34,4 +34,4 @@
 < start2(): joined with kid 8, status = -4
 < All processes completed.
 ---
-> ./runtests.sh: line 28: 13432 Segmentation fault      (core dumped) test26
+> ./runtests.sh: line 28: 14242 Segmentation fault      (core dumped) test26
