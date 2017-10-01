@@ -22,8 +22,8 @@ void check_kernel_mode(char *);
 void freeSlot(slotPtr);
 int receive(mailbox *, void *, int);
 int send(mailbox *, void *, int);
-int enqueue(mailbox *);
-int dequeue(mailbox *);
+int enqueue(mailbox *, int);
+queueSlot dequeue(mailbox *);
 int MboxRelease(int);
 int check_io(void);
 void nullsys(int, int);
@@ -31,6 +31,8 @@ void clockHandler2(int, int);
 void diskHandler(int, int);
 void termHandler(int, int);
 void syscallHandler(int, int);
+int peekStatus(mailbox *);
+
 
 /* -------------------------- Globals ------------------------------------- */
 int debugflag2 = 0;
@@ -127,7 +129,7 @@ int MboxCreate(int slots, int slot_size)
 
 	for(i = 0; i < MAXSLOTS; i++){
 		//-1 will be our null. meaning that pid at that slot will be "empty"
-		MailBoxTable[currentMboxId % MAXMBOX].sendQueuePids[i] = -1;
+		MailBoxTable[currentMboxId % MAXMBOX].sendQueue[i].pid = -1;
 	}
     currentMboxId++;
 	enableInterrupts();
@@ -315,8 +317,8 @@ int MboxRelease(int mailboxID)
 
 	//unblock the procs in sendQueues
 	for(i = 0; i < MAXSLOTS; i++){
-        if(currentMbox->sendQueuePids[i] != -1){
-			unblockProc(currentMbox->sendQueuePids[i]);
+        if(currentMbox->sendQueue[i].pid != -1){
+			unblockProc(currentMbox->sendQueue[i].pid);
         }
     }
 
@@ -328,7 +330,8 @@ int MboxRelease(int mailboxID)
 
     //unblock the procs in sendQueues
     for(i = 0; i < MAXSLOTS; i++){
-   		currentMbox->sendQueuePids[i] = -1;
+   		currentMbox->sendQueue[i].pid = -1;
+        currentMbox->sendQueue[i].status = 0;
 	}
 
 	currentMbox->numSlots = 0;
@@ -497,7 +500,7 @@ void syscallHandler(int dev, int unit)
 	// error check
 	if (dev != USLOSS_SYSCALL_INT || unit < 0 || unit >= MAXSYSCALLS) {
         USLOSS_Console("termHandler(): incorrect device and/or unit number\n");
-    }	
+    }
 	// call nullsys for now (initialized in start2)
 	void (*syscallFunc) (int dev, int unit) = SyscallHandlers[unit];
 	syscallFunc(dev, unit);
@@ -511,7 +514,7 @@ int check_io()
 {
 	int i = 0;
 	for (i = 0; i < 7; i++) {
-		if (MailBoxTable[i].sendQueuePids[0] != -1)
+		if (MailBoxTable[i].sendQueue[0].pid != -1)
 			return 1;
 	}
 	return 0;
@@ -651,16 +654,17 @@ int send(mailbox *currentMbox, void *msg_ptr, int msg_size)
  * enqueue -- for sendqueue at mailbox currentMbox
  * returns 0 on success, -1 if full
  */
-int enqueue(mailbox *currentMbox)
+int enqueue(mailbox *currentMbox, int status)
 {
 	int i = 0;
-	while (i < MAXSLOTS && currentMbox->sendQueuePids[i] != -1) {
+	while (i < MAXSLOTS && currentMbox->sendQueue[i].pid != -1) {
 		i++;
 		if (i == MAXSLOTS) {
 			return -1; //error case if full
 		}
 	}
-	currentMbox->sendQueuePids[i] = getpid();
+    currentMbox->sendQueue[i].pid = getpid();
+    currentMbox->sendQueue[i].status = status;
 	return 0;
 }
 
@@ -668,15 +672,24 @@ int enqueue(mailbox *currentMbox)
  * dequeue -- for sendqueue at mailbox currentMbox
  * returns pid if successful, -1 if unsuccessful
  */
-int dequeue(mailbox *currentMbox)
+queueSlot dequeue(mailbox *currentMbox)
 {
 	int i = 0;
-	int retPid = currentMbox->sendQueuePids[i];
+	queueSlot retQueueSlot = currentMbox->sendQueue[i];
 
-	while (i+1 < MAXSLOTS && currentMbox->sendQueuePids[i+1] != -1) {
-		currentMbox->sendQueuePids[i] = currentMbox->sendQueuePids[i+1];
+	while (i+1 < MAXSLOTS && currentMbox->sendQueue[i+1].pid != -1) {
+		currentMbox->sendQueue[i] = currentMbox->sendQueue[i+1];
 		i++;
 	}
 
-	return retPid;
+	return retQueueSlot;
+}
+
+/*
+ * peek - status peeker
+ */
+int peekStatus(mailbox *currentMbox)
+{
+	queueSlot retQueueSlot = currentMbox->sendQueue[0];
+	return retQueueSlot.status;
 }

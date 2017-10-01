@@ -1,10 +1,11 @@
 
 #define DEBUG2 1
 
-typedef struct mailSlot *slotPtr;
+typedef struct mailSlot  *slotPtr;
 typedef struct mailbox   mailbox;
-typedef struct mboxProc *mboxProcPtr;
+typedef struct mboxProc  *mboxProcPtr;
 typedef struct mailSlot  mailSlot;
+typedef struct queueSlot queueSlot;
 
 struct mailbox {
     int       mboxID;
@@ -12,7 +13,7 @@ struct mailbox {
     int       numSlots;
     slotPtr   childSlots[MAXSLOTS];
     int       maxLength;
-    int       sendQueuePids[MAXSLOTS];
+    queueSlot sendQueue[MAXSLOTS];
     // other items as needed...
 
 };
@@ -24,6 +25,11 @@ struct mailSlot {
     int       msgSize;
     int       reservedPid;
     // other items as needed...
+};
+
+struct queueSlot {
+    int       pid;
+    int       status;
 };
 
 struct psrBits {
@@ -44,3 +50,5 @@ union psrValues {
 #define RSVD 2
 #define NULL 0
 #define IO_BLOCKED 69
+#define SENT 1
+#define RECEIVED 2
