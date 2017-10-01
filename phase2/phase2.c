@@ -243,11 +243,22 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
         // case 2: no message, reserve block receiver
 		} else {
             enqueue(currentMbox, RECEIVED);
+            int j = 0;
+            while (j < MAXSLOTS && (MailSlotTable[j].status == FULL || MailSlotTable[j].status == RSVD))
+                j++;
+            if (j == MAXSLOTS) {
+    			USLOSS_Halt(1);
+            }
+            // change its status to RSVD (reserved)
+    		currentMbox->childSlots[0] = &MailSlotTable[j];
+            currentMbox->childSlots[0]->status = RSVD;
+    		currentMbox->childSlots[0]->reservedPid = getpid();
 			enableInterrupts();
             blockMe(12);
+            int status = receive(currentMbox, msg_ptr, msg_size);
             if (isZapped()) return -3;
             if (currentMbox->isUsed == 0) return -3;
-            return 0;
+            return status;
         }
     }
 
