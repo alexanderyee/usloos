@@ -1,4 +1,4 @@
 start2(): putting itself into user mode
 start2(): calling USLOSS_Syscall executing syscall 0, this should halt
 termHandler(): incorrect device and/or unit number
-./runtests.sh: line 28: 14439 Segmentation fault      (core dumped) test38
+./runtests.sh: line 28:  8890 Segmentation fault      (core dumped) test38

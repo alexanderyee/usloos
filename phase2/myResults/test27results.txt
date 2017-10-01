@@ -10,4 +10,4 @@ XXp1(): receiving message #0 from mailbox 7
 XXp4(): started and quitting
 
 XXp3(): started
-./runtests.sh: line 28: 14259 Segmentation fault      (core dumped) test27
+./runtests.sh: line 28:  8634 Segmentation fault      (core dumped) test27

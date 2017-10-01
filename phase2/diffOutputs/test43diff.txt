@@ -14,4 +14,4 @@
 < start2(): after send of message #24, result = -2
 < All processes completed.
 ---
-> ./runtests.sh: line 28: 14514 Segmentation fault      (core dumped) test43
+> ./runtests.sh: line 28:  8964 Segmentation fault      (core dumped) test43

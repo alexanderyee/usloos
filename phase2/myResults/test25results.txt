@@ -2,4 +2,4 @@ start2(): started, trying to create too many mailboxes...
 start2(): MailBoxCreate returned id less than zero, id = -1
 start2(): MailBoxCreate returned id less than zero, id = -1
 start2(): calling MboxRelease(0)
-./runtests.sh: line 28: 14225 Segmentation fault      (core dumped) test25
+./runtests.sh: line 28:  8599 Segmentation fault      (core dumped) test25

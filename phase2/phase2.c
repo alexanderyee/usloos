@@ -33,7 +33,7 @@ void termHandler(int, int);
 void syscallHandler(int, int);
 
 /* -------------------------- Globals ------------------------------------- */
-int debugflag2 = 1;
+int debugflag2 = 0;
 // the mail boxes
 mailbox MailBoxTable[MAXMBOX];
 int currentMboxId = 0;
@@ -267,7 +267,7 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
         while (j < MAXSLOTS && (MailSlotTable[j].status == FULL || MailSlotTable[j].status == RSVD))
             j++;
         if (j == MAXSLOTS) {
-            USLOSS_Halt(1);
+			USLOSS_Halt(1);
         }
         // change its status to RSVD (reserved)
 		currentMbox->childSlots[0] = &MailSlotTable[j];
@@ -353,9 +353,6 @@ int MboxCondSend(int mbox_id, void *msg_ptr, int msg_size)
         return -1;
     }
     if (msg_size > MailBoxTable[mbox_id % MAXMBOX].maxLength) {
-        return -1;
-    }
-    if (msg_ptr == NULL) {
         return -1;
     }
 	disableInterrupts();
@@ -628,8 +625,8 @@ int send(mailbox *currentMbox, void *msg_ptr, int msg_size)
             while (j < MAXSLOTS && MailSlotTable[j].status == FULL)
                 j++;
             if (j == MAXSLOTS) {
-                USLOSS_Halt(1);
-            }
+            	return -2;
+			}
             currentMbox->childSlots[i] = &MailSlotTable[j];
             currentMbox->childSlots[i]->status = FULL;
             currentMbox->childSlots[i]->msgSize = msg_size;

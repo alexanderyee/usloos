@@ -20,4 +20,4 @@
 < start2(): MailBoxCreate for i = 7 returned id less than zero, id = -1
 < All processes completed.
 ---
-> ./runtests.sh: line 28: 14225 Segmentation fault      (core dumped) test25
+> ./runtests.sh: line 28:  8599 Segmentation fault      (core dumped) test25
