@@ -292,10 +292,17 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
         if (j == MAXSLOTS) {
 			USLOSS_Halt(1);
         }
-        // change its status to RSVD (reserved)
-		currentMbox->childSlots[0] = &MailSlotTable[j];
-        currentMbox->childSlots[0]->status = RSVD;
-		currentMbox->childSlots[0]->reservedPid = getpid();
+        int i = 0;
+        for(i = 0; i < MAXSLOTS ; i++){
+            if(currentMbox->childSlots[i] != NULL && currentMbox->childSlots[i]->status == EMPTY){
+                // change its status to RSVD (reserved)
+        		currentMbox->childSlots[0] = &MailSlotTable[j];
+                currentMbox->childSlots[0]->status = RSVD;
+        		currentMbox->childSlots[0]->reservedPid = getpid();
+                break;
+            }
+        }
+
 		enableInterrupts();
 		blockMe(11);
 		disableInterrupts();
@@ -616,14 +623,19 @@ void check_kernel_mode(char * funcName)
 int receive(mailbox *currentMbox, void *msg_ptr, int msg_size)
 {
 	disableInterrupts();
-    int size = currentMbox->childSlots[0]->msgSize;
+    int i = 0;
+    for(i = 0; i < MAXSLOTS ; i++){
+        if(currentMbox->childSlots[i] != NULL && currentMbox->childSlots[i]->status == FULL && currentMbox->childSlots[i]->reservedPid == getpid()){
+            break;
+        }
+    }
+    int size = currentMbox->childSlots[i]->msgSize;
     if (size > msg_size) {
         enableInterrupts();
 		return -1;
     }
-    memcpy(msg_ptr, currentMbox->childSlots[0]->data, msg_size);
-    freeSlot(currentMbox->childSlots[0]);
-    int i = 0;
+    memcpy(msg_ptr, currentMbox->childSlots[i]->data, msg_size);
+    freeSlot(currentMbox->childSlots[i]);
     while (i < currentMbox->numSlots - 1 && currentMbox->childSlots[i] != NULL) {
     	currentMbox->childSlots[i] = currentMbox->childSlots[i+1];
         i++;
