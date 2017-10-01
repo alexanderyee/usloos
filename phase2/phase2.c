@@ -159,6 +159,7 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
         int waitingStatus = -1;
         // case 2: recv has been called on this 0-slot mailbox,
         if((waitingStatus = peekStatus(currentMbox)) == RECEIVED){
+            send(currentMbox, msg_ptr, msg_size);
             unblockProc(dequeue(currentMbox).pid);
         // case 1: recv hasn't been called on the 0-slot mailbox yet, enqueue a
         // sendqueue message then block me
