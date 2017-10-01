@@ -164,7 +164,7 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
         // sendqueue message then block me
         } else {
             enqueue(currentMbox, SENT);
-            send(currentMbox, msg_ptr, msg_size)
+            send(currentMbox, msg_ptr, msg_size);
 			enableInterrupts();
             blockMe(11);
 			disableInterrupts();
@@ -239,7 +239,7 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
 			    unblockProc(dequeue(currentMbox).pid);
                 enableInterrupts();
 	            if (isZapped()) return -3;
-                return 0;
+                return retval;
         // case 2: no message, reserve block receiver
 		} else {
             enqueue(currentMbox, RECEIVED);
