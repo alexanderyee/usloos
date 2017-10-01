@@ -229,10 +229,17 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
         // check if there is a message in sendqueue there
         int waitingStatus = -1;
 		if ((waitingStatus = peekStatus(currentMbox)) == SENT) {
-			unblockProc(dequeue(currentMbox).pid);
-    		enableInterrupts();
-	        if (isZapped()) return -3;
-            return 0;
+            if (currentMbox->childSlots[0] != NULL && currentMbox->childSlots[0]->status == FULL) {
+                int retval = receive(currentMbox, msg_ptr, msg_size);
+                disableInterrupts(); // receive turns interrupts back on, disable
+        		if (retval == -1) {
+                 	enableInterrupts();
+        		    return -1;
+        		}
+			    unblockProc(dequeue(currentMbox).pid);
+                enableInterrupts();
+	            if (isZapped()) return -3;
+                return 0;
         // case 2: no message, reserve block receiver
 		} else {
             enqueue(currentMbox, RECEIVED);
@@ -623,7 +630,12 @@ int send(mailbox *currentMbox, void *msg_ptr, int msg_size)
 {
 	disableInterrupts();
 	int i;
-    for (i = 0; i < currentMbox->numSlots; i++) {
+    int numSlots;
+    if (currentMbox->numSlots == 0)
+        numSlots = MAXSLOTS;
+    else
+        numSlots = currentMbox->numSlots;
+    for (i = 0; i < numSlots; i++) {
         if (currentMbox->childSlots[i] == NULL) {
             // find a slot in the slot table to insert
             int j=0;
