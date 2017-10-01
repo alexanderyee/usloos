@@ -33,7 +33,7 @@ int start2(char *arg)
 
     USLOSS_Console("start2(): calling USLOSS_DeviceOutput to enable receive ");
     USLOSS_Console("interrupts, control = %d\n", control);
-
+    dumpProcesses();
     result = USLOSS_DeviceOutput(USLOSS_TERM_DEV, 1, (void *)control);
     if ( result != USLOSS_DEV_OK ) {
         USLOSS_Console("start2(): USLOSS_DeviceOutput returned %d ",
