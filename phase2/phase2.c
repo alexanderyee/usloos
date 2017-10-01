@@ -256,9 +256,9 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
     		currentMbox->childSlots[0]->reservedPid = getpid();
 			enableInterrupts();
             blockMe(12);
+            if (currentMbox->isUsed == 0) return -3;
             int status = receive(currentMbox, msg_ptr, msg_size);
             if (isZapped()) return -3;
-            if (currentMbox->isUsed == 0) return -3;
             return status;
         }
     }
