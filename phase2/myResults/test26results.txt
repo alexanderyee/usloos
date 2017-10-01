@@ -12,4 +12,4 @@ XXp2b(): after receive of message result = -3
 XXp2b(): zap'd by MboxReceive() call
 
 start2(): joined with kid 6, status = -3
-./runtests.sh: line 28:  8616 Segmentation fault      (core dumped) test26
+./runtests.sh: line 28:  2150 Segmentation fault      (core dumped) test26

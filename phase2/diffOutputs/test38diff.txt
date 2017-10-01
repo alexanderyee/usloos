@@ -2,4 +2,4 @@
 < syscallHandler(): sys number 50 is wrong.  Halting...
 ---
 > termHandler(): incorrect device and/or unit number
-> ./runtests.sh: line 28:  8890 Segmentation fault      (core dumped) test38
+> ./runtests.sh: line 28:  2358 Segmentation fault      (core dumped) test38

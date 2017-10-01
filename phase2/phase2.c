@@ -228,8 +228,7 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
         // case 1: sender is blocked, receive the message and unblock sender
         // check if there is a message in sendqueue there
         int waitingStatus = -1;
-		if ((waitingStatus = peekStatus(currentMbox)) == SENT) {
-            if (currentMbox->childSlots[0] != NULL && currentMbox->childSlots[0]->status == FULL) {
+		if ((waitingStatus = peekStatus(currentMbox)) == SENT && currentMbox->childSlots[0] != NULL && currentMbox->childSlots[0]->status == FULL) {
                 int retval = receive(currentMbox, msg_ptr, msg_size);
                 disableInterrupts(); // receive turns interrupts back on, disable
         		if (retval == -1) {

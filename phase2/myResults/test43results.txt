@@ -271,4 +271,4 @@ start2(): sending message #19 to mailbox 7
 start2(): after send of message #19, result = 0
 start2(): sending message #20 to mailbox 7
 start2(): this should return -2
-./runtests.sh: line 28:  8964 Segmentation fault      (core dumped) test43
+./runtests.sh: line 28:  2434 Segmentation fault      (core dumped) test43
