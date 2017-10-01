@@ -7,13 +7,18 @@ typedef struct mboxProc  *mboxProcPtr;
 typedef struct mailSlot  mailSlot;
 typedef struct queueSlot queueSlot;
 
+struct queueSlot {
+    int       pid;
+    int       status;
+};
+
 struct mailbox {
     int       mboxID;
     int       isUsed;
     int       numSlots;
     slotPtr   childSlots[MAXSLOTS];
     int       maxLength;
-    queueSlot sendQueue[MAXSLOTS];
+    struct queueSlot sendQueue[MAXSLOTS];
     // other items as needed...
 
 };
@@ -25,11 +30,6 @@ struct mailSlot {
     int       msgSize;
     int       reservedPid;
     // other items as needed...
-};
-
-struct queueSlot {
-    int       pid;
-    int       status;
 };
 
 struct psrBits {

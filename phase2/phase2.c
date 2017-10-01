@@ -239,6 +239,7 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
 			enableInterrupts();
             blockMe(12);
             if (isZapped()) return -3;
+            if (currentMbox->isUsed == 0) return -3;
             return 0;
         }
     }
@@ -260,6 +261,7 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
 			unblockProc(dequeue(currentMbox).pid);
 		}
 		enableInterrupts();
+        if (isZapped()) return -3;
 		return retval;
     } else {
         // block receiver if there are no messages in this mailbox
