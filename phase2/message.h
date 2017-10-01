@@ -47,7 +47,8 @@ union psrValues {
 
 #define FULL 1
 #define EMPTY 0
-#define RSVD 2
+#define RECV_RSVD 2
+#define SEND_RSVD 3
 #define NULL 0
 #define IO_BLOCKED 69
 #define SENT 1

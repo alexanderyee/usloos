@@ -22,8 +22,8 @@ void check_kernel_mode(char *);
 void freeSlot(slotPtr);
 int receive(mailbox *, void *, int);
 int send(mailbox *, void *, int);
-int enqueue(mailbox *, int);
-queueSlot dequeue(mailbox *);
+int enqueue(mailbox *);
+int dequeue(mailbox *);
 int MboxRelease(int);
 int check_io(void);
 void nullsys(int, int);
@@ -31,11 +31,9 @@ void clockHandler2(int, int);
 void diskHandler(int, int);
 void termHandler(int, int);
 void syscallHandler(int, int);
-int peekStatus(mailbox *);
-
 
 /* -------------------------- Globals ------------------------------------- */
-int debugflag2 = 0;
+int debugflag2 = 1;
 // the mail boxes
 mailbox MailBoxTable[MAXMBOX];
 int currentMboxId = 0;
@@ -129,7 +127,7 @@ int MboxCreate(int slots, int slot_size)
 
 	for(i = 0; i < MAXSLOTS; i++){
 		//-1 will be our null. meaning that pid at that slot will be "empty"
-		MailBoxTable[currentMboxId % MAXMBOX].sendQueue[i].pid = -1;
+		MailBoxTable[currentMboxId % MAXMBOX].sendQueuePids[i] = -1;
 	}
     currentMboxId++;
 	enableInterrupts();
@@ -149,49 +147,61 @@ int MboxCreate(int slots, int slot_size)
 int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
 {
     check_kernel_mode("MboxSend");
-	if (!MailBoxTable[mbox_id % MAXMBOX].isUsed) {
-        return -1;
-    }
 	disableInterrupts();
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
-    // zero-slot mailbox case
-    if (currentMbox->numSlots == 0) {
-        int waitingStatus = -1;
-        // case 2: recv has been called on this 0-slot mailbox,
-        if((waitingStatus = peekStatus(currentMbox)) == RECEIVED){
-            dequeue(currentMbox);
-            send(currentMbox, msg_ptr, msg_size);
-        // case 1: recv hasn't been called on the 0-slot mailbox yet, enqueue a
-        // sendqueue message then block me
-        } else {
-            enqueue(currentMbox, SENT);
-            send(currentMbox, msg_ptr, msg_size);
-			enableInterrupts();
-            blockMe(11);
-			disableInterrupts();
-        }
-        enableInterrupts();
-		if(!currentMbox->isUsed){
-            return -3;
-        }
-        if(isZapped()){
-    		return -3;
-    	}
-        return 0;
-    }
-    if (msg_size > currentMbox->maxLength) {
-		enableInterrupts();
+
+    // invalid mailbox case
+	if (!(currentMbox->isUsed)) {
         return -1;
     }
-    if (msg_ptr == NULL) {
+    // message size being too large case
+    if (msg_size > currentMbox->maxLength) {
 		enableInterrupts();
         return -1;
     }
 
     // find a childslot in the mailbox to insert,
-    // if none are available, send block and continue trying
-	while (send(currentMbox, msg_ptr, msg_size) != 0) {
-		enqueue(currentMbox, SENT);
+    // if none are available, reserve a slot for send and send block
+    // this also accounts for 0-slot mbox case (block sender until receive)
+    // also need to unblock if it is a 0-slot RECV_RSVD
+	if (send(currentMbox, msg_ptr, msg_size) != 0) {
+	    // no slots available in mbox, reserve a slot
+        int i = 0;
+        // iterate until we find an empty slot. any RECV_RSVD slots would've
+        // been successfully sent to (and send should return 0 in that case)
+        while (currentMbox->childSlots[i] != NULL && currentMbox->childSlots[i]->status != EMPTY) {
+            // but, if it is a 0-slot mailbox and does find a RECV_RSVD, unblock
+            if (currentMbox->childSlots[i]->status == RECV_RSVD) {
+                currentMbox->childSlots[i]->status = FULL;
+                currentMbox->childSlots[i]->msgSize = msg_size;
+                memcpy(currentMbox->childSlots[i]->data, msg_ptr, msg_size);
+                enableInterrupts();
+                unblockProc(currentMbox->childSlots[i]->reservedPid);
+                if(isZapped()){
+            		return -3;
+            	}
+            	return 0;
+            }
+            i++;
+            // no slots in universal slot table case (all taken up by this mbox)
+            if (i == MAXSLOTS) {
+                USLOSS_Halt(1);
+            }
+        }
+        // index i should be at an empty slot, copy message and reserve the slot.
+        // find an empty slot in the universal slot table to insert
+        int j = 0;
+        while (j < MAXSLOTS && MailSlotTable[j].status != EMPTY)
+            j++;
+        if (j == MAXSLOTS) {
+            USLOSS_Halt(1);
+        }
+        currentMbox->childSlots[i] = &MailSlotTable[j];
+        currentMbox->childSlots[i]->status = SEND_RSVD;
+        currentMbox->childSlots[i]->reservedPid = getpid();
+        currentMbox->childSlots[i]->msgSize = msg_size;
+        memcpy(currentMbox->childSlots[i]->data, msg_ptr, msg_size);
+        currentMbox->childSlots[i]->mboxID = currentMbox->mboxID;
 		enableInterrupts();
 		blockMe(11);
 		if(!currentMbox->isUsed){
@@ -220,53 +230,47 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
 int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
 {
     check_kernel_mode("MboxReceive");
-    if (!MailBoxTable[mbox_id % MAXMBOX].isUsed) {
-        return -1;
-    }
-	disableInterrupts();
+    disableInterrupts();
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
-    // zero-slot mailbox case
-    if (currentMbox->numSlots == 0) {
-        // case 1: sender is blocked, receive the message and unblock sender
-        // check if there is a message in sendqueue there
-        int waitingStatus = -1;
-		if ((waitingStatus = peekStatus(currentMbox)) == SENT && currentMbox->childSlots[0] != NULL && currentMbox->childSlots[0]->status == FULL) {
-                int retval = receive(currentMbox, msg_ptr, msg_size);
-                disableInterrupts(); // receive turns interrupts back on, disable
-        		if (retval == -1) {
-                 	enableInterrupts();
-        		    return -1;
-        		}
-			    unblockProc(dequeue(currentMbox).pid);
-                enableInterrupts();
-	            if (isZapped()) return -3;
-                return retval;
-        // case 2: no message, reserve block receiver
-		} else {
-            enqueue(currentMbox, RECEIVED);
-            int j = 0;
-            while (j < MAXSLOTS && (MailSlotTable[j].status == FULL || MailSlotTable[j].status == RSVD))
-                j++;
-            if (j == MAXSLOTS) {
-    			USLOSS_Halt(1);
-            }
-            // change its status to RSVD (reserved)
-    		currentMbox->childSlots[0] = &MailSlotTable[j];
-            currentMbox->childSlots[0]->status = RSVD;
-    		currentMbox->childSlots[0]->reservedPid = getpid();
-			enableInterrupts();
-            blockMe(12);
-            if (currentMbox->isUsed == 0) return -3;
-            int status = receive(currentMbox, msg_ptr, msg_size);
-            if (isZapped()) return -3;
-            return status;
-        }
-    }
-
-    if (msg_ptr == NULL) {
+    // check if invalid mailbox
+    if (!(currentMbox->isUsed)) {
 		enableInterrupts();
         return -1;
     }
+    // check ptr is valid
+	if (msg_ptr == NULL) {
+		enableInterrupts();
+        return -1;
+    }
+    // we will check msg_size later on if there is a sent message...
+    int retval = receive(currentMbox, msg_ptr, msg_size);
+    // return 0 on success, index of MailSlotTable if reserved something, negative something if error
+    if (retval != 0) {
+
+    }
+
+    // begin old code
+    // zero-slot mailbox case
+
+    if (currentMbox->numSlots == 0) {
+        // case 1: sender is blocked, receive the message and unblock sender
+        // check if there is a message in sendqueue there
+        int waitingPid = -1;
+		if ((waitingPid = dequeue(currentMbox)) != -1) {
+			unblockProc(waitingPid);
+    		enableInterrupts();
+	        if (isZapped()) return -3;
+            return 0;
+        // case 2: no message, reserve block receiver
+		} else {
+            enqueue(currentMbox);
+			enableInterrupts();
+            blockMe(12);
+            if (isZapped()) return -3;
+            return 0;
+        }
+    }
+
 
     if (currentMbox->childSlots[0] != NULL && currentMbox->childSlots[0]->status == FULL) {
         int retval = receive(currentMbox, msg_ptr, msg_size);
@@ -275,12 +279,11 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
          	enableInterrupts();
 		    return -1;
 		}
-		int waitingStatus = -1;
-		if ((waitingStatus = peekStatus(currentMbox)) == SENT) {
-			unblockProc(dequeue(currentMbox).pid);
+		int waitingPid = -1;
+		if ((waitingPid = dequeue(currentMbox)) != -1) {
+			unblockProc(waitingPid);
 		}
 		enableInterrupts();
-        if (isZapped()) return -3;
 		return retval;
     } else {
         // block receiver if there are no messages in this mailbox
@@ -290,19 +293,12 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
         while (j < MAXSLOTS && (MailSlotTable[j].status == FULL || MailSlotTable[j].status == RSVD))
             j++;
         if (j == MAXSLOTS) {
-			USLOSS_Halt(1);
+            USLOSS_Halt(1);
         }
-        int i = 0;
-        for(i = 0; i < MAXSLOTS ; i++){
-            if(currentMbox->childSlots[i] != NULL && currentMbox->childSlots[i]->status == EMPTY){
-                // change its status to RSVD (reserved)
-        		currentMbox->childSlots[0] = &MailSlotTable[j];
-                currentMbox->childSlots[0]->status = RSVD;
-        		currentMbox->childSlots[0]->reservedPid = getpid();
-                break;
-            }
-        }
-
+        // change its status to RSVD (reserved)
+		currentMbox->childSlots[0] = &MailSlotTable[j];
+        currentMbox->childSlots[0]->status = RSVD;
+		currentMbox->childSlots[0]->reservedPid = getpid();
 		enableInterrupts();
 		blockMe(11);
 		disableInterrupts();
@@ -345,8 +341,8 @@ int MboxRelease(int mailboxID)
 
 	//unblock the procs in sendQueues
 	for(i = 0; i < MAXSLOTS; i++){
-        if(currentMbox->sendQueue[i].pid != -1){
-			unblockProc(currentMbox->sendQueue[i].pid);
+        if(currentMbox->sendQueuePids[i] != -1){
+			unblockProc(currentMbox->sendQueuePids[i]);
         }
     }
 
@@ -358,8 +354,7 @@ int MboxRelease(int mailboxID)
 
     //unblock the procs in sendQueues
     for(i = 0; i < MAXSLOTS; i++){
-   		currentMbox->sendQueue[i].pid = -1;
-        currentMbox->sendQueue[i].status = 0;
+   		currentMbox->sendQueuePids[i] = -1;
 	}
 
 	currentMbox->numSlots = 0;
@@ -386,6 +381,9 @@ int MboxCondSend(int mbox_id, void *msg_ptr, int msg_size)
     if (msg_size > MailBoxTable[mbox_id % MAXMBOX].maxLength) {
         return -1;
     }
+    // if (msg_ptr == NULL) {
+    //     return -1;
+    // }
 	disableInterrupts();
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     //if mailbox is full, message not sent, or no slots available in the system
@@ -417,9 +415,9 @@ int MboxCondReceive(int mbox_id, void *msg_ptr, int msg_size)
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     if (currentMbox->childSlots[0] != NULL && currentMbox->childSlots[0]->status == FULL) {
         int retval = receive(currentMbox, msg_ptr, msg_size);
-        int waitingStatus = -1;
-		if ((waitingStatus = peekStatus(currentMbox)) == SENT) {
-            unblockProc(dequeue(currentMbox).pid);
+        int waitingPid = -1;
+        if ((waitingPid = dequeue(currentMbox)) != -1) {
+            unblockProc(waitingPid);
         }
         if (isZapped()) return -3;
         return retval;
@@ -542,7 +540,7 @@ int check_io()
 {
 	int i = 0;
 	for (i = 0; i < 7; i++) {
-		if (MailBoxTable[i].sendQueue[0].pid != -1)
+		if (MailBoxTable[i].sendQueuePids[0] != -1)
 			return 1;
 	}
 	return 0;
@@ -623,19 +621,43 @@ void check_kernel_mode(char * funcName)
 int receive(mailbox *currentMbox, void *msg_ptr, int msg_size)
 {
 	disableInterrupts();
-    int i = 0;
-    for(i = 0; i < MAXSLOTS ; i++){
-        if(currentMbox->childSlots[i] != NULL && currentMbox->childSlots[i]->status == FULL && currentMbox->childSlots[i]->reservedPid == getpid()){
-            break;
+    int size = 0;
+    // check if there's something that is sent or to be sent (0-slot)
+    if (currentMbox->childSlots[0] != NULL &&
+        (currentMbox->childSlots[0]->status == FULL ||
+            currentMbox->childSlots[0]->status == SEND_RSVD)) {
+        // if there is, then memcpy and unblock if needed.
+        size = currentMbox->childSlots[0]->msgSize;
+        if (size > msg_size) {
+            enableInterrupts();
+	        return -1;
         }
-    }
-    int size = currentMbox->childSlots[i]->msgSize;
-    if (size > msg_size) {
+        memcpy(msg_ptr, currentMbox->childSlots[0]->data, msg_size);
+        // 0-slot unblock case
+        if (currentMbox->childSlots[0]->status == SEND_RSVD) {
+            unblockProc(currentMbox->childSlots[0]->reservedPid);
+        }
+        freeSlot(currentMbox->childSlots[0]);
+        // shift mailbox slots left 1, this should also take care of any other
+        // waiting sends
+        int i = 0;
+        while (i < MAXSLOTS - 1 && currentMbox->childSlots[i] != NULL) {
+        	currentMbox->childSlots[i] = currentMbox->childSlots[i+1];
+            i++;
+        } // need to account for no more slots left case?
+        // case where we need to unblock sender if their msg was placed in mbox
+        if (currentMbox->childSlots[currentMbox->numSlots - 1]->status == SEND_RSVD)
+            unblockProc(currentMbox->childSlots[currentMbox->numSlots - 1]->reservedPid);
         enableInterrupts();
-		return -1;
+    	return size;
+    } else {
+        // slot at 0 is either receive reserved or NULL, just find a null slot
+        // to reserve
     }
-    memcpy(msg_ptr, currentMbox->childSlots[i]->data, msg_size);
-    freeSlot(currentMbox->childSlots[i]);
+    //
+    memcpy(msg_ptr, currentMbox->childSlots[0]->data, msg_size);
+    freeSlot(currentMbox->childSlots[0]);
+    int i = 0;
     while (i < currentMbox->numSlots - 1 && currentMbox->childSlots[i] != NULL) {
     	currentMbox->childSlots[i] = currentMbox->childSlots[i+1];
         i++;
@@ -654,28 +676,25 @@ int send(mailbox *currentMbox, void *msg_ptr, int msg_size)
 {
 	disableInterrupts();
 	int i;
-    int numSlots;
-    if (currentMbox->numSlots == 0)
-        numSlots = MAXSLOTS;
-    else
-        numSlots = currentMbox->numSlots;
-    for (i = 0; i < numSlots; i++) {
+    for (i = 0; i < currentMbox->numSlots; i++) {
         if (currentMbox->childSlots[i] == NULL) {
-            // find a slot in the slot table to insert
-            int j=0;
-            while (j < MAXSLOTS && MailSlotTable[j].status == FULL)
+            // find an empty slot in the slot table to insert
+            int j = 0;
+            while (j < MAXSLOTS && MailSlotTable[j].status != EMPTY)
                 j++;
             if (j == MAXSLOTS) {
-            	return -2;
-			}
+                USLOSS_Halt(1);
+            }
             currentMbox->childSlots[i] = &MailSlotTable[j];
             currentMbox->childSlots[i]->status = FULL;
             currentMbox->childSlots[i]->msgSize = msg_size;
             memcpy(currentMbox->childSlots[i]->data, msg_ptr, msg_size);
-            currentMbox->childSlots[i]->mboxID = currentMbox->mboxID;;
+            currentMbox->childSlots[i]->mboxID = currentMbox->mboxID;
 			enableInterrupts();
             return 0;
-        } else if (currentMbox->childSlots[i]->status == RSVD) {
+        } else if (currentMbox->childSlots[i]->status == RECV_RSVD) {
+            // recieve reserved slot found, unblock and let the receiver
+            // free the slot and shift child slots down 1
             currentMbox->childSlots[i]->status = FULL;
             currentMbox->childSlots[i]->msgSize = msg_size;
             memcpy(currentMbox->childSlots[i]->data, msg_ptr, msg_size);
@@ -692,17 +711,16 @@ int send(mailbox *currentMbox, void *msg_ptr, int msg_size)
  * enqueue -- for sendqueue at mailbox currentMbox
  * returns 0 on success, -1 if full
  */
-int enqueue(mailbox *currentMbox, int status)
+int enqueue(mailbox *currentMbox)
 {
 	int i = 0;
-	while (i < MAXSLOTS && currentMbox->sendQueue[i].pid != -1) {
+	while (i < MAXSLOTS && currentMbox->sendQueuePids[i] != -1) {
 		i++;
 		if (i == MAXSLOTS) {
 			return -1; //error case if full
 		}
 	}
-    currentMbox->sendQueue[i].pid = getpid();
-    currentMbox->sendQueue[i].status = status;
+	currentMbox->sendQueuePids[i] = getpid();
 	return 0;
 }
 
@@ -710,24 +728,15 @@ int enqueue(mailbox *currentMbox, int status)
  * dequeue -- for sendqueue at mailbox currentMbox
  * returns pid if successful, -1 if unsuccessful
  */
-queueSlot dequeue(mailbox *currentMbox)
+int dequeue(mailbox *currentMbox)
 {
 	int i = 0;
-	queueSlot retQueueSlot = currentMbox->sendQueue[i];
+	int retPid = currentMbox->sendQueuePids[i];
 
-	while (i+1 < MAXSLOTS && currentMbox->sendQueue[i+1].pid != -1) {
-		currentMbox->sendQueue[i] = currentMbox->sendQueue[i+1];
+	while (i+1 < MAXSLOTS && currentMbox->sendQueuePids[i+1] != -1) {
+		currentMbox->sendQueuePids[i] = currentMbox->sendQueuePids[i+1];
 		i++;
 	}
 
-	return retQueueSlot;
-}
-
-/*
- * peek - status peeker
- */
-int peekStatus(mailbox *currentMbox)
-{
-	queueSlot retQueueSlot = currentMbox->sendQueue[0];
-	return retQueueSlot.status;
+	return retPid;
 }
