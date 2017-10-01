@@ -77,7 +77,7 @@ int start1(char *arg)
 	for (i = 0; i < 7; i++) {
 		MboxCreate(0, sizeof(int));
 	}
-	
+
 	// initalize the syscall handlers
 	for (i = 0; i < MAXSYSCALLS; i++) {
 		SyscallHandlers[i] = (void (*) (int, int)) nullsys;
@@ -250,7 +250,7 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
         int retval = receive(currentMbox, msg_ptr, msg_size);
         disableInterrupts(); // receive turns interrupts back on, disable
 		if (retval == -1) {
-         	enableInterrupts(); 
+         	enableInterrupts();
 		    return -1;
 		}
 		int waitingPid = -1;
@@ -445,10 +445,10 @@ void clockHandler2(int dev, int unit)
     timeSlice();
 	clockHandlerCycle++;
 	if (clockHandlerCycle % 5 == 0) {
-		int completionStatus; 
-		USLOSS_DeviceInput(dev, unit, &completionStatus); 
+		int completionStatus;
+		USLOSS_DeviceInput(dev, unit, &completionStatus);
 		MboxCondSend(USLOSS_CLOCK_DEV, &completionStatus, sizeof(int));
-	}	
+	}
 
 } /* clockHandler */
 
@@ -459,16 +459,16 @@ void diskHandler(int dev, int unit)
     if (DEBUG2 && debugflag2)
         USLOSS_Console("diskHandler(): called\n");
     check_kernel_mode("diskHandler");
-    // error check: is device the correct device? 
+    // error check: is device the correct device?
     // is unit number in correct range? 0-6
     // read device's status register using USLOSS_DeviceInput
     // condsend contents of status register to mailbox
 	if (dev != USLOSS_DISK_DEV || unit < 0 || unit >= 2) {
         USLOSS_Console("diskHandler(): incorrect device and/or unit number\n");
     }
-	
-	int completionStatus; 
-    USLOSS_DeviceInput(dev, unit, &completionStatus); 
+
+	int completionStatus;
+    USLOSS_DeviceInput(dev, unit, &completionStatus);
     MboxCondSend(1 + unit, &completionStatus, sizeof(int));
 
 } /* diskHandler */
@@ -485,9 +485,9 @@ void termHandler(int dev, int unit)
     }
 
     int completionStatus;
-    USLOSS_DeviceInput(dev, unit, &completionStatus);   
+    USLOSS_DeviceInput(dev, unit, &completionStatus);
     MboxCondSend(3 + unit, &completionStatus, sizeof(int));
-	printf("termhandler: %d completion status\n", completionStatus);
+	//printf("termhandler: %d completion status\n", completionStatus);
 } /* termHandler */
 
 
@@ -510,7 +510,7 @@ void syscallHandler(int dev, int unit)
 /*
  *
  */
-int check_io() 
+int check_io()
 {
 	int i = 0;
 	for (i = 0; i < 7; i++) {
