@@ -156,17 +156,17 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     // zero-slot mailbox case
     if (currentMbox->numSlots == 0) {
-        int waitingPid = -1;
+        int waitingStatus = -1;
+        // case 2: recv has been called on this 0-slot mailbox,
+        if((waitingStatus = peekStatus(currentMbox)) == RECEIVED){
+            unblockProc(dequeue(currentMbox).pid);
         // case 1: recv hasn't been called on the 0-slot mailbox yet, enqueue a
         // sendqueue message then block me
-        if ((waitingPid = dequeue(currentMbox)) == -1) {
-            enqueue(currentMbox);
+        } else {
+            enqueue(currentMbox, SENT);
 			enableInterrupts();
             blockMe(11);
 			disableInterrupts();
-        // case 2: recv has been called on this 0-slot mailbox,
-        } else {
-            unblockProc(waitingPid);
         }
         enableInterrupts();
 		if(!currentMbox->isUsed){
@@ -189,7 +189,7 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
     // find a childslot in the mailbox to insert,
     // if none are available, send block and continue trying
 	while (send(currentMbox, msg_ptr, msg_size) != 0) {
-		enqueue(currentMbox);
+		enqueue(currentMbox, SENT);
 		enableInterrupts();
 		blockMe(11);
 		if(!currentMbox->isUsed){
@@ -227,15 +227,15 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
     if (currentMbox->numSlots == 0) {
         // case 1: sender is blocked, receive the message and unblock sender
         // check if there is a message in sendqueue there
-        int waitingPid = -1;
-		if ((waitingPid = dequeue(currentMbox)) != -1) {
-			unblockProc(waitingPid);
+        int waitingStatus = -1;
+		if ((waitingStatus = peekStatus(currentMbox)) == SENT) {
+			unblockProc(dequeue(currentMbox).pid);
     		enableInterrupts();
 	        if (isZapped()) return -3;
             return 0;
         // case 2: no message, reserve block receiver
 		} else {
-            enqueue(currentMbox);
+            enqueue(currentMbox, RECEIVED);
 			enableInterrupts();
             blockMe(12);
             if (isZapped()) return -3;
@@ -255,9 +255,9 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
          	enableInterrupts();
 		    return -1;
 		}
-		int waitingPid = -1;
-		if ((waitingPid = dequeue(currentMbox)) != -1) {
-			unblockProc(waitingPid);
+		int waitingStatus = -1;
+		if ((waitingStatus = peekStatus(currentMbox)) == SENT) {
+			unblockProc(dequeue(currentMbox).pid);
 		}
 		enableInterrupts();
 		return retval;
@@ -351,7 +351,7 @@ int MboxRelease(int mailboxID)
  */
 int MboxCondSend(int mbox_id, void *msg_ptr, int msg_size)
 {
-    check_kernel_mode("MboxSend");
+    check_kernel_mode("MboxCondSend");
     if (!MailBoxTable[mbox_id % MAXMBOX].isUsed) {
         return -1;
     }
@@ -389,9 +389,9 @@ int MboxCondReceive(int mbox_id, void *msg_ptr, int msg_size)
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     if (currentMbox->childSlots[0] != NULL && currentMbox->childSlots[0]->status == FULL) {
         int retval = receive(currentMbox, msg_ptr, msg_size);
-        int waitingPid = -1;
-        if ((waitingPid = dequeue(currentMbox)) != -1) {
-            unblockProc(waitingPid);
+        int waitingStatus = -1;
+		if ((waitingStatus = peekStatus(currentMbox)) == SENT) {
+            unblockProc(dequeue(currentMbox).pid);
         }
         if (isZapped()) return -3;
         return retval;
