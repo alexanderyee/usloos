@@ -310,18 +310,11 @@ int MboxRelease(int mailboxID)
 	mailbox *currentMbox = &MailBoxTable[mailboxID % MAXMBOX];
 	currentMbox->mboxID = 0;
     currentMbox->isUsed = 0; // this lets a blocked process know it's released.
-	for(i = 0; i < currentMbox->numSlots; i++){
-		if(currentMbox->childSlots[i] != NULL && (currentMbox->childSlots[i]->status == RECV_RSVD || currentMbox->childSlots[i]->status == SEND_RSVD) {
+	for(i = 0; i < MAXSLOTS; i++) {
+		if(currentMbox->childSlots[i] != NULL && (currentMbox->childSlots[i]->status == RECV_RSVD || currentMbox->childSlots[i]->status == SEND_RSVD)) {
 			unblockProc(currentMbox->childSlots[i]->reservedPid);
 		}
 	}
-
-	//unblock the procs in sendQueues
-	for(i = 0; i < MAXSLOTS; i++){
-        if(currentMbox->sendQueuePids[i] != -1){
-			unblockProc(currentMbox->sendQueuePids[i]);
-        }
-    }
 
 	//reset rest of fields
 	for(i = 0; i < currentMbox->numSlots; i++){
@@ -507,9 +500,10 @@ void syscallHandler(int dev, int unit)
  */
 int check_io()
 {
-	int i = 0;
+	int i, j = 0;
 	for (i = 0; i < 7; i++) {
-		if (MailBoxTable[i].sendQueuePids[0] != -1)
+        for (j = 0; j < MAXSLOTS; j++)
+		if (MailBoxTable[i].childSlots[j] != NULL && MailBoxTable[i].childSlots[j]->reservedPid != -1)
 			return 1;
 	}
 	return 0;
@@ -664,38 +658,4 @@ int send(mailbox *currentMbox, void *msg_ptr, int msg_size)
     }
 	enableInterrupts();
 	return 1;
-}
-
-/*
- * enqueue -- for sendqueue at mailbox currentMbox
- * returns 0 on success, -1 if full
- */
-int enqueue(mailbox *currentMbox)
-{
-	int i = 0;
-	while (i < MAXSLOTS && currentMbox->sendQueuePids[i] != -1) {
-		i++;
-		if (i == MAXSLOTS) {
-			return -1; //error case if full
-		}
-	}
-	currentMbox->sendQueuePids[i] = getpid();
-	return 0;
-}
-
-/*
- * dequeue -- for sendqueue at mailbox currentMbox
- * returns pid if successful, -1 if unsuccessful
- */
-int dequeue(mailbox *currentMbox)
-{
-	int i = 0;
-	int retPid = currentMbox->sendQueuePids[i];
-
-	while (i+1 < MAXSLOTS && currentMbox->sendQueuePids[i+1] != -1) {
-		currentMbox->sendQueuePids[i] = currentMbox->sendQueuePids[i+1];
-		i++;
-	}
-
-	return retPid;
 }
