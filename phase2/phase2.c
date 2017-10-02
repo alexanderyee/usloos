@@ -177,7 +177,7 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
                 memcpy(currentMbox->childSlots[i]->data, msg_ptr, msg_size);
                 enableInterrupts();
                 unblockProc(currentMbox->childSlots[i]->reservedPid);
-                if (currentMbox->childSlots[i]->msgSize == -1)
+                if (currentMbox->childSlots[i] != NULL && currentMbox->childSlots[i]->msgSize == -1)
                     return -1;
                 if(isZapped()){
             		return -3;
@@ -209,7 +209,7 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
 		if(!currentMbox->isUsed){
 			return -3;
 		}
-        if (currentMbox->childSlots[i]->msgSize == -1)
+        if (currentMbox->childSlots[i] != NULL && currentMbox->childSlots[i]->msgSize == -1)
             return -1;
 	}
     else if (retval == -1)
@@ -662,7 +662,7 @@ int send(mailbox *currentMbox, void *msg_ptr, int msg_size)
             unblockProc(currentMbox->childSlots[i]->reservedPid);
 
             // check if it was received through msg size
-            if (currentMbox->childSlots[i]->msgSize == -1)
+            if (currentMbox->childSlots[i] != NULL && currentMbox->childSlots[i]->msgSize == -1)
                 return -1;
             enableInterrupts();
 			return 0;
