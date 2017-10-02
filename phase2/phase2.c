@@ -6,7 +6,7 @@
 
    Alex Yee & Katie Pan
    ------------------------------------------------------------------------ */
-
+#include <stdio.h>
 #include <phase1.h>
 #include <phase2.h>
 #include <usloss.h>
@@ -26,11 +26,11 @@ int enqueue(mailbox *);
 int dequeue(mailbox *);
 int MboxRelease(int);
 int check_io(void);
-void nullsys(int, int);
-void clockHandler2(int, int);
-void diskHandler(int, int);
-void termHandler(int, int);
-void syscallHandler(int, int);
+void nullsys(sysargs *);
+void clockHandler2(int, void *);
+void diskHandler(int, void *);
+void termHandler(int, void *);
+void syscallHandler(int, void *);
 
 /* -------------------------- Globals ------------------------------------- */
 int debugflag2 = 0;
@@ -43,7 +43,7 @@ int clockHandlerCycle = 0;
 // handlers, ...
 void (*SyscallHandlers[MAXSYSCALLS])(int dev, int unit);
 // the process table
-//procStruct ProcTable[MAXPROC];
+procStruct ProcTable[MAXPROC];
 /* -------------------------- Functions ----------------------------------- */
 
 /* ------------------------------------------------------------------------
@@ -403,7 +403,7 @@ int waitDevice(int type, int unit, int *status)
 }
 
 /* an error method to handle invalid syscalls */
-void nullsys(int dev, int unit)
+void nullsys(sysargs *args)
 {
     USLOSS_Console("nullsys(): Invalid syscall. Halting...\n");
     USLOSS_Halt(1);
@@ -413,9 +413,9 @@ void nullsys(int dev, int unit)
  * The clock interrupt handler for our OS baby
  * conditionally sends to the clock i/o mailbox every 5th clock interrupt
  */
-void clockHandler2(int dev, int unit)
+void clockHandler2(int dev, void *arg)
 {
-
+    int result, unit = (int) *arg;
     if (DEBUG2 && debugflag2)
       USLOSS_Console("clockHandler2(): called\n");
     check_kernel_mode("clockHandler");
@@ -426,16 +426,16 @@ void clockHandler2(int dev, int unit)
 	clockHandlerCycle++;
 	if (clockHandlerCycle % 5 == 0) {
 		int completionStatus;
-		USLOSS_DeviceInput(dev, unit, &completionStatus);
+		result = USLOSS_DeviceInput(dev, unit, &completionStatus);
 		MboxCondSend(USLOSS_CLOCK_DEV, &completionStatus, sizeof(int));
 	}
 
 } /* clockHandler */
 
 
-void diskHandler(int dev, int unit)
+void diskHandler(int dev, void *arg)
 {
-
+    int result, unit = (int) *arg;
     if (DEBUG2 && debugflag2)
         USLOSS_Console("diskHandler(): called\n");
     check_kernel_mode("diskHandler");
@@ -448,15 +448,15 @@ void diskHandler(int dev, int unit)
     }
 
 	int completionStatus;
-    USLOSS_DeviceInput(dev, unit, &completionStatus);
+    result = USLOSS_DeviceInput(dev, unit, &completionStatus);
     MboxCondSend(1 + unit, &completionStatus, sizeof(int));
 
 } /* diskHandler */
 
 
-void termHandler(int dev, int unit)
+void termHandler(int dev, void *arg)
 {
-
+    int result, unit = (int) *arg;
     if (DEBUG2 && debugflag2)
        USLOSS_Console("termHandler(): called\n");
     check_kernel_mode("termHandler");
@@ -465,21 +465,21 @@ void termHandler(int dev, int unit)
     }
 
     int completionStatus;
-    USLOSS_DeviceInput(dev, unit, &completionStatus);
+    result = USLOSS_DeviceInput(dev, unit, &completionStatus);
     MboxCondSend(3 + unit, &completionStatus, sizeof(int));
 	//printf("termhandler: %d completion status\n", completionStatus);
 } /* termHandler */
 
 
-void syscallHandler(int dev, int unit)
+void syscallHandler(int dev, void *arg)
 {
-
-   if (DEBUG2 && debugflag2)
-      USLOSS_Console("syscallHandler(): called\n");
+    int result, unit = (int) *arg;
+    if (DEBUG2 && debugflag2)
+        USLOSS_Console("syscallHandler(): called\n");
 	// next phase stuff
 	// error check
 	if (dev != USLOSS_SYSCALL_INT || unit < 0 || unit >= MAXSYSCALLS) {
-        USLOSS_Console("termHandler(): incorrect device and/or unit number\n");
+        USLOSS_Console("syscallHandler(): incorrect device and/or unit number\n");
     }
 	// call nullsys for now (initialized in start2)
 	void (*syscallFunc) (int dev, int unit) = SyscallHandlers[unit];
@@ -517,9 +517,9 @@ void enableInterrupts()
     }
 
     unsigned int newPSRValue = ((previousPSRValue << 2) & 12) | 3;
-    // left shifting by 2 to shift the previous psr bits to the left two bits
-    // then logical and by 12 to mask all the other bits except the previous mode bits
-    // then a logical or by 3 to set the first two bits to 11
+    // left shift 2 to store prev values
+    // then and by 12 to mask all the other bits except the previous mode bits (bits 2-3)
+    // then enable interrupts and kernel mode
     if (USLOSS_PsrSet(newPSRValue) == USLOSS_ERR_INVALID_PSR)
         USLOSS_Console("ERROR: Invalid PSR value set! was: %u\n", newPSRValue);
 } /* enableInterrupts */
@@ -550,7 +550,7 @@ void check_kernel_mode(char * funcName)
 {
     if (!(USLOSS_PsrGet() & 1)) {
         USLOSS_Console(
-             "%s(): called while in user mode, by process %d. Halting...\n", funcName, 69); // need to change this to current pid?
+             "%s(): called while in user mode, by process %d. Halting...\n", funcName, getpid());
          USLOSS_Halt(1);
     }
 }
