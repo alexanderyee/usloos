@@ -26,7 +26,7 @@ int enqueue(mailbox *);
 int dequeue(mailbox *);
 int MboxRelease(int);
 int check_io(void);
-void nullsys(sysargs *);
+void nullsys(systemArgs *);
 void clockHandler2(int, void *);
 void diskHandler(int, void *);
 void termHandler(int, void *);
@@ -41,9 +41,9 @@ mailSlot MailSlotTable[MAXSLOTS];
 int clockHandlerCycle = 0;
 // also need array of mail slots, array of function ptrs to system call
 // handlers, ...
-void (*SyscallHandlers[MAXSYSCALLS])(int dev, int unit);
+void (*SyscallHandlers[MAXSYSCALLS])(systemArgs *);
 // the process table
-procStruct ProcTable[MAXPROC];
+//procStruct ProcTable[MAXPROC];
 /* -------------------------- Functions ----------------------------------- */
 
 /* ------------------------------------------------------------------------
@@ -80,7 +80,7 @@ int start1(char *arg)
 
 	// initalize the syscall handlers
 	for (i = 0; i < MAXSYSCALLS; i++) {
-		SyscallHandlers[i] = (void (*) (int, int)) nullsys;
+		SyscallHandlers[i] = (void (*) (systemArgs *)) nullsys;
 	}
 
     enableInterrupts();
@@ -415,7 +415,7 @@ void nullsys(sysargs *args)
  */
 void clockHandler2(int dev, void *arg)
 {
-    int result, unit = (int) *arg;
+    int result, unit = *((int *) arg);
     if (DEBUG2 && debugflag2)
       USLOSS_Console("clockHandler2(): called\n");
     check_kernel_mode("clockHandler");
@@ -435,7 +435,7 @@ void clockHandler2(int dev, void *arg)
 
 void diskHandler(int dev, void *arg)
 {
-    int result, unit = (int) *arg;
+    int result, unit = *((int *) arg);
     if (DEBUG2 && debugflag2)
         USLOSS_Console("diskHandler(): called\n");
     check_kernel_mode("diskHandler");
@@ -456,7 +456,7 @@ void diskHandler(int dev, void *arg)
 
 void termHandler(int dev, void *arg)
 {
-    int result, unit = (int) *arg;
+    int result, unit = *((int *) arg);
     if (DEBUG2 && debugflag2)
        USLOSS_Console("termHandler(): called\n");
     check_kernel_mode("termHandler");
@@ -473,7 +473,7 @@ void termHandler(int dev, void *arg)
 
 void syscallHandler(int dev, void *arg)
 {
-    int result, unit = (int) *arg;
+    int result, unit = *((systemArgs *) arg).number;
     if (DEBUG2 && debugflag2)
         USLOSS_Console("syscallHandler(): called\n");
 	// next phase stuff
@@ -482,7 +482,7 @@ void syscallHandler(int dev, void *arg)
         USLOSS_Console("syscallHandler(): incorrect device and/or unit number\n");
     }
 	// call nullsys for now (initialized in start2)
-	void (*syscallFunc) (int dev, int unit) = SyscallHandlers[unit];
+	void (*syscallFunc) (systemArgs *) = SyscallHandlers[unit];
 	syscallFunc(dev, unit);
 } /* syscallHandler */
 
