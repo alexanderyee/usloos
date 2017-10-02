@@ -256,14 +256,15 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
 			return -3;
 		}
         // we're unblocked now, try to copy from the slot ptr
+
         disableInterrupts();
-        int size = currentMbox->childSlots[0]->msgSize;
+        int size = MailSlotTable[j].msgSize;
         if (size > msg_size) {
             enableInterrupts();
 	        return -1;
         }
         retval = size;
-        memcpy(msg_ptr, currentMbox->childSlots[0]->data, size);
+        memcpy(msg_ptr, MailSlotTable[j].data, size);
         // child slots might have shifted, need to account for this...
         // for 0 slots, use MAXSLOTS to check all slots.
         int numSlots = currentMbox->numSlots;
