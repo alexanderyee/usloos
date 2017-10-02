@@ -314,9 +314,10 @@ int MboxRelease(int mailboxID)
 	}
 
 	//reset rest of fields
-	for(i = 0; i < currentMbox->numSlots; i++){
-    	freeSlot(currentMbox->childSlots[i]);
-		currentMbox->childSlots[i] = NULL;
+	for(i = 0; i < currentMbox->numSlots; i++) {
+        if (currentMbox->childSlots[i] == NULL) break;
+        freeSlot(currentMbox->childSlots[i]);
+        currentMbox->childSlots[i] = NULL;
 	}
 
 	currentMbox->numSlots = 0;
