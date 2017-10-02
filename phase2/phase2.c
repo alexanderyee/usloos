@@ -403,7 +403,7 @@ int waitDevice(int type, int unit, int *status)
 }
 
 /* an error method to handle invalid syscalls */
-void nullsys(sysargs *args)
+void nullsys(systemArgs *args)
 {
     USLOSS_Console("nullsys(): Invalid syscall. Halting...\n");
     USLOSS_Halt(1);
@@ -473,7 +473,7 @@ void termHandler(int dev, void *arg)
 
 void syscallHandler(int dev, void *arg)
 {
-    int result, unit = *((systemArgs *) arg).number;
+    int result, unit = (*((systemArgs *) arg)).number;
     if (DEBUG2 && debugflag2)
         USLOSS_Console("syscallHandler(): called\n");
 	// next phase stuff
@@ -483,7 +483,7 @@ void syscallHandler(int dev, void *arg)
     }
 	// call nullsys for now (initialized in start2)
 	void (*syscallFunc) (systemArgs *) = SyscallHandlers[unit];
-	syscallFunc(dev, unit);
+	syscallFunc((systemArgs *) arg);
 } /* syscallHandler */
 
 
