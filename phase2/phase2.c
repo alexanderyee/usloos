@@ -121,13 +121,12 @@ int MboxCreate(int slots, int slot_size)
 	}
 	disableInterrupts();
 	MailBoxTable[currentMboxId % MAXMBOX].isUsed = 1;
-	MailBoxTable[currentMboxId % MAXMBOX].mboxID = currentMboxId;
+	MailBoxTable[currentMboxId % MAXMBOX].mboxID = currentMboxId % MAXMBOX;
     MailBoxTable[currentMboxId % MAXMBOX].numSlots = slots;
     MailBoxTable[currentMboxId % MAXMBOX].maxLength = slot_size;
 
-    currentMboxId++;
 	enableInterrupts();
-    return currentMboxId - 1;
+    return MailBoxTable[currentMboxId++ % MAXMBOX].mboxID;
 
 } /* MboxCreate */
 
