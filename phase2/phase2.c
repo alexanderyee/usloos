@@ -558,6 +558,7 @@ void check_kernel_mode(char * funcName)
      slot->status = EMPTY;
      int i;
      slot->msgSize = 0;
+     slot->reservedPid = 0;
      for (i = 0; i < MAX_MESSAGE; i++)
         slot->data[i] = '\0';
  }
@@ -575,6 +576,7 @@ int receive(mailbox *currentMbox, void *msg_ptr, int msg_size)
     if (currentMbox->childSlots[0] != NULL &&
         (currentMbox->childSlots[0]->status == FULL ||
             currentMbox->childSlots[0]->status == SEND_RSVD)) {
+                printf("receive called\n");
         // if there is, then memcpy and unblock if needed.
         size = currentMbox->childSlots[0]->msgSize;
         if (size > msg_size) {
@@ -596,8 +598,11 @@ int receive(mailbox *currentMbox, void *msg_ptr, int msg_size)
         } // need to account for no more slots left case?
         // case where we need to unblock sender if their msg was placed in mbox
         if (currentMbox->childSlots[currentMbox->numSlots - 1] != NULL &&
-                currentMbox->childSlots[currentMbox->numSlots - 1]->status == SEND_RSVD)
-            unblockProc(currentMbox->childSlots[currentMbox->numSlots - 1]->reservedPid);
+                currentMbox->childSlots[currentMbox->numSlots - 1]->status == SEND_RSVD) {
+            if (currentMbox->numSlots != 0) {
+                unblockProc(currentMbox->childSlots[currentMbox->numSlots - 1]->reservedPid);
+            }
+        }
         enableInterrupts();
     	return size;
     }
