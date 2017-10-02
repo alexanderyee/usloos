@@ -265,7 +265,12 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
         retval = size;
         memcpy(msg_ptr, currentMbox->childSlots[0]->data, size);
         // child slots might have shifted, need to account for this...
-        for (i = 0; i < currentMbox->numSlots; i++) {
+        // for 0 slots, use MAXSLOTS to check all slots.
+        int numSlots = currentMbox->numSlots;
+        if (!numSlots)
+            numSlots = MAXSLOTS;
+
+        for (i = 0; i < numSlots; i++) {
             if (currentMbox->childSlots[i] != NULL && currentMbox->childSlots[i]->reservedPid == getpid()) {
                 // found slot, let's shift everything to the right left by 1.
                 freeSlot(&MailSlotTable[j]);
@@ -576,7 +581,6 @@ int receive(mailbox *currentMbox, void *msg_ptr, int msg_size)
     if (currentMbox->childSlots[0] != NULL &&
         (currentMbox->childSlots[0]->status == FULL ||
             currentMbox->childSlots[0]->status == SEND_RSVD)) {
-                printf("receive called\n");
         // if there is, then memcpy and unblock if needed.
         size = currentMbox->childSlots[0]->msgSize;
         if (size > msg_size) {
