@@ -108,10 +108,14 @@ int start1(char *arg)
              mailbox id.
    Side Effects - initializes one element of the mail box array.
    ----------------------------------------------------------------------- */
-int MboxCreate(int slots, int slot_size)
+int MboxCreate(int slots, int msg_size)
 {
     check_kernel_mode("MboxCreate");
     int i = 0;
+    if (msg_size > MAX_MESSAGE || msg_size < 0)
+        return -1;
+    else if (slots < 0)
+        return -1;
 	while (MailBoxTable[currentMboxId % MAXMBOX].isUsed) {
 		currentMboxId++;
 	    i++;
