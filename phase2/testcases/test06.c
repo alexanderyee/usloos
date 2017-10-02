@@ -1,7 +1,10 @@
 
-/* Creates two children.  Higher priority child does a receive, and should
- * block.  Lower priority child then does a send and should unblock the
- * higher priority child.
+/* Creates two children.  Higher priority child does 6 sends to a mailbox
+ * with 5 slots.  It should block when sending the last message.
+ *
+ * Lower priority child then does 6 receives.  As soon as the first receive
+ * is done, the higher priority child is unblocked from the mailbox.
+ * Remainder of receives then execute.
  */
 
 #include <stdio.h>

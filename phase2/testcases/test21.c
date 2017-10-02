@@ -1,6 +1,6 @@
-/* Creates two children.  Lower priority child does a receive, and should
- * block.  Higher priority child then does a send and should unblock the
- * lower priority child.
+/* Creates two children.  Higher priority child does a send, and should
+ * block.  Lower priority child then does a receive and should unblock the
+ * higher priority child.
  */
 
 #include <stdio.h>

@@ -50,8 +50,11 @@ int XXp1(char *arg)
         USLOSS_Console("XXp1(): got zap'd result from waitDevice() call. ");
         USLOSS_Console("Should not have happened!\n");
     }
-    else if ( result == 0 )
-        USLOSS_Console("XXp1(): status = %d\n", status);
+    else if ( result == 0 ) {
+        USLOSS_Console("XXp1(): About to print status from clock Handler:\n");
+        USLOSS_Console("XXp1(): status = %d Should be close, but ", status);
+        USLOSS_Console("does not have to be an exact match\n");
+    }
     else
         USLOSS_Console("XXp1(): got %d instead of -1 or 0 from waitDevice\n",
                        result);

@@ -1,8 +1,0 @@
-8,9d7
-< XXp3(): after send of message, result = -3
-< XXp2(): after send of message, result = -3
-12,13c10
-< start2(): after send of message, result = -3
-< All processes completed.
----
-> checkDeadlock(): numProc = 5. Only Sentinel should be left. Halting...

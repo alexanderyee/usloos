@@ -28,32 +28,6 @@ XXp1(): after conditional send of message #6, result = -2
 XXp1(): conditionally sending message #7 to mailbox 7
 XXp1(): after conditional send of message #7, result = -2
 
-XXp1(): conditionally sending message #8 to mailbox 7
-XXp1(): after conditional send of message #8, result = -2
-
-XXp1(): conditionally sending message #9 to mailbox 7
-XXp1(): after conditional send of message #9, result = -2
-
-XXp1(): conditionally sending message #10 to mailbox 7
-XXp1(): after conditional send of message #10, result = -2
-
-XXp1(): conditionally sending message #11 to mailbox 7
-XXp1(): after conditional send of message #11, result = -2
-
-XXp1(): conditionally sending message #12 to mailbox 7
-XXp1(): after conditional send of message #12, result = -2
-
-XXp1(): conditionally sending message #13 to mailbox 7
-XXp1(): after conditional send of message #13, result = -2
-
-XXp1(): conditionally sending message #14 to mailbox 7
-XXp1(): after conditional send of message #14, result = -2
-
-XXp1(): conditionally sending message #15 to mailbox 7
-XXp1(): after conditional send of message #15, result = -2
-
-start2(): joined with kid 4, status = -3
-
 XXp3(): started
 XXp3(): conditionally received message #0 from mailbox 7
         message = `hello there, #0'
@@ -67,8 +41,44 @@ XXp3(): conditionally received message #0 from mailbox 7
         message = `hello there, #4'
 XXp3(): After loop, result is negative; result = -2
 XXp3(): received 5 hello messages from mailbox 7
+
+XXp1(): conditionally sending message #8 to mailbox 7
+XXp1(): after conditional send of message #8, result = 0
+
+XXp1(): conditionally sending message #9 to mailbox 7
+XXp1(): after conditional send of message #9, result = 0
+
+XXp1(): conditionally sending message #10 to mailbox 7
+XXp1(): after conditional send of message #10, result = 0
+
+XXp1(): conditionally sending message #11 to mailbox 7
+XXp1(): after conditional send of message #11, result = 0
+
+XXp1(): conditionally sending message #12 to mailbox 7
+XXp1(): after conditional send of message #12, result = 0
+
+XXp1(): conditionally sending message #13 to mailbox 7
+XXp1(): after conditional send of message #13, result = -2
+
+XXp1(): conditionally sending message #14 to mailbox 7
+XXp1(): after conditional send of message #14, result = -2
+
+XXp1(): conditionally sending message #15 to mailbox 7
+XXp1(): after conditional send of message #15, result = -2
+
+start2(): joined with kid 4, status = -3
+XXp3(): conditionally received message #0 from mailbox 7
+        message = `good-bye, #0', result = 13
+XXp3(): conditionally received message #0 from mailbox 7
+        message = `good-bye, #1', result = 13
+XXp3(): conditionally received message #0 from mailbox 7
+        message = `good-bye, #2', result = 13
+XXp3(): conditionally received message #0 from mailbox 7
+        message = `good-bye, #3', result = 13
+XXp3(): conditionally received message #0 from mailbox 7
+        message = `good-bye, #4', result = 13
 XXp3(): After loop, result is negative; result = -2
-XXp3(): received 0 good-bye messages from mailbox 7
+XXp3(): received 5 good-bye messages from mailbox 7
 
 start2(): joined with kid 5, status = -4
 All processes completed.
