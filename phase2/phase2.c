@@ -238,7 +238,7 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
     // return 0 on success, -2 if no slots left
     if (retval == -2) {
         // need to reserve a slot
-        int i, j = 0;
+        int i = 0, j = 0;
         while (i < MAXSLOTS && currentMbox->childSlots[i] != NULL)
             i++;
         while (j < MAXSLOTS && MailSlotTable[j].status != EMPTY)
@@ -491,7 +491,7 @@ void syscallHandler(int dev, int unit)
  */
 int check_io()
 {
-	int i, j = 0;
+	int i = 0, j = 0;
 	for (i = 0; i < 7; i++) {
         for (j = 0; j < MAXSLOTS; j++)
 		if (MailBoxTable[i].childSlots[j] != NULL && (MailBoxTable[i].childSlots[j]->status == SEND_RSVD || MailBoxTable[i].childSlots[j]->status == RECV_RSVD))
