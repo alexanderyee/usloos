@@ -127,7 +127,7 @@ int MboxCreate(int slots, int msg_size)
 	MailBoxTable[currentMboxId % MAXMBOX].isUsed = 1;
 	MailBoxTable[currentMboxId % MAXMBOX].mboxID = currentMboxId % MAXMBOX;
     MailBoxTable[currentMboxId % MAXMBOX].numSlots = slots;
-    MailBoxTable[currentMboxId % MAXMBOX].maxLength = slot_size;
+    MailBoxTable[currentMboxId % MAXMBOX].maxLength = msg_size;
 
 	enableInterrupts();
     return MailBoxTable[currentMboxId++ % MAXMBOX].mboxID;
