@@ -233,11 +233,6 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
 		enableInterrupts();
         return -1;
     }
-    // check ptr is valid
-	if (msg_ptr == NULL) {
-		enableInterrupts();
-        return -1;
-    }
     // we will check msg_size later on if there is a sent message...
     int retval = receive(currentMbox, msg_ptr, msg_size);
     // return 0 on success, -2 if no slots left
