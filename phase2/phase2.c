@@ -415,7 +415,7 @@ void nullsys(systemArgs *args)
  */
 void clockHandler2(int dev, void *arg)
 {
-    int result, unit = *((int *) arg);
+    int result, unit = 0;
     if (DEBUG2 && debugflag2)
       USLOSS_Console("clockHandler2(): called\n");
     check_kernel_mode("clockHandler");
