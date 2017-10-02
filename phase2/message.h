@@ -5,12 +5,6 @@ typedef struct mailSlot  *slotPtr;
 typedef struct mailbox   mailbox;
 typedef struct mboxProc  *mboxProcPtr;
 typedef struct mailSlot  mailSlot;
-typedef struct queueSlot queueSlot;
-
-struct queueSlot {
-    int       pid;
-    int       status;
-};
 
 struct mailbox {
     int       mboxID;
@@ -18,7 +12,6 @@ struct mailbox {
     int       numSlots;
     slotPtr   childSlots[MAXSLOTS];
     int       maxLength;
-    struct queueSlot sendQueue[MAXSLOTS];
     // other items as needed...
 
 };

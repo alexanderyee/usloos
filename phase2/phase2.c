@@ -125,10 +125,6 @@ int MboxCreate(int slots, int slot_size)
     MailBoxTable[currentMboxId % MAXMBOX].numSlots = slots;
     MailBoxTable[currentMboxId % MAXMBOX].maxLength = slot_size;
 
-	for(i = 0; i < MAXSLOTS; i++){
-		//-1 will be our null. meaning that pid at that slot will be "empty"
-		MailBoxTable[currentMboxId % MAXMBOX].sendQueuePids[i] = -1;
-	}
     currentMboxId++;
 	enableInterrupts();
     return currentMboxId - 1;
@@ -322,11 +318,6 @@ int MboxRelease(int mailboxID)
 		currentMbox->childSlots[i] = NULL;
 	}
 
-    //unblock the procs in sendQueues
-    for(i = 0; i < MAXSLOTS; i++){
-   		currentMbox->sendQueuePids[i] = -1;
-	}
-
 	currentMbox->numSlots = 0;
 	currentMbox->maxLength = 0;
 	enableInterrupts();
@@ -503,7 +494,7 @@ int check_io()
 	int i, j = 0;
 	for (i = 0; i < 7; i++) {
         for (j = 0; j < MAXSLOTS; j++)
-		if (MailBoxTable[i].childSlots[j] != NULL && MailBoxTable[i].childSlots[j]->reservedPid != -1)
+		if (MailBoxTable[i].childSlots[j] != NULL && (MailBoxTable[i].childSlots[j]->status == SEND_RSVD || MailBoxTable[i].childSlots[j]->status == RECV_RSVD))
 			return 1;
 	}
 	return 0;
