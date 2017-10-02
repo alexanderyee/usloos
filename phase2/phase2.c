@@ -623,7 +623,7 @@ int send(mailbox *currentMbox, void *msg_ptr, int msg_size)
             while (j < MAXSLOTS && MailSlotTable[j].status != EMPTY)
                 j++;
             if (j == MAXSLOTS) {
-                USLOSS_Halt(1);
+                return -2;
             }
             currentMbox->childSlots[i] = &MailSlotTable[j];
             currentMbox->childSlots[i]->status = FULL;
