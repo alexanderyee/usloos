@@ -163,7 +163,8 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
     // if none are available, reserve a slot for send and send block
     // this also accounts for 0-slot mbox case (block sender until receive)
     // also need to unblock if it is a 0-slot RECV_RSVD
-	if (send(currentMbox, msg_ptr, msg_size) != 0) {
+    int retval = send(currentMbox, msg_ptr, msg_size);
+	if (retval == -2) {
 	    // no slots available in mbox, reserve a slot
         int i = 0;
         // iterate until we find an empty slot. any RECV_RSVD slots would've
@@ -176,6 +177,8 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
                 memcpy(currentMbox->childSlots[i]->data, msg_ptr, msg_size);
                 enableInterrupts();
                 unblockProc(currentMbox->childSlots[i]->reservedPid);
+                if (currentMbox->childSlots[i]->msgSize == -1)
+                    return -1;
                 if(isZapped()){
             		return -3;
             	}
@@ -206,7 +209,11 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
 		if(!currentMbox->isUsed){
 			return -3;
 		}
+        if (currentMbox->childSlots[i]->msgSize == -1)
+            return -1;
 	}
+    else if (retval == -1)
+        return -1;
 	enableInterrupts();
     //if it is zapped
 	if(isZapped()){
@@ -263,6 +270,7 @@ int MboxReceive(int mbox_id, void *msg_ptr, int msg_size)
         disableInterrupts();
         int size = MailSlotTable[j].msgSize;
         if (size > msg_size) {
+            MailSlotTable[j].msgSize = -1;
             enableInterrupts();
 	        return -1;
         }
@@ -353,15 +361,14 @@ int MboxCondSend(int mbox_id, void *msg_ptr, int msg_size)
 	disableInterrupts();
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     //if mailbox is full, message not sent, or no slots available in the system
-    if (send(currentMbox, msg_ptr, msg_size) != 0) {
-		return -2;
-	}
+    int retval = send(currentMbox, msg_ptr, msg_size);
+
 	enableInterrupts();
     if(isZapped()){
         return -3;
     }
 
-	return 0;
+	return retval;
 
 } /* MboxCondSend */
 
@@ -653,6 +660,10 @@ int send(mailbox *currentMbox, void *msg_ptr, int msg_size)
             currentMbox->childSlots[i]->msgSize = msg_size;
             memcpy(currentMbox->childSlots[i]->data, msg_ptr, msg_size);
             unblockProc(currentMbox->childSlots[i]->reservedPid);
+
+            // check if it was received through msg size
+            if (currentMbox->childSlots[i]->msgSize == -1)
+                return -1;
             enableInterrupts();
 			return 0;
         }
