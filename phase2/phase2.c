@@ -33,7 +33,7 @@ void termHandler(int, int);
 void syscallHandler(int, int);
 
 /* -------------------------- Globals ------------------------------------- */
-int debugflag2 = 1;
+int debugflag2 = 0;
 // the mail boxes
 mailbox MailBoxTable[MAXMBOX];
 int currentMboxId = 0;
@@ -600,7 +600,8 @@ int receive(mailbox *currentMbox, void *msg_ptr, int msg_size)
             i++;
         } // need to account for no more slots left case?
         // case where we need to unblock sender if their msg was placed in mbox
-        if (currentMbox->childSlots[currentMbox->numSlots - 1]->status == SEND_RSVD)
+        if (currentMbox->childSlots[currentMbox->numSlots - 1] != NULL &&
+                currentMbox->childSlots[currentMbox->numSlots - 1]->status == SEND_RSVD)
             unblockProc(currentMbox->childSlots[currentMbox->numSlots - 1]->reservedPid);
         enableInterrupts();
     	return size;
