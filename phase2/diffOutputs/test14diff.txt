@@ -1,9 +1,0 @@
-4,9c4
-< XXp1(): after waitDevice call
-< XXp1(): status = 18433
-< XXp1(): receive status for terminal 1 = 1
-< XXp1(): character received = H
-< start2(): joined with kid 4, status = -3
-< All processes completed.
----
-> ./runtests.sh: line 28:   959 Segmentation fault      (core dumped) test14

@@ -266,3 +266,17 @@ start2(): sending message #19 to mailbox 7
 start2(): after send of message #19, result = 0
 start2(): sending message #20 to mailbox 7
 start2(): this should return -2
+start2(): after send of message #20, result = -2
+start2(): sending message #21 to mailbox 7
+start2(): this should return -2
+start2(): after send of message #21, result = -2
+start2(): sending message #22 to mailbox 7
+start2(): this should return -2
+start2(): after send of message #22, result = -2
+start2(): sending message #23 to mailbox 7
+start2(): this should return -2
+start2(): after send of message #23, result = -2
+start2(): sending message #24 to mailbox 7
+start2(): this should return -2
+start2(): after send of message #24, result = -2
+All processes completed.

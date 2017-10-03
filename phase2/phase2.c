@@ -387,8 +387,8 @@ int MboxCondSend(int mbox_id, void *msg_ptr, int msg_size)
             i++;
             // no slots in universal slot table case (all taken up by this mbox)
             if (i == MAXSLOTS) {
-                USLOSS_Halt(1);
-            }
+            	return -2;
+			}
         }
 	}
 
@@ -446,7 +446,7 @@ int waitDevice(int type, int unit, int *status)
 /* an error method to handle invalid syscalls */
 void nullsys(systemArgs *args)
 {
-    USLOSS_Console("nullsys(): Invalid syscall. Halting...\n");
+    USLOSS_Console("nullsys(): Invalid syscall %d. Halting...\n", (*args).number);
     USLOSS_Halt(1);
 } /* nullsys */
 
@@ -497,11 +497,11 @@ void diskHandler(int dev, void *arg)
 
 void termHandler(int dev, void *arg)
 {
-    int result, unit = *((int *) arg);
+    int result, unit = (int) arg;
     if (DEBUG2 && debugflag2)
        USLOSS_Console("termHandler(): called\n");
     check_kernel_mode("termHandler");
-	if (dev != USLOSS_DISK_DEV || unit < 0 || unit >= 4) {
+	if (dev != USLOSS_TERM_DEV || unit < 0 || unit >= 4) {
         USLOSS_Console("termHandler(): incorrect device and/or unit number\n");
     }
 
@@ -519,9 +519,13 @@ void syscallHandler(int dev, void *arg)
         USLOSS_Console("syscallHandler(): called\n");
 	// next phase stuff
 	// error check
-	if (dev != USLOSS_SYSCALL_INT || unit < 0 || unit >= MAXSYSCALLS) {
-        USLOSS_Console("syscallHandler(): incorrect device and/or unit number\n");
-    }
+	if (dev != USLOSS_SYSCALL_INT) {
+        USLOSS_Console("syscallHandler(): incorrect device number %d\n", dev);
+		USLOSS_Halt(1);
+    } else if (unit < 0 || unit >= MAXSYSCALLS) {
+		USLOSS_Console("syscallHandler(): sys number %d is wrong.  Halting...\n", unit);
+		USLOSS_Halt(1);
+	}
 	// call nullsys for now (initialized in start2)
 	void (*syscallFunc) (systemArgs *) = SyscallHandlers[unit];
 	syscallFunc((systemArgs *) arg);
