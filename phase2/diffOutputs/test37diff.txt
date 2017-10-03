@@ -1,5 +1,4 @@
-4c4,5
+4c4
 < nullsys(): Invalid syscall 49. Halting...
 ---
-> termHandler(): incorrect device and/or unit number
-> ./runtests.sh: line 28: 23262 Segmentation fault      (core dumped) test37
+> nullsys(): Invalid syscall. Halting...

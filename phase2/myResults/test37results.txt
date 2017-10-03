@@ -1,5 +1,4 @@
 start2(): putting itself into user mode
 start2(): calling USLOSS_Syscall executing syscall MAXSYSCALLS - 1
           This should halt
-termHandler(): incorrect device and/or unit number
-./runtests.sh: line 28: 23262 Segmentation fault      (core dumped) test37
+nullsys(): Invalid syscall. Halting...

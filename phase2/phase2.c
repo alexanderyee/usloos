@@ -75,7 +75,9 @@ int start1(char *arg)
 	// initialize the device i/o mailboxes to be 0 slot mailboxes
 	int i;
 	for (i = 0; i < 7; i++) {
-		MboxCreate(0, sizeof(int));
+		int retval = MboxCreate(0, sizeof(int));
+		if (retval < 0 || retval > 7)
+			printf("wtf");
 	}
 
 	// initalize the syscall handlers
@@ -164,7 +166,7 @@ int MboxSend(int mbox_id, void *msg_ptr, int msg_size)
     // this also accounts for 0-slot mbox case (block sender until receive)
     // also need to unblock if it is a 0-slot RECV_RSVD
     int retval = send(currentMbox, msg_ptr, msg_size);
-	if (retval == -2) {
+	if (retval == -2 || retval == 1) {
 	    // no slots available in mbox, reserve a slot
         int i = 0;
         // iterate until we find an empty slot. any RECV_RSVD slots would've
@@ -406,7 +408,8 @@ int waitDevice(int type, int unit, int *status)
     } else if (type == USLOSS_TERM_DEV) {
 		mailboxId = 3;
     }
-	MboxCondReceive(mailboxId + unit, status, sizeof(int));
+	MboxReceive(mailboxId + unit, status, sizeof(int));
+	enableInterrupts();
 	if (isZapped())
 		return -1;
 	return 0;
@@ -503,11 +506,15 @@ void syscallHandler(int dev, void *arg)
  */
 int check_io()
 {
+    if (DEBUG2 && debugflag2)
+        USLOSS_Console("check_io(): called\n");
+	
 	int i = 0, j = 0;
 	for (i = 0; i < 7; i++) {
-        for (j = 0; j < MAXSLOTS; j++)
-		if (MailBoxTable[i].childSlots[j] != NULL && (MailBoxTable[i].childSlots[j]->status == SEND_RSVD || MailBoxTable[i].childSlots[j]->status == RECV_RSVD))
-			return 1;
+        	for (j = 0; j < MAXSLOTS; j++) {
+				if (MailBoxTable[i].childSlots[j] != NULL && (MailBoxTable[i].childSlots[j]->status == SEND_RSVD || MailBoxTable[i].childSlots[j]->status == RECV_RSVD))
+					return 1;
+			}
 	}
 	return 0;
 }
@@ -613,10 +620,10 @@ int receive(mailbox *currentMbox, void *msg_ptr, int msg_size)
             i++;
         } // need to account for no more slots left case?
         // case where we need to unblock sender if their msg was placed in mbox
-        if (currentMbox->childSlots[currentMbox->numSlots - 1] != NULL &&
-                currentMbox->childSlots[currentMbox->numSlots - 1]->status == SEND_RSVD) {
+		if (currentMbox->childSlots[currentMbox->numSlots-1] != NULL &&
+            currentMbox->childSlots[currentMbox->numSlots-1]->status == SEND_RSVD) {
             if (currentMbox->numSlots != 0) {
-                unblockProc(currentMbox->childSlots[currentMbox->numSlots - 1]->reservedPid);
+                unblockProc(currentMbox->childSlots[currentMbox->numSlots-1]->reservedPid);
             }
         }
         enableInterrupts();
@@ -653,7 +660,7 @@ int send(mailbox *currentMbox, void *msg_ptr, int msg_size)
             currentMbox->childSlots[i]->mboxID = currentMbox->mboxID;
 			enableInterrupts();
             return 0;
-        } else if (currentMbox->childSlots[i]->status == RECV_RSVD) {
+        } else if (i < MAXSLOTS && currentMbox->childSlots[i]->status == RECV_RSVD) {
             // recieve reserved slot found, unblock and let the receiver
             // free the slot and shift child slots down 1
             currentMbox->childSlots[i]->status = FULL;
@@ -669,5 +676,5 @@ int send(mailbox *currentMbox, void *msg_ptr, int msg_size)
         }
     }
 	enableInterrupts();
-	return 1;
+	return -2;
 }

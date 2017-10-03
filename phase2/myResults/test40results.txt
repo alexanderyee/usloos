@@ -11,5 +11,5 @@ start2(): after receive of message, result = -1
           message is `'
 start2(): got that message was too big. PASSED!
 start2(): joining with child
-XXp1(): after send of message, result = 0
+XXp1(): after send of message, result = -1
 All processes completed.

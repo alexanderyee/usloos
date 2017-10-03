@@ -1,4 +1,0 @@
-14c14
-< XXp1(): after send of message, result = -1
----
-> XXp1(): after send of message, result = 0
