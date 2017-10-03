@@ -1,4 +1,4 @@
 6c6
 < XXp1(): status = 90007 Should be close, but does not have to be an exact match
 ---
-> XXp1(): status = 0 Should be close, but does not have to be an exact match
+> XXp1(): status = 90019 Should be close, but does not have to be an exact match

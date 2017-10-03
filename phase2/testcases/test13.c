@@ -42,7 +42,6 @@ int XXp1(char *arg)
     int result, status;
 
     USLOSS_Console("XXp1(): started, calling waitDevice for clock\n");
-	printf("%d", USLOSS_PsrGet());
     result = waitDevice(USLOSS_CLOCK_DEV, 0, &status);
     USLOSS_Console("XXp1(): after waitDevice call\n");
 

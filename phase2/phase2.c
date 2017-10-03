@@ -364,6 +364,33 @@ int MboxCondSend(int mbox_id, void *msg_ptr, int msg_size)
     mailbox *currentMbox = &MailBoxTable[mbox_id % MAXMBOX];
     //if mailbox is full, message not sent, or no slots available in the system
     int retval = send(currentMbox, msg_ptr, msg_size);
+	if (retval == -2 || retval == 1) {
+        // no slots available in mbox, reserve a slot
+        int i = 0;
+        // iterate until we find an empty slot. any RECV_RSVD slots would've
+        // been successfully sent to (and send should return 0 in that case)
+        while (currentMbox->childSlots[i] != NULL && currentMbox->childSlots[i]->status != EMPTY) {
+            // but, if it is a 0-slot mailbox and does find a RECV_RSVD, unblock
+            if (currentMbox->childSlots[i]->status == RECV_RSVD) {
+                currentMbox->childSlots[i]->status = FULL;
+                currentMbox->childSlots[i]->msgSize = msg_size;
+                memcpy(currentMbox->childSlots[i]->data, msg_ptr, msg_size);
+                enableInterrupts();
+                unblockProc(currentMbox->childSlots[i]->reservedPid);
+                if (currentMbox->childSlots[i] != NULL && currentMbox->childSlots[i]->msgSize == -1)
+                    return -1; 
+                if(isZapped()){
+                    return -3; 
+                }
+                return 0;
+            }
+            i++;
+            // no slots in universal slot table case (all taken up by this mbox)
+            if (i == MAXSLOTS) {
+                USLOSS_Halt(1);
+            }
+        }
+	}
 
 	enableInterrupts();
     if(isZapped()){
@@ -429,7 +456,7 @@ void nullsys(systemArgs *args)
  */
 void clockHandler2(int dev, void *arg)
 {
-    int result, unit = 0;
+    int result, condsend, unit = 0;
     if (DEBUG2 && debugflag2)
       USLOSS_Console("clockHandler2(): called\n");
     check_kernel_mode("clockHandler");
@@ -441,7 +468,7 @@ void clockHandler2(int dev, void *arg)
 	if (clockHandlerCycle % 5 == 0) {
 		int completionStatus;
 		result = USLOSS_DeviceInput(dev, unit, &completionStatus);
-		MboxCondSend(USLOSS_CLOCK_DEV, &completionStatus, sizeof(int));
+		condsend = MboxCondSend(USLOSS_CLOCK_DEV, &completionStatus, sizeof(int));
 	}
 
 } /* clockHandler */
