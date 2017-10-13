@@ -11,9 +11,9 @@ struct mailbox {
     int       isUsed;
     int       numSlots;
     slotPtr   childSlots[MAXSLOTS];
+    /* childSlots will contain pointers to global mailslot table,
+	not actual mailSlot structs */
     int       maxLength;
-    // other items as needed...
-
 };
 
 struct mailSlot {
@@ -22,7 +22,6 @@ struct mailSlot {
     char      data[MAX_MESSAGE];
     int       msgSize;
     int       reservedPid;
-    // other items as needed...
 };
 
 struct psrBits {

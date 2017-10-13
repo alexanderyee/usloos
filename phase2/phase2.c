@@ -39,11 +39,7 @@ mailbox MailBoxTable[MAXMBOX];
 int currentMboxId = 0;
 mailSlot MailSlotTable[MAXSLOTS];
 int clockHandlerCycle = 0;
-// also need array of mail slots, array of function ptrs to system call
-// handlers, ...
 void (*SyscallHandlers[MAXSYSCALLS])(systemArgs *);
-// the process table
-//procStruct ProcTable[MAXPROC];
 /* -------------------------- Functions ----------------------------------- */
 
 /* ------------------------------------------------------------------------
@@ -77,7 +73,7 @@ int start1(char *arg)
 	for (i = 0; i < 7; i++) {
 		int retval = MboxCreate(0, sizeof(int));
 		if (retval < 0 || retval > 7)
-			printf("wtf");
+			USLOSS_Console("Error with creating I/O mailboxes\n");
 	}
 
 	// initalize the syscall handlers
@@ -508,7 +504,6 @@ void termHandler(int dev, void *arg)
     int completionStatus;
     result = USLOSS_DeviceInput(dev, unit, &completionStatus);
     MboxCondSend(3 + unit, &completionStatus, sizeof(int));
-	//printf("termhandler: %d completion status\n", completionStatus);
 } /* termHandler */
 
 
