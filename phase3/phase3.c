@@ -42,7 +42,7 @@ int start2(char *arg)
     systemCallVec[SYS_SEMP] = (void (*) (systemArgs *)) SemP;
     systemCallVec[SYS_SEMV] = (void (*) (systemArgs *)) SemV;
     systemCallVec[SYS_SEMFREE] = (void (*) (systemArgs *)) SemFree;
-    systemCallVec[SYS_GETTIMEOFDAY] = (void (*) (systemArgs *)) GetTimeOfDay;
+    systemCallVec[SYS_GETTIMEOFDAY] = (void (*) (systemArgs *)) GetTimeofDay;
     systemCallVec[SYS_CPUTIME] = (void (*) (systemArgs *)) CPUTime;
     systemCallVec[SYS_GETPID] = (void (*) (systemArgs *)) GetPID;
 
