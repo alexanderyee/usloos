@@ -4,11 +4,16 @@
 #include <phase2.h>
 #include <phase3.h>
 #include <libuser.h>
+
+/* Prototypes */
+void check_kernel_mode(char *);
+void nullsys3(systemArgs *)
+/* Data structures */
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
+
 int start2(char *arg)
 {
-    int pid;
-    int status;
+    int pid, i, status;
     /*
      * Check kernel mode here.
      */
@@ -21,16 +26,16 @@ int start2(char *arg)
  		systemCallVec[i] = (void (*) (systemArgs *)) nullsys3;
  	}
 
-    systemCallVec[SYS_SPAWN] = (void (systemArgs *)) Spawn;
-    systemCallVec[SYS_WAIT] = (void (systemArgs *)) Wait;
-    systemCallVec[SYS_TERMINATE] = (void (systemArgs *)) Terminate;
-    systemCallVec[SYS_SEMCREATE] = (void (systemArgs *)) SemCreate;
-    systemCallVec[SYS_SEMP] = (void (systemArgs *)) SemP;
-    systemCallVec[SYS_SEMV] = (void (systemArgs *)) SemV;
-    systemCallVec[SYS_SEMFREE] = (void (systemArgs *)) SemFree;
-    systemCallVec[SYS_GETTIMEOFDAY] = (void (systemArgs *)) GetTimeOfDay;
-    systemCallVec[CPUTIME] = (void (systemArgs *)) CPUTime;
-    systemCallVec[GETPID] = (void (systemArgs *)) GetPID;
+    systemCallVec[SYS_SPAWN] = (void (*) (systemArgs *)) Spawn;
+    systemCallVec[SYS_WAIT] = (void (*) (systemArgs *)) Wait;
+    systemCallVec[SYS_TERMINATE] = (void (*) (systemArgs *)) Terminate;
+    systemCallVec[SYS_SEMCREATE] = (void (*) (systemArgs *)) SemCreate;
+    systemCallVec[SYS_SEMP] = (void (*) (systemArgs *)) SemP;
+    systemCallVec[SYS_SEMV] = (void (*) (systemArgs *)) SemV;
+    systemCallVec[SYS_SEMFREE] = (void (*) (systemArgs *)) SemFree;
+    systemCallVec[SYS_GETTIMEOFDAY] = (void (*) (systemArgs *)) GetTimeOfDay;
+    systemCallVec[SYS_CPUTIME] = (void (*) (systemArgs *)) CPUTime;
+    systemCallVec[SYS_GETPID] = (void (*) (systemArgs *)) GetPID;
 
 
     /*
