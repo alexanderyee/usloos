@@ -49,7 +49,7 @@ int Spawn(char *name, int (*func)(char *), char *arg, int stack_size,
     sysArg.arg5 = name;
     fork1(name, func, arg, stack_size, priority, pid);
     USLOSS_Syscall(&sysArg);
-    setUserMode(start1);
+    setUserMode();
     *pid = (int) sysArg.arg1;
     return (int) sysArg.arg4;
 } /* end of Spawn */
