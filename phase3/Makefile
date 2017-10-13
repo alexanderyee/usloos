@@ -13,7 +13,7 @@ PHASE2LIB = patrickphase2
 #PHASE1LIB = patrickphase1debug
 #PHASE2LIB = patrickphase2debug
 
-HDRS = sems.h
+HDRS = libuser.h
 
 INCLUDE = ${PREFIX}/include
 
@@ -46,7 +46,7 @@ clean:
 	rm -f $(COBJS) $(TARGET) test*.o test*.txt term* $(TESTS) \
 		libuser.o p1.o core
 
-phase3.o:	sems.h
+phase3.o: libuser.h
 
 submit: $(CSRCS) $(HDRS) Makefile
 	tar cvzf phase3.tgz $(CSRCS) $(HDRS) Makefile
