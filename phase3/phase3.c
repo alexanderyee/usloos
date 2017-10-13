@@ -1,3 +1,12 @@
+/* ------------------------------------------------------------------------
+   phase3.c
+
+   University of Arizona
+   Computer Science 452
+
+   Katie Pan & Alex Yee
+   ------------------------------------------------------------------------ */
+#include <stdio.h>
 #include <usloss.h>
 #include <usyscall.h>
 #include <phase1.h>
@@ -7,7 +16,7 @@
 
 /* Prototypes */
 void check_kernel_mode(char *);
-void nullsys3(systemArgs *)
+void nullsys3(systemArgs *);
 /* Data structures */
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
 
@@ -66,7 +75,7 @@ int start2(char *arg)
      * values back into the sysargs pointer, switch to user-mode, and
      * return to the user code that called Spawn.
      */
-    pid = spawnReal("start3", start3, NULL, USLOSS_MIN_STACK, 3);
+//    pid = spawnReal("start3", start3, NULL, USLOSS_MIN_STACK, 3);
 
     /* Call the waitReal version of your wait code here.
      * You call waitReal (rather than Wait) because start2 is running
