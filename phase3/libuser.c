@@ -12,6 +12,8 @@
 #include <phase2.h>
 #include <libuser.h>
 
+void setUserMode();
+
 #define CHECKMODE {    \
     if (USLOSS_PsrGet() & USLOSS_PSR_CURRENT_MODE) { \
         USLOSS_Console("Trying to invoke syscall from kernel\n"); \
@@ -77,9 +79,9 @@ int Wait(int *pid, int *status)
 
     USLOSS_Syscall(&sysArg);
 
-    *pid = (int) sysArg.arg1;
-    *status = (int) sysArg.arg2;
-    return (int) sysArg.arg4;
+    *pid = (long) sysArg.arg1;
+    *status = (long) sysArg.arg2;
+    return (long) sysArg.arg4;
 
 } /* end of Wait */
 
