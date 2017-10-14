@@ -93,6 +93,7 @@ int start2(char *arg)
 
 int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long priority)
 {
+    setUserMode();
     int pid = 0;
 
     Spawn(name, func, arg, stack_size, priority, &pid);
@@ -102,10 +103,11 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
 
 int waitReal(int *status)
 {
+    setUserMode();
     int pid = 0;
 
     Wait(&pid, status);
-    
+
     return pid;
 }
 
