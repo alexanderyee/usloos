@@ -20,6 +20,8 @@ void nullsys3(systemArgs *);
 /* Data structures */
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
 
+procStruct ProcTable[MAXPROC];
+
 int start2(char *arg)
 {
     int pid, i, status;
@@ -75,15 +77,20 @@ int start2(char *arg)
      * values back into the sysargs pointer, switch to user-mode, and
      * return to the user code that called Spawn.
      */
-//    pid = spawnReal("start3", start3, NULL, USLOSS_MIN_STACK, 3);
+    pid = spawnReal("start3", start3, NULL, USLOSS_MIN_STACK, 3);
 
     /* Call the waitReal version of your wait code here.
      * You call waitReal (rather than Wait) because start2 is running
      * in kernel (not user) mode.
      */
-//    pid = waitReal(&status); << LOSER METHOD LMAO
+    pid = waitReal(&status); << LOSER METHOD LMAO
 
 } /* start2 */
+
+int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long priority)
+{
+    int pid =
+}
 
 
 
