@@ -24,6 +24,7 @@ int waitReal(int *);
 /* Data structures */
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
 procStruct ProcTable[MAXPROC];
+int currProcId = 0;
 
 int start2(char *arg)
 {
@@ -92,12 +93,20 @@ int start2(char *arg)
 
 int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long priority)
 {
-    return 0;
+    int pid = 0;
+
+    Spawn(name, func, arg, stack_size, priority, &pid);
+
+    return pid;
 }
 
 int waitReal(int *status)
 {
-    return 0;
+    int pid = 0;
+
+    Wait(&pid, status);
+    
+    return pid;
 }
 
 /* an error method to handle invalid syscalls
