@@ -35,8 +35,8 @@
  *  Return Value: 0 means success, -1 means error occurs
  *
  */
-int Spawn(char *name, int (*func)(char *), char *arg, int stack_size,
-    int priority, int *pid)
+long Spawn(char *name, int (*func)(char *), char *arg, long stack_size,
+    long priority, int *pid)
 {
     USLOSS_Sysargs sysArg;
 
@@ -50,8 +50,8 @@ int Spawn(char *name, int (*func)(char *), char *arg, int stack_size,
     fork1(name, func, arg, stack_size, priority);
     USLOSS_Syscall(&sysArg);
     setUserMode();
-    *pid = (int) sysArg.arg1;
-    return (int) sysArg.arg4;
+    *pid = (long) sysArg.arg1;
+    return (long) sysArg.arg4;
 } /* end of Spawn */
 
 
