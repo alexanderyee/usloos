@@ -17,11 +17,12 @@
 /* Prototypes */
 void check_kernel_mode(char *);
 void nullsys3(systemArgs *);
-/* Data structures */
-void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
 extern int start3 (char *);
 int spawnReal(char *, int (*)(char *), char *, long , long);
+int waitReal(int *);
 
+/* Data structures */
+void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
 procStruct ProcTable[MAXPROC];
 
 int start2(char *arg)
@@ -94,7 +95,10 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     return 0;
 }
 
-
+int waitReal(int *status)
+{
+    return 0;
+}
 
 /* an error method to handle invalid syscalls
  * To clarify, we know it is an invalid syscall.
