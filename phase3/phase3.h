@@ -7,5 +7,9 @@
 
 #define MAXSEMS         200
 
-#endif /* _PHASE3_H */
+typedef struct procStruct
+{
+        int pid;
+} procStruct;
 
+#endif /* _PHASE3_H */
