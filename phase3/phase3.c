@@ -83,13 +83,13 @@ int start2(char *arg)
      * You call waitReal (rather than Wait) because start2 is running
      * in kernel (not user) mode.
      */
-    pid = waitReal(&status); << LOSER METHOD LMAO
+    pid = waitReal(&status);
 
 } /* start2 */
 
 int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long priority)
 {
-    int pid =
+    return 0; 
 }
 
 
