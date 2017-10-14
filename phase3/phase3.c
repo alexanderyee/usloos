@@ -19,6 +19,8 @@ void check_kernel_mode(char *);
 void nullsys3(systemArgs *);
 /* Data structures */
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
+extern int start3 (char *);
+int spawnReal(char *, int (*)(char *), char *, long , long);
 
 procStruct ProcTable[MAXPROC];
 
@@ -89,7 +91,7 @@ int start2(char *arg)
 
 int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long priority)
 {
-    return 0; 
+    return 0;
 }
 
 
