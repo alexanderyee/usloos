@@ -6,8 +6,8 @@
 #define _LIBUSER_H
 
 // Phase 3 -- User Function Prototypes
-extern long Spawn(char *name, int (*func)(char *), char *arg, int stack_size,
-                  int priority, int *pid);
+extern long Spawn(char *name, int (*func)(char *), char *arg, long stack_size,
+                  long priority, int *pid);
 extern int  Wait(int *pid, int *status);
 extern void Terminate(int status);
 extern void GetTimeofDay(int *tod);

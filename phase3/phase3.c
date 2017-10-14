@@ -81,7 +81,7 @@ int start2(char *arg)
      * You call waitReal (rather than Wait) because start2 is running
      * in kernel (not user) mode.
      */
-//    pid = waitReal(&status);
+//    pid = waitReal(&status); << LOSER METHOD LMAO
 
 } /* start2 */
 
