@@ -104,6 +104,7 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     ProcTable[pid % MAXPROC].mboxID = MboxCreate(0, 50);
     ProcTable[pid % MAXPROC].startFunc = func;
     ProcTable[pid % MAXPROC].startArg = arg;
+    USLOSS_Console("spawnReal():1 %d\n", pid);
     // block
     MboxSend(ProcTable[pid % MAXPROC].mboxID, NULL, 0);
 
@@ -130,7 +131,7 @@ int spawn(systemArgs *args)
 void spawnLaunch()
 {
     USLOSS_Console("spawnLaunch(): %d\n", getpid());
-    MboxReceive(getpid() % MAXPROC, NULL, MAX_MESSAGE);
+    MboxReceive(ProcTable[getpid() % MAXPROC].mboxID, NULL, MAX_MESSAGE);
     int result, currPid = getpid();
 
     USLOSS_Console("spawnLaunch(): 2 %d\n", getpid());
