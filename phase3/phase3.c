@@ -18,8 +18,11 @@
 void check_kernel_mode(char *);
 void nullsys3(systemArgs *);
 extern int start3 (char *);
+int spawn(systemArgs *);
+int wait(systemArgs *);
 int spawnReal(char *, int (*)(char *), char *, long , long);
 int waitReal(int *);
+void setUserMode();
 
 /* Data structures */
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
@@ -102,7 +105,7 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
 
 int spawn(systemArgs *args)
 {
-    int ans = spawnReal(*args.arg5, *args.arg1, *args.arg2, *args.arg3, *args.arg4);
+    int ans = spawnReal(args->arg5, args->arg1, args->arg2, args->arg3, args->arg4);
     return ans;
 }
 
@@ -121,9 +124,9 @@ int waitReal(int *status)
 
 int wait(systemArgs *args)
 {
-    int pid = waitReal(*args.args2);
-    *args.arg1 = pid;
-    return ans;
+    int pid = waitReal(args->args2);
+    args->arg1 = pid;
+    return pid;
 }
 
 /* an error method to handle invalid syscalls
@@ -134,7 +137,7 @@ int wait(systemArgs *args)
  */
 void nullsys3(systemArgs *args)
 {
-    USLOSS_Console("nullsys(): Invalid syscall %d. Halting...\n", (*args).number);
+    USLOSS_Console("nullsys(): Invalid syscall %d. Halting...\n", args->number);
     USLOSS_Halt(1);
 } /* nullsys */
 
