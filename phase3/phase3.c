@@ -48,7 +48,7 @@ int start2(char *arg)
     systemCallVec[SYS_SPAWN] = (void (*) (systemArgs *)) spawn;
     systemCallVec[SYS_WAIT] = (void (*) (systemArgs *)) wait;
     systemCallVec[SYS_TERMINATE] = (void (*) (systemArgs *)) terminate;
-    systemCallVec[SYS_SEMCREATE] = (void (*) (systemArgs *)) SemCreate;
+    systemCallVec[SYS_SEMCREATE] = (void (*) (systemArgs *)) semCreate;
     systemCallVec[SYS_SEMP] = (void (*) (systemArgs *)) SemP;
     systemCallVec[SYS_SEMV] = (void (*) (systemArgs *)) SemV;
     systemCallVec[SYS_SEMFREE] = (void (*) (systemArgs *)) SemFree;
