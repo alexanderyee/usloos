@@ -146,20 +146,20 @@ void spawnLaunch()
 
 int waitReal(int *status)
 {
-	
+
     int pid = join(status);
     if(pid < 0)
     {
         USLOSS_Console("waitReal(): Invalid join %d. Halting...\n", pid);
         USLOSS_Halt(1);
     }
-	
+
     return pid;
 }
 
 int wait(systemArgs *args)
 {
-	
+
     int pid = waitReal(args->arg2);
     args->arg1 = (long) pid;
     return pid;
@@ -178,6 +178,11 @@ void terminate(systemArgs *args)
         zap(childPid);
     }
     quit(args->arg1);
+}
+
+void semCreate(systemArgs *args)
+{
+    args->arg2 = MboxCreate(args->arg1, 50);
 }
 
 /* an error method to handle invalid syscalls
