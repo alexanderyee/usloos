@@ -98,19 +98,12 @@ int start2(char *arg)
 
 int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long priority)
 {
-<<<<<<< HEAD
 
     USLOSS_Console("spawnReal(): %d\n", getpid());
-=======
->>>>>>> 60a1cb498e15921f6a86ff2ea4779f9afc84a3a6
-    if (ProcTable[getpid() % MAXPROC].mboxID == -1)
-        ProcTable[getpid() % MAXPROC].mboxID = MboxCreate(0, 50);
     int pid = fork1(name, spawnLaunch, NULL, stack_size, priority);
-    ProcTable[pid % MAXPROC].mboxID = MboxCreate(0, 50);
     ProcTable[pid % MAXPROC].pid = pid;
     ProcTable[pid % MAXPROC].startFunc = func;
     ProcTable[pid % MAXPROC].startArg = arg;
-
     // block
     MboxSend(ProcTable[pid % MAXPROC].mboxID, NULL, 0);
     return pid;
@@ -135,6 +128,7 @@ int spawn(systemArgs *args)
 void spawnLaunch()
 {
     USLOSS_Console("spawnLaunch(): %d\n", getpid());
+    ProcTable[getpid() % MAXPROC].mboxID = MboxCreate(0, 50);
     MboxReceive(getpid() % MAXPROC, NULL, MAX_MESSAGE);
     int result, currPid = getpid();
 
