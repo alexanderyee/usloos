@@ -1,0 +1,6 @@
+202,203c202,203
+< i = 200, sem_result = -1
+< i = 201, sem_result = -1
+---
+> i = 200, sem_result =  0
+> i = 201, sem_result =  0

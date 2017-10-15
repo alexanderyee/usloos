@@ -1,0 +1,5 @@
+start3(): started.  Calling SemCreate
+start3(): ERROR: sem_result should have been -1, but was not
+start3(): freeing one semaphore
+start3(): Correct result from last call to SemCreate()
+All processes completed.

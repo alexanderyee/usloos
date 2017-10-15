@@ -1,0 +1,15 @@
+3,4c3,5
+< Child1(): starting, pid = 5
+< Child2(): starting, pid = 6
+---
+> Child1(): starting, pid = 2
+> Child2(): starting, pid = 14
+> Child1(): spawned process 6
+5a7
+> Child2a(): starting
+6a9
+> Child2b(): starting
+8c11
+< Child1(): spawned process 6
+---
+> Child2c(): starting

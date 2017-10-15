@@ -1,0 +1,14 @@
+3a4
+> Child1a(): done
+4a6
+> Child1b(): done
+5a8
+> Child1c(): done
+8c11
+< Child2(): 8 starting, V'ing semaphore
+---
+> Child2(): 14 starting, V'ing semaphore
+10,12d12
+< Child1a(): done
+< Child1b(): done
+< Child1c(): done

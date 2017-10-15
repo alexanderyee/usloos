@@ -29,8 +29,9 @@ int start3(char *arg)
     Spawn("Child1", Child1, NULL, USLOSS_MIN_STACK, 5, &pid);
 
     USLOSS_Console("start3(): fork %d\n", pid);
-    
+
     Wait(&pid, &status);
+
     USLOSS_Console("start3(): result of wait, pid = %d, status = %d\n",
                    pid, status);
     USLOSS_Console("start3(): Parent done. Calling Terminate.\n");
@@ -41,7 +42,7 @@ int start3(char *arg)
 } /* start3 */
 
 
-int Child1(char *arg)
+int Child1(char *arg) 
 {
 
     USLOSS_Console("Child1(): starting\n");

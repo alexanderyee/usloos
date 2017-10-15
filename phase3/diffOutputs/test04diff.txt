@@ -1,0 +1,6 @@
+2,3c2,3
+< start3(): sem_result = 0, semaphore = 0
+< start3(): sem_result = 0, semaphore = 1
+---
+> start3(): sem_result = 0, semaphore = 2
+> start3(): sem_result = 0, semaphore = 2

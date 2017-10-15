@@ -1,0 +1,2 @@
+1a2
+> start3(): ERROR: sem_result should have been -1, but was not

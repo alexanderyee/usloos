@@ -1,0 +1,42 @@
+4,9c4,9
+< Child1a(): current time of day =  61  Should be close, but does not have to be an exact match
+< Child1a(): current CPU time =  20     Should be close, but does not have to be an exact match
+< Child1a(): current time of day =  74  Should be close, but does not have to be an exact match
+< Child1a(): current CPU time =  34     Should be close, but does not have to be an exact match
+< Child1a(): current time of day =  86  Should be close, but does not have to be an exact match
+< Child1a(): current CPU time =  48     Should be close, but does not have to be an exact match
+---
+> Child1a(): current time of day = 39027120  Should be close, but does not have to be an exact match
+> Child1a(): current CPU time = 39027120     Should be close, but does not have to be an exact match
+> Child1a(): current time of day = 39027120  Should be close, but does not have to be an exact match
+> Child1a(): current CPU time = 39027120     Should be close, but does not have to be an exact match
+> Child1a(): current time of day = 39027120  Should be close, but does not have to be an exact match
+> Child1a(): current CPU time = 39027120     Should be close, but does not have to be an exact match
+13,18c13,18
+< Child1b(): current time of day = 127  Should be close, but does not have to be an exact match
+< Child1b(): current CPU time =  17     Should be close, but does not have to be an exact match
+< Child1b(): current time of day = 139  Should be close, but does not have to be an exact match
+< Child1b(): current CPU time =  31     Should be close, but does not have to be an exact match
+< Child1b(): current time of day = 154  Should be close, but does not have to be an exact match
+< Child1b(): current CPU time =  47     Should be close, but does not have to be an exact match
+---
+> Child1b(): current time of day = 39109056  Should be close, but does not have to be an exact match
+> Child1b(): current CPU time = 39109056     Should be close, but does not have to be an exact match
+> Child1b(): current time of day = 39109056  Should be close, but does not have to be an exact match
+> Child1b(): current CPU time = 39109056     Should be close, but does not have to be an exact match
+> Child1b(): current time of day = 39109056  Should be close, but does not have to be an exact match
+> Child1b(): current CPU time = 39109056     Should be close, but does not have to be an exact match
+22,27c22,27
+< Child1c(): current time of day = 197  Should be close, but does not have to be an exact match
+< Child1c(): current CPU time =  18     Should be close, but does not have to be an exact match
+< Child1c(): current time of day = 211  Should be close, but does not have to be an exact match
+< Child1c(): current CPU time =  34     Should be close, but does not have to be an exact match
+< Child1c(): current time of day = 225  Should be close, but does not have to be an exact match
+< Child1c(): current CPU time =  49     Should be close, but does not have to be an exact match
+---
+> Child1c(): current time of day = 39190992  Should be close, but does not have to be an exact match
+> Child1c(): current CPU time = 39190992     Should be close, but does not have to be an exact match
+> Child1c(): current time of day = 39190992  Should be close, but does not have to be an exact match
+> Child1c(): current CPU time = 39190992     Should be close, but does not have to be an exact match
+> Child1c(): current time of day = 39190992  Should be close, but does not have to be an exact match
+> Child1c(): current CPU time = 39190992     Should be close, but does not have to be an exact match
