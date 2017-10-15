@@ -128,7 +128,7 @@ void spawnLaunch(int (*func)(char *), char *arg)
     // Call the function passed to fork1, and capture its return value
     result = func(arg);
 
-    quit(result);
+    //quit(result);
 
 } /* launch */
 
