@@ -98,7 +98,7 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
 {
 
     int pid = fork1(name, func, arg, stack_size, priority);
-
+    spawnLaunch(func, arg);
     setUserMode();
     return pid;
 }
