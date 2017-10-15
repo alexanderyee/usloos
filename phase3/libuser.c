@@ -74,12 +74,11 @@ int Wait(int *pid, int *status)
 
     CHECKMODE;
     sysArg.number = SYS_WAIT;
-
+	sysArg.arg1 = pid;
+	sysArg.arg2 = status;
     USLOSS_Syscall(&sysArg);
 
-    *pid = (long) sysArg.arg1;
-    *status = (long) sysArg.arg2;
-    return (long) sysArg.arg4;
+    return 0;
 
 } /* end of Wait */
 
@@ -98,7 +97,6 @@ int Wait(int *pid, int *status)
 void Terminate(int status)
 {
     USLOSS_Sysargs sysArg;
-
     CHECKMODE;
     sysArg.number = SYS_TERMINATE;
     sysArg.arg1 = status;

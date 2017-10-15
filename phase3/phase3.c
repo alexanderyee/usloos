@@ -138,25 +138,24 @@ void spawnLaunch()
     // Call the function passed to fork1, and capture its return value
     result = ProcTable[currPid % MAXPROC].startFunc(ProcTable[currPid % MAXPROC].startArg);
 
-    //quit(result);
-
 } /* spawnLaunch */
 
 int waitReal(int *status)
 {
+	
     int pid = join(status);
     if(pid < 0)
     {
         USLOSS_Console("waitReal(): Invalid join %d. Halting...\n", pid);
         USLOSS_Halt(1);
     }
-
-    setUserMode();
+	
     return pid;
 }
 
 int wait(systemArgs *args)
 {
+	
     int pid = waitReal(args->arg2);
     args->arg1 = (long) pid;
     return pid;
@@ -165,8 +164,12 @@ int wait(systemArgs *args)
 void terminate(systemArgs *args)
 {
     int childPid = ProcTable[getpid() % MAXPROC].childPid;
+	ProcTable[getpid() % MAXPROC].childPid = 0;
+	MboxRelease(ProcTable[getpid() % MAXPROC].mboxID);
+	ProcTable[getpid() % MAXPROC].mboxID = 0;
+	ProcTable[getpid() % MAXPROC].pid = 0;
     //if there is a child zap em
-    if (childPid != 0)
+    if (childPid != 0 && ProcTable[childPid % MAXPROC].pid != 0)
     {
         zap(childPid);
     }

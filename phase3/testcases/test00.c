@@ -31,7 +31,6 @@ int start3(char *arg)
     USLOSS_Console("start3(): fork %d\n", pid);
     
     Wait(&pid, &status);
-    USLOSS_Console("start3()\n after wait");
     USLOSS_Console("start3(): result of wait, pid = %d, status = %d\n",
                    pid, status);
     USLOSS_Console("start3(): Parent done. Calling Terminate.\n");
