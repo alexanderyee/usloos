@@ -99,9 +99,10 @@ int start2(char *arg)
 int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long priority)
 {
 
-    USLOSS_Console("spawnReal(): %d\n", getpid());
+
     int pid = fork1(name, spawnLaunch, NULL, stack_size, priority);
     ProcTable[pid % MAXPROC].pid = pid;
+    USLOSS_Console("spawnReal(): %d\n", pid);
     ProcTable[pid % MAXPROC].startFunc = func;
     ProcTable[pid % MAXPROC].startArg = arg;
     // block
