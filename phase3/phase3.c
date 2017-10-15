@@ -55,7 +55,9 @@ int start2(char *arg)
     systemCallVec[SYS_CPUTIME] = (void (*) (systemArgs *)) CPUTime;
     systemCallVec[SYS_GETPID] = (void (*) (systemArgs *)) GetPID;
 
-
+    for (i = 0; i < MAXPROC; i++) {
+        ProcTable[i].mboxID = -1;
+    }
     /*
      * Create first user-level process and wait for it to finish.
      * These are lower-case because they are not system calls;
@@ -96,6 +98,8 @@ int start2(char *arg)
 
 int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long priority)
 {
+    if (ProcTable[getpid() % MAXPROC].mboxID == -1)
+        ProcTable[getpid() % MAXPROC].mboxID = MboxCreate(0, 50);
     int pid = fork1(name, spawnLaunch, NULL, stack_size, priority);
     ProcTable[pid % MAXPROC].mboxID = MboxCreate(0, 50);
     ProcTable[pid % MAXPROC].pid = pid;
@@ -125,6 +129,7 @@ int spawn(systemArgs *args)
    ------------------------------------------------------------------------ */
 void spawnLaunch()
 {
+    USLOSS_Console("spawnLaunch(): %d\n", getpid());
     MboxReceive(getpid() % MAXPROC, NULL, MAX_MESSAGE);
     int result, currPid = getpid();
 
