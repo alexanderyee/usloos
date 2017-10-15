@@ -110,6 +110,28 @@ int spawn(systemArgs *args)
     return ans;
 }
 
+/* ------------------------------------------------------------------------
+   Name - launch
+   Purpose - Dummy function to enable interrupts and launch a given process
+             upon startup.
+   Parameters - none
+   Returns - nothing
+   Side Effects - enable interrupts
+   ------------------------------------------------------------------------ */
+void spawnLaunch(int (*func)(char *), char *arg)
+{
+    int result;
+
+    // Enable interrupts
+	//enableInterrupts();
+
+    // Call the function passed to fork1, and capture its return value
+    result = func(arg);
+
+    quit(result);
+
+} /* launch */
+
 int waitReal(int *status)
 {
     int pid = join(status);
