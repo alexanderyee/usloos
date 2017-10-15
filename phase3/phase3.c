@@ -41,8 +41,8 @@ int start2(char *arg)
  		systemCallVec[i] = (void (*) (systemArgs *)) nullsys3;
  	}
 
-    systemCallVec[SYS_SPAWN] = (void (*) (systemArgs *)) Spawn;
-    systemCallVec[SYS_WAIT] = (void (*) (systemArgs *)) Wait;
+    systemCallVec[SYS_SPAWN] = (void (*) (systemArgs *)) spawn;
+    systemCallVec[SYS_WAIT] = (void (*) (systemArgs *)) wait;
     systemCallVec[SYS_TERMINATE] = (void (*) (systemArgs *)) Terminate;
     systemCallVec[SYS_SEMCREATE] = (void (*) (systemArgs *)) SemCreate;
     systemCallVec[SYS_SEMP] = (void (*) (systemArgs *)) SemP;
@@ -93,22 +93,37 @@ int start2(char *arg)
 
 int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long priority)
 {
+
+    int pid = fork1(name, func, arg, stack_size, priority);
+
     setUserMode();
-    int pid = 0;
-
-    Spawn(name, func, arg, stack_size, priority, &pid);
-
     return pid;
+}
+
+int spawn(systemArgs *args)
+{
+    int ans = spawnReal(*args.arg5, *args.arg1, *args.arg2, *args.arg3, *args.arg4);
+    return ans;
 }
 
 int waitReal(int *status)
 {
+    int pid = join(status);
+    if(pid < 0)
+    {
+        USLOSS_Console("waitReal(): Invalid join %d. Halting...\n", pid);
+        USLOSS_Halt(1);
+    }
+
     setUserMode();
-    int pid = 0;
-
-    Wait(&pid, status);
-
     return pid;
+}
+
+int wait(systemArgs *args)
+{
+    int pid = waitReal(*args.args2);
+    *args.arg1 = pid;
+    return ans;
 }
 
 /* an error method to handle invalid syscalls

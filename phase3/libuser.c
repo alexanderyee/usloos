@@ -49,9 +49,7 @@ long Spawn(char *name, int (*func)(char *), char *arg, long stack_size,
     sysArg.arg3 = (void *) stack_size;
     sysArg.arg4 = (void *) priority;
     sysArg.arg5 = name;
-    fork1(name, func, arg, stack_size, priority);
     USLOSS_Syscall(&sysArg);
-    setUserMode();
     *pid = (long) sysArg.arg1;
     return (long) sysArg.arg4;
 } /* end of Spawn */
