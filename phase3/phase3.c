@@ -105,7 +105,8 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
 
 int spawn(systemArgs *args)
 {
-    int ans = spawnReal(args->arg5, args->arg1, args->arg2, args->arg3, args->arg4);
+    int ans = spawnReal(args->arg5, args->arg1, args->arg2, (long) args->arg3, args->arg4);
+    args->arg1 = ans;
     return ans;
 }
 
@@ -124,8 +125,8 @@ int waitReal(int *status)
 
 int wait(systemArgs *args)
 {
-    int pid = waitReal(args->args2);
-    args->arg1 = pid;
+    int pid = waitReal(args->arg2);
+    args->arg1 = (long) pid;
     return pid;
 }
 
