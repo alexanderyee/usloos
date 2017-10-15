@@ -23,7 +23,7 @@ int wait(systemArgs *);
 int spawnReal(char *, int (*)(char *), char *, long , long);
 int waitReal(int *);
 void setUserMode();
-
+void spawnLaunch();
 /* Data structures */
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
 procStruct ProcTable[MAXPROC];
@@ -91,13 +91,13 @@ int start2(char *arg)
      * in kernel (not user) mode.
      */
     pid = waitReal(&status);
-    return 0;
+    return pid;
 } /* start2 */
 
 int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long priority)
 {
-    ProcTable[pid % MAXPROC].mboxID = MboxCreate(0, 0);
     int pid = fork1(name, spawnLaunch, NULL, stack_size, priority);
+    ProcTable[pid % MAXPROC].mboxID = MboxCreate(0, 50);
     ProcTable[pid % MAXPROC].pid = pid;
     ProcTable[pid % MAXPROC].startFunc = func;
     ProcTable[pid % MAXPROC].startArg = arg;
