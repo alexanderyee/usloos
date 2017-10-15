@@ -99,16 +99,17 @@ int start2(char *arg)
 
 int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long priority)
 {
-    int pid = fork1(name, spawnLaunch, NULL, stack_size, priority);
+	int pid = fork1(name, spawnLaunch, NULL, stack_size, priority);
     ProcTable[pid % MAXPROC].pid = pid;
-    ProcTable[pid % MAXPROC].mboxID = MboxCreate(0, 50);
+	if (ProcTable[pid % MAXPROC].mboxID == -1){
+         ProcTable[pid % MAXPROC].mboxID = MboxCreate(0, 50);
+	}
     ProcTable[pid % MAXPROC].startFunc = func;
     ProcTable[pid % MAXPROC].startArg = arg;
     // TODO: implement multiple children
     ProcTable[getpid() % MAXPROC].childPid = pid;
     // block
     MboxSend(ProcTable[pid % MAXPROC].mboxID, NULL, 0);
-
     return pid;
 }
 
@@ -129,6 +130,9 @@ int spawn(systemArgs *args)
    ------------------------------------------------------------------------ */
 void spawnLaunch()
 {
+	if (ProcTable[getpid() % MAXPROC].mboxID == -1){
+		ProcTable[getpid() % MAXPROC].mboxID = MboxCreate(0, 50);
+	}
     MboxReceive(ProcTable[getpid() % MAXPROC].mboxID, NULL, MAX_MESSAGE);
     int result, currPid = getpid();
 
@@ -137,7 +141,7 @@ void spawnLaunch()
 	setUserMode();
     // Call the function passed to fork1, and capture its return value
     result = ProcTable[currPid % MAXPROC].startFunc(ProcTable[currPid % MAXPROC].startArg);
-
+	Terminate(result);
 } /* spawnLaunch */
 
 int waitReal(int *status)
