@@ -100,21 +100,17 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
 {
     int pid = fork1(name, spawnLaunch, NULL, stack_size, priority);
     ProcTable[pid % MAXPROC].pid = pid;
-    USLOSS_Console("spawnReal(): %d\n", pid);
     ProcTable[pid % MAXPROC].mboxID = MboxCreate(0, 50);
     ProcTable[pid % MAXPROC].startFunc = func;
     ProcTable[pid % MAXPROC].startArg = arg;
-    USLOSS_Console("spawnReal():1 %d\n", pid);
     // block
     MboxSend(ProcTable[pid % MAXPROC].mboxID, NULL, 0);
 
-    USLOSS_Console("spawnReal():2 %d\n", pid);
     return pid;
 }
 
 int spawn(systemArgs *args)
 {
-    setUserMode();
     int ans = spawnReal(args->arg5, args->arg1, args->arg2, (long) args->arg3, args->arg4);
     args->arg1 = ans;
     return ans;
@@ -130,14 +126,12 @@ int spawn(systemArgs *args)
    ------------------------------------------------------------------------ */
 void spawnLaunch()
 {
-    USLOSS_Console("spawnLaunch(): %d\n", getpid());
     MboxReceive(ProcTable[getpid() % MAXPROC].mboxID, NULL, MAX_MESSAGE);
     int result, currPid = getpid();
 
-    USLOSS_Console("spawnLaunch(): 2 %d\n", getpid());
     // Enable interrupts
 	//enableInterrupts();
-
+	setUserMode();
     // Call the function passed to fork1, and capture its return value
     result = ProcTable[currPid % MAXPROC].startFunc(ProcTable[currPid % MAXPROC].startArg);
 
