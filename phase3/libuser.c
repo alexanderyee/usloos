@@ -116,10 +116,13 @@ int SemCreate(int value, int *semaphore)
 {
     USLOSS_Sysargs sysArg;
     CHECKMODE;
+    if (value < 0)
+        return -1;
     sysArg.number = SYS_SEMCREATE;
     sysArg.arg1 = value;
     sysArg.arg2 = semaphore;
     USLOSS_Syscall(&sysArg);
+    return 0;
 } /* end of SemCreate */
 
 

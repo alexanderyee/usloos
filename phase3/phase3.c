@@ -179,10 +179,19 @@ void terminate(systemArgs *args)
     }
     quit(args->arg1);
 }
-
+/*
+ *Creates a user-level semaphore.
+    Input
+        arg1: initial semaphore value.
+    Output
+        arg1: semaphore handle to be used in subsequent semaphore system calls.
+        arg4: -1 if initial value is negative or no semaphores are available; 0 otherwise.
+ */
 void semCreate(systemArgs *args)
 {
     args->arg2 = MboxCreate(args->arg1, 50);
+    if (args->arg2 == -1)
+        args->arg4 = -1;
 }
 
 /* an error method to handle invalid syscalls
