@@ -96,10 +96,10 @@ int start2(char *arg)
 
 int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long priority)
 {
-
     int pid = fork1(name, func, arg, stack_size, priority);
-    spawnLaunch(func, arg);
     setUserMode();
+    spawnLaunch(func, arg);
+
     return pid;
 }
 
