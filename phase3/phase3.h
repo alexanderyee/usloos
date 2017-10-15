@@ -7,9 +7,14 @@
 
 #define MAXSEMS         200
 
+typedef struct procStruct procStruct;
+typedef struct procStruct * procPtr;
 typedef struct procStruct
 {
-        int pid;
+        int     pid;
+        int     (* startFunc) (char *); /* function where process begins -- launch */
+        int     mboxID;
+        char    startArg[MAXARG];       /* args passed to process */
 } procStruct;
 
 #endif /* _PHASE3_H */
