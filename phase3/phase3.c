@@ -101,9 +101,9 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     ProcTable[pid % MAXPROC].pid = pid;
     ProcTable[pid % MAXPROC].startFunc = func;
     ProcTable[pid % MAXPROC].startArg = arg;
+
     // block
     MboxSend(ProcTable[pid % MAXPROC].mboxID, NULL, 0);
-    spawnLaunch();
     return pid;
 }
 
