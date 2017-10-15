@@ -15,6 +15,8 @@ typedef struct procStruct
         int     (* startFunc) (char *); /* function where process begins -- launch */
         int     mboxID;
         char    *startArg;       /* args passed to process */
+        int     childPid;
+        int     nextPid;
 } procStruct;
 
 #endif /* _PHASE3_H */

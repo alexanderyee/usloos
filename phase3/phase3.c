@@ -24,10 +24,11 @@ int spawnReal(char *, int (*)(char *), char *, long , long);
 int waitReal(int *);
 void setUserMode();
 void spawnLaunch();
+void terminate(systemArgs *);
+
 /* Data structures */
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
 procStruct ProcTable[MAXPROC];
-int currProcId = 0;
 
 int start2(char *arg)
 {
@@ -46,7 +47,7 @@ int start2(char *arg)
 
     systemCallVec[SYS_SPAWN] = (void (*) (systemArgs *)) spawn;
     systemCallVec[SYS_WAIT] = (void (*) (systemArgs *)) wait;
-    systemCallVec[SYS_TERMINATE] = (void (*) (systemArgs *)) Terminate;
+    systemCallVec[SYS_TERMINATE] = (void (*) (systemArgs *)) terminate;
     systemCallVec[SYS_SEMCREATE] = (void (*) (systemArgs *)) SemCreate;
     systemCallVec[SYS_SEMP] = (void (*) (systemArgs *)) SemP;
     systemCallVec[SYS_SEMV] = (void (*) (systemArgs *)) SemV;
@@ -103,6 +104,8 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     ProcTable[pid % MAXPROC].mboxID = MboxCreate(0, 50);
     ProcTable[pid % MAXPROC].startFunc = func;
     ProcTable[pid % MAXPROC].startArg = arg;
+    // TODO: implement multiple children
+    ProcTable[getpid() % MAXPROC].childPid = pid;
     // block
     MboxSend(ProcTable[pid % MAXPROC].mboxID, NULL, 0);
 
@@ -157,6 +160,17 @@ int wait(systemArgs *args)
     int pid = waitReal(args->arg2);
     args->arg1 = (long) pid;
     return pid;
+}
+
+void terminate(systemArgs *args)
+{
+    int childPid = ProcTable[getpid() % MAXPROC].childPid;
+    //if there is a child zap em
+    if (childPid != 0)
+    {
+        zap(childPid);
+    }
+    quit(args->arg1);
 }
 
 /* an error method to handle invalid syscalls

@@ -97,7 +97,12 @@ int Wait(int *pid, int *status)
  */
 void Terminate(int status)
 {
+    USLOSS_Sysargs sysArg;
 
+    CHECKMODE;
+    sysArg.number = SYS_TERMINATE;
+    sysArg.arg1 = status;
+    USLOSS_Syscall(&sysArg);
 } /* end of Terminate */
 
 
