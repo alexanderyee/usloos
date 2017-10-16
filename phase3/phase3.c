@@ -31,6 +31,7 @@ void semV(systemArgs *);
 void getPID(systemArgs *);
 void semFree(systemArgs *);
 void getTimeofDay(systemArgs *);
+void cpuTime(systemArgs *);
 
 /* Data structures */
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
@@ -59,7 +60,7 @@ int start2(char *arg)
     systemCallVec[SYS_SEMV] = (void (*) (systemArgs *)) semV;
     systemCallVec[SYS_SEMFREE] = (void (*) (systemArgs *)) semFree;
     systemCallVec[SYS_GETTIMEOFDAY] = (void (*) (systemArgs *)) getTimeofDay;
-    systemCallVec[SYS_CPUTIME] = (void (*) (systemArgs *)) CPUTime;
+    systemCallVec[SYS_CPUTIME] = (void (*) (systemArgs *)) cpuTime;
     systemCallVec[SYS_GETPID] = (void (*) (systemArgs *)) getPID;
 
     for (i = 0; i < MAXPROC; i++) {
@@ -311,6 +312,21 @@ void getTimeofDay(systemArgs *args)
 		USLOSS_Halt(1);
 	}
 }
+
+/*
+ *  Routine:  cpuTime
+ *
+ *  Description: Returns the CPU time of the process (this is
+                the actual CPU time used, not just the time since
+                the current time slice started).
+ *
+ *  Arguments: Output: arg1: the CPU time used by the currently running process.
+ *
+ */
+ void cpuTime(systemArgs *args)
+ {
+    args->arg1 = readtime();
+ }
 
 /* an error method to handle invalid syscalls
  * To clarify, we know it is an invalid syscall.

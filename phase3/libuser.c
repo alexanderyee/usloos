@@ -207,13 +207,20 @@ void GetTimeofDay(int *tod)
 /*
  *  Routine:  CPUTime
  *
- *  Description: This is the call entry point for the process' CPU time.
+ *  Description: Returns the CPU time of the process (this is
+                the actual CPU time used, not just the time since
+                the current time slice started).
  *
- *  Arguments:
+ *  Arguments: Output: arg1: the CPU time used by the currently running process.
  *
  */
 void CPUTime(int *cpu)
 {
+    USLOSS_Sysargs sysArg;
+    CHECKMODE;
+    sysArg.number = SYS_CPUTIME;
+    USLOSS_Syscall(&sysArg);
+    *cpu = sysArg.arg1;
 } /* end of CPUTime */
 
 
