@@ -1,13 +1,7 @@
 start3(): started
 start3(): After P in the CS
 Child1(): starting
-Child1(): After P in the CS
-Child1(): After V in the CS
-Child1(): done
 start3(): fork 5
 Child2(): starting
-Child2(): After P in the CS
-Child2(): After V in the CS
-Child2(): done
 start3(): fork 6
 start3(): test failed ... wrong value returned

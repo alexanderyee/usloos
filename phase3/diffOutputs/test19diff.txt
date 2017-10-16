@@ -2,5 +2,5 @@
 < start3(): elapsed time in middle =  6 Should be close, but does not have to be an exact match
 < start3(): elapsed time at end    = 13 Should be close, but does not have to be an exact match
 ---
-> start3(): elapsed time in middle = 37597600 Should be close, but does not have to be an exact match
+> start3(): elapsed time in middle = 23585184 Should be close, but does not have to be an exact match
 > start3(): elapsed time at end    =  3 Should be close, but does not have to be an exact match

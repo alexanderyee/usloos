@@ -228,12 +228,11 @@ void semCreate(systemArgs *args)
  */
 void semP(systemArgs *args)
 {
-    if (args->arg1 < 0 || args->arg1 >= 0) {
+    if (args->arg1 < 0 || args->arg1 > MAXSEMS) {
         args->arg4 = -1;
         return;
     }
-    semaphore *semPtr = SemsTable[args->arg1];
-    int result = MboxSend(semPtr->mboxID, NULL, 0);
+    int result = MboxSend(SemsTable[(int) args->arg1].mboxID, NULL, 0);
     if (result == -1)
         USLOSS_Console("semP(): Invalid params for MboxSend\n");
     args->arg4 = 0;
@@ -246,12 +245,12 @@ void semP(systemArgs *args)
  */
 void semV(systemArgs *args)
 {
-    if (args->arg1 < 0 || args->arg1 >= 0) {
+    if (args->arg1 < 0 || args->arg1 > MAXSEMS) {
         args->arg4 = -1;
         return;
     }
-    semaphore *semPtr = SemsTable[args->arg1];
-    int result = MboxCondReceive(semPtr->mboxID, NULL, 0);
+    
+    int result = MboxCondReceive(SemsTable[(int) args->arg1].mboxID, NULL, 0);
     if (result == -1)
         USLOSS_Console("semP(): Invalid params for MboxSend\n");
     args->arg4 = 0;

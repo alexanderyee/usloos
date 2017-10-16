@@ -1,2 +1,4 @@
-1a2
-> start3(): ERROR: sem_result should have been -1, but was not
+3c3
+< start3(): Correct result from last call to SemCreate()
+---
+> start3(): ERROR: last call to SemCreate should have returned 0, but did not

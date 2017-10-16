@@ -1,21 +1,21 @@
 start3(): started
 start3(): calling Spawn for Child1a
 Child1a(): starting
-Child1a(): current time = 24715696  Should be close, but does not have to be an exact match
-Child1a(): current time = 24715696  Should be close, but does not have to be an exact match
-Child1a(): current time = 24715696  Should be close, but does not have to be an exact match
+Child1a(): current time = 28058032  Should be close, but does not have to be an exact match
+Child1a(): current time = 28058032  Should be close, but does not have to be an exact match
+Child1a(): current time = 28058032  Should be close, but does not have to be an exact match
 Child1a(): done
 start3(): calling Spawn for Child1b
 Child1b(): starting
-Child1b(): current time = 24797632  Should be close, but does not have to be an exact match
-Child1b(): current time = 24797632  Should be close, but does not have to be an exact match
-Child1b(): current time = 24797632  Should be close, but does not have to be an exact match
+Child1b(): current time = 28139968  Should be close, but does not have to be an exact match
+Child1b(): current time = 28139968  Should be close, but does not have to be an exact match
+Child1b(): current time = 28139968  Should be close, but does not have to be an exact match
 Child1b(): done
 start3(): calling Spawn for Child1c
 Child1c(): starting
-Child1c(): current time = 24879568  Should be close, but does not have to be an exact match
-Child1c(): current time = 24879568  Should be close, but does not have to be an exact match
-Child1c(): current time = 24879568  Should be close, but does not have to be an exact match
+Child1c(): current time = 28221904  Should be close, but does not have to be an exact match
+Child1c(): current time = 28221904  Should be close, but does not have to be an exact match
+Child1c(): current time = 28221904  Should be close, but does not have to be an exact match
 Child1c(): done
 start3(): calling Spawn for Child2
 start3(): Parent done. Calling Terminate.

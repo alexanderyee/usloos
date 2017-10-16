@@ -199,6 +199,6 @@ i = 196, sem_result =  0
 i = 197, sem_result =  0
 i = 198, sem_result =  0
 i = 199, sem_result =  0
-i = 200, sem_result =  0
-i = 201, sem_result =  0
+i = 200, sem_result = -1
+i = 201, sem_result = -1
 All processes completed.
