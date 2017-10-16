@@ -19,4 +19,11 @@ typedef struct procStruct
         int     nextPid;
 } procStruct;
 
+typedef struct semaphore
+{
+        int     semPid;
+        int     mboxID;
+
+} semaphore;
+
 #endif /* _PHASE3_H */

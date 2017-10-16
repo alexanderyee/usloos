@@ -29,7 +29,7 @@ void semCreate(systemArgs *);
 /* Data structures */
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
 procStruct ProcTable[MAXPROC];
-int semId;
+semaphore SemsTable[MAXSEMS];
 int start2(char *arg)
 {
     int pid, i, status;
@@ -44,7 +44,7 @@ int start2(char *arg)
  	for (i = 0; i < MAXSYSCALLS; i++) {
  		systemCallVec[i] = (void (*) (systemArgs *)) nullsys3;
  	}
-	
+
     systemCallVec[SYS_SPAWN] = (void (*) (systemArgs *)) spawn;
     systemCallVec[SYS_WAIT] = (void (*) (systemArgs *)) wait;
     systemCallVec[SYS_TERMINATE] = (void (*) (systemArgs *)) terminate;
@@ -59,8 +59,12 @@ int start2(char *arg)
     for (i = 0; i < MAXPROC; i++) {
         ProcTable[i].mboxID = -1;
     }
-	
-	semId = 0;
+
+    for(i = 0; i < MAXSEMS; i++){
+        SemsTable[i].semPid = -1;
+        SemsTable[i].mboxID = -1;
+    }
+
     /*
      * Create first user-level process and wait for it to finish.
      * These are lower-case because they are not system calls;
@@ -191,12 +195,26 @@ void terminate(systemArgs *args)
  */
 void semCreate(systemArgs *args)
 {
-    int result = MboxCreate(args->arg1, 50);
-    if (result == -1)
+    // find an empty slot to insert
+    int i;
+    for (i = 0; i < MAXSEMS; i++){
+        if(SemsTable[i].semId == -1)
+            break;
+    }
+    if (i == MAXSEMS){
         args->arg4 = -1;
-	else
-		args->arg4 = 0;
-	args->arg2 = (long) semId++;
+        return;
+    }
+
+    int result = MboxCreate(args->arg1, 50);
+    if (result == -1) {
+        args->arg4 = -1;
+        return;
+    }
+	args->arg4 = 0;
+	args->arg2 = (long) i;
+    SemsTable[i].mboxID = result;
+    SemsTable[i].semId = i;
 }
 
 /* an error method to handle invalid syscalls
