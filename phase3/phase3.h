@@ -21,7 +21,7 @@ typedef struct procStruct
 
 typedef struct semaphore
 {
-        int     semPid;
+        int     semId;
         int     mboxID;
 
 } semaphore;
