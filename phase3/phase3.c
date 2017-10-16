@@ -29,7 +29,7 @@ void semCreate(systemArgs *);
 void semP(systemArgs *);
 void semV(systemArgs *);
 void getPID(systemArgs *);
-void semFree(systemArgs *)
+void semFree(systemArgs *);
 /* Data structures */
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
 procStruct ProcTable[MAXPROC];
@@ -234,7 +234,9 @@ void semP(systemArgs *args)
     }
     int result = MboxSend(SemsTable[(int) args->arg1].mboxID, NULL, 0);
     if (SemsTable[(int) args->arg1].semId == -1) {
-        Terminate(420);
+        systemArgs args;
+        arg.arg1 = 420;
+        terminate(args);
     }
     if (result == -1)
         USLOSS_Console("semP(): Invalid params for MboxSend\n");
