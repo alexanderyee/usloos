@@ -196,6 +196,11 @@ int SemFree(int semaphore)
  */
 void GetTimeofDay(int *tod)
 {
+    USLOSS_Sysargs sysArg;
+    CHECKMODE;
+    sysArg.number = SYS_GETTIMEOFDAY;
+    USLOSS_Syscall(&sysArg);
+    *tod = sysArg.arg1;
 } /* end of GetTimeofDay */
 
 

@@ -30,6 +30,8 @@ void semP(systemArgs *);
 void semV(systemArgs *);
 void getPID(systemArgs *);
 void semFree(systemArgs *);
+void getTimeofDay(systemArgs *)
+
 /* Data structures */
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
 procStruct ProcTable[MAXPROC];
@@ -56,7 +58,7 @@ int start2(char *arg)
     systemCallVec[SYS_SEMP] = (void (*) (systemArgs *)) semP;
     systemCallVec[SYS_SEMV] = (void (*) (systemArgs *)) semV;
     systemCallVec[SYS_SEMFREE] = (void (*) (systemArgs *)) semFree;
-    systemCallVec[SYS_GETTIMEOFDAY] = (void (*) (systemArgs *)) GetTimeofDay;
+    systemCallVec[SYS_GETTIMEOFDAY] = (void (*) (systemArgs *)) getTimeofDay;
     systemCallVec[SYS_CPUTIME] = (void (*) (systemArgs *)) CPUTime;
     systemCallVec[SYS_GETPID] = (void (*) (systemArgs *)) getPID;
 
@@ -299,6 +301,11 @@ void semFree(systemArgs *args)
 void getPID(systemArgs *args)
 {
     args->arg1 = getpid();
+}
+
+void getTimeofDay(systemArgs *args)
+{
+    args->arg1 = USLOSS_DeviceInput();
 }
 
 /* an error method to handle invalid syscalls
