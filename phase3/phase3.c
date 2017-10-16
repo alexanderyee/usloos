@@ -26,6 +26,10 @@ void setUserMode();
 void spawnLaunch();
 void terminate(systemArgs *);
 void semCreate(systemArgs *);
+void semP(systemArgs *);
+void semV(systemArgs *);
+
+
 /* Data structures */
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
 procStruct ProcTable[MAXPROC];
@@ -49,8 +53,8 @@ int start2(char *arg)
     systemCallVec[SYS_WAIT] = (void (*) (systemArgs *)) wait;
     systemCallVec[SYS_TERMINATE] = (void (*) (systemArgs *)) terminate;
     systemCallVec[SYS_SEMCREATE] = (void (*) (systemArgs *)) semCreate;
-    systemCallVec[SYS_SEMP] = (void (*) (systemArgs *)) SemP;
-    systemCallVec[SYS_SEMV] = (void (*) (systemArgs *)) SemV;
+    systemCallVec[SYS_SEMP] = (void (*) (systemArgs *)) semP;
+    systemCallVec[SYS_SEMV] = (void (*) (systemArgs *)) semV;
     systemCallVec[SYS_SEMFREE] = (void (*) (systemArgs *)) SemFree;
     systemCallVec[SYS_GETTIMEOFDAY] = (void (*) (systemArgs *)) GetTimeofDay;
     systemCallVec[SYS_CPUTIME] = (void (*) (systemArgs *)) CPUTime;
@@ -215,6 +219,42 @@ void semCreate(systemArgs *args)
 	args->arg2 = (long) i;
     SemsTable[i].mboxID = result;
     SemsTable[i].semId = i;
+}
+
+/*
+ * Performs a “P” operation on a semaphore.
+   Input: arg1: semaphore handle
+   Output:  arg4: -1 if semaphore handle is invalid, 0 otherwise
+ */
+void semP(systemArgs *args)
+{
+    if (args->arg1 < 0 || args->arg1 >= 0) {
+        args->arg4 = -1;
+        return;
+    }
+    semaphore *semPtr = SemsTable[args->arg1];
+    int result = MboxSend(semPtr->mboxID, NULL, 0);
+    if (result == -1)
+        USLOSS_Console("semP(): Invalid params for MboxSend\n");
+    args->arg4 = 0;
+}
+
+/*
+ * Performs a “V” operation on a semaphore.
+   Input: arg1: semaphore handle
+   Output:  arg4: -1 if semaphore handle is invalid, 0 otherwise
+ */
+void semV(systemArgs *args)
+{
+    if (args->arg1 < 0 || args->arg1 >= 0) {
+        args->arg4 = -1;
+        return;
+    }
+    semaphore *semPtr = SemsTable[args->arg1];
+    int result = MboxCondReceive(semPtr->mboxID, NULL, 0);
+    if (result == -1)
+        USLOSS_Console("semP(): Invalid params for MboxSend\n");
+    args->arg4 = 0;
 }
 
 /* an error method to handle invalid syscalls
