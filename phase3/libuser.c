@@ -122,7 +122,8 @@ int SemCreate(int value, int *semaphore)
     sysArg.arg1 = value;
     sysArg.arg2 = semaphore;
     USLOSS_Syscall(&sysArg);
-    return 0;
+	*semaphore = sysArg.arg2;
+    return sysArg.arg4;
 } /* end of SemCreate */
 
 
