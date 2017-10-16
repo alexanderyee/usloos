@@ -281,17 +281,12 @@ void semFree(systemArgs *args)
 
     //1 if there were processes blocked on the semaphore
     //check using a MboxCondSend if the mailbox is full
-    int res;
-    if((res = MboxCondSend(SemsTable[(int) args->arg1].mboxID, NULL, 0)) == 1 ||
-        MboxCondSend(SemsTable[(int) args->arg1].mboxID, NULL, 0) == -1){
-        printf("ey ;)\n");
+    if(MboxCondSend(SemsTable[(int) args->arg1].mboxID, NULL, 0) == -2){
         args->arg4 = 1;
     } else{
         //0 otherwise
         args->arg4 = 0;
     }
-
-    printf("res %d\n", res);
 
     int result = MboxRelease(SemsTable[(int) args->arg1].mboxID);
 
