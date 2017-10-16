@@ -23,7 +23,7 @@ typedef struct semaphore
 {
         int     semId;
         int     mboxID;
-
+        int     value;
 } semaphore;
 
 #endif /* _PHASE3_H */

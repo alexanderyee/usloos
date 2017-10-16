@@ -222,6 +222,7 @@ void semCreate(systemArgs *args)
 	args->arg2 = (long) i;
     SemsTable[i].mboxID = result;
     SemsTable[i].semId = i;
+    SemsTable[i].value = args->arg1;
 }
 
 /*
@@ -281,7 +282,7 @@ void semFree(systemArgs *args)
 
     //1 if there were processes blocked on the semaphore
     //check using a MboxCondSend if the mailbox is full
-    if(MboxCondSend(SemsTable[(int) args->arg1].mboxID, NULL, 0) == -2){
+    if(MboxCondSend(SemsTable[(int) args->arg1].mboxID, NULL, 0) == -2 && ){
         args->arg4 = 1;
     } else{
         //0 otherwise
