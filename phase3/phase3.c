@@ -305,7 +305,11 @@ void getPID(systemArgs *args)
 
 void getTimeofDay(systemArgs *args)
 {
-    args->arg1 = USLOSS_DeviceInput();
+	int errCode = USLOSS_DeviceInput(USLOSS_CLOCK_DEV, 0, &(args->arg1));
+	if (errCode == USLOSS_DEV_INVALID) {
+		USLOSS_Console("readCurStartTime(): Device and unit invalid\n");
+		USLOSS_Halt(1);
+	}
 }
 
 /* an error method to handle invalid syscalls
