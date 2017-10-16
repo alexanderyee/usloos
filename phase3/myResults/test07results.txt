@@ -5,7 +5,7 @@ Child1b(): starting, P'ing semaphore
 Child1c(): starting, P'ing semaphore
 start3(): after spawn of 7
 start3(): calling Spawn for Child2
-Child2(): 14 starting, V'ing semaphore
+Child2(): 8 starting, V'ing semaphore
 Child2(): done
 Child1a(): done
 Child1b(): done

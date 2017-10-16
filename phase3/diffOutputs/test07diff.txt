@@ -1,4 +1,0 @@
-8c8
-< Child2(): 8 starting, V'ing semaphore
----
-> Child2(): 14 starting, V'ing semaphore

@@ -1,7 +1,7 @@
 start3(): started
 start3(): spawned process 5
-Child1(): starting, pid = 2
-Child2(): starting, pid = 14
+Child1(): starting, pid = 5
+Child2(): starting, pid = 6
 Child1(): spawned process 6
 Child2(): spawned process 7
 Child2a(): starting
