@@ -109,7 +109,7 @@ int start2(char *arg)
 
 int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long priority)
 {
-	int pid = fork1(name, spawnLaunch, NULL, stack_size, priority);
+	int pid = fork1(name,((int) (*)(char *)) spawnLaunch, NULL, stack_size, priority);
     ProcTable[pid % MAXPROC].pid = pid;
 	if (ProcTable[pid % MAXPROC].mboxID == -1){
          ProcTable[pid % MAXPROC].mboxID = MboxCreate(0, 50);
@@ -126,7 +126,7 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
 int spawn(systemArgs *args)
 {
     int ans = spawnReal(args->arg5, args->arg1, args->arg2, (long) args->arg3, args->arg4);
-    args->arg1 = ans;
+    args->arg1 = (long) ans;
     return ans;
 }
 
@@ -187,7 +187,7 @@ void terminate(systemArgs *args)
     {
         zap(childPid);
     }
-    quit(args->arg1);
+    quit((int) args->arg1);
 }
 /*
  *Creates a user-level semaphore.
@@ -206,7 +206,7 @@ void semCreate(systemArgs *args)
             break;
     }
     if (i == MAXSEMS){
-        args->arg4 = -1;
+        args->arg4 = (void *) -1;
         return;
     }
 
@@ -228,7 +228,7 @@ void semCreate(systemArgs *args)
  */
 void semP(systemArgs *args)
 {
-    if (args->arg1 < 0 || args->arg1 > MAXSEMS) {
+    if (args->arg1 < 0 || (int) args->arg1 > MAXSEMS) {
         args->arg4 = -1;
         return;
     }
@@ -236,7 +236,7 @@ void semP(systemArgs *args)
     if (SemsTable[(int) args->arg1].semId == -1) {
         systemArgs args;
         args.arg1 = 420;
-        terminate(args);
+        terminate(&args);
     }
     if (result == -1)
         USLOSS_Console("semP(): Invalid params for MboxSend\n");
