@@ -231,7 +231,7 @@ void semCreate(systemArgs *args)
  */
 void semP(systemArgs *args)
 {
-    if (args->arg1 < 0 || (int) args->arg1 > MAXSEMS) {
+    if (args->arg1 < 0 || (int) args->arg1 >= MAXSEMS) {
         args->arg4 = -1;
         return;
     }
@@ -253,7 +253,7 @@ void semP(systemArgs *args)
  */
 void semV(systemArgs *args)
 {
-    if (args->arg1 < 0 || args->arg1 > MAXSEMS) {
+    if (args->arg1 < 0 || args->arg1 >= MAXSEMS) {
         args->arg4 = -1;
         return;
     }
@@ -273,7 +273,7 @@ Any process waiting on a semaphore when it is freed should be terminated using t
  */
 void semFree(systemArgs *args)
 {
-    if (args->arg1 < 0 || args->arg1 > MAXSEMS) {
+    if (args->arg1 < 0 || args->arg1 >= MAXSEMS) {
         args->arg4 = -1;
         return;
     }
