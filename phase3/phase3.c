@@ -283,6 +283,7 @@ void semFree(systemArgs *args)
     //check using a MboxCondSend if the mailbox is full
     if(MboxCondSend(SemsTable[(int) args->arg1].mboxID, NULL, 0) == 1 ||
         MboxCondSend(SemsTable[(int) args->arg1].mboxID, NULL, 0) == -1){
+        printf("ey ;)\n");
         args->arg4 = 1;
     } else{
         //0 otherwise
