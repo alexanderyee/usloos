@@ -28,8 +28,8 @@ void terminate(systemArgs *);
 void semCreate(systemArgs *);
 void semP(systemArgs *);
 void semV(systemArgs *);
-void getPID(systemArgs *args);
-
+void getPID(systemArgs *);
+void semFree(systemArgs *)
 /* Data structures */
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
 procStruct ProcTable[MAXPROC];
@@ -55,7 +55,7 @@ int start2(char *arg)
     systemCallVec[SYS_SEMCREATE] = (void (*) (systemArgs *)) semCreate;
     systemCallVec[SYS_SEMP] = (void (*) (systemArgs *)) semP;
     systemCallVec[SYS_SEMV] = (void (*) (systemArgs *)) semV;
-    systemCallVec[SYS_SEMFREE] = (void (*) (systemArgs *)) SemFree;
+    systemCallVec[SYS_SEMFREE] = (void (*) (systemArgs *)) semFree;
     systemCallVec[SYS_GETTIMEOFDAY] = (void (*) (systemArgs *)) GetTimeofDay;
     systemCallVec[SYS_CPUTIME] = (void (*) (systemArgs *)) CPUTime;
     systemCallVec[SYS_GETPID] = (void (*) (systemArgs *)) getPID;
@@ -233,6 +233,9 @@ void semP(systemArgs *args)
         return;
     }
     int result = MboxSend(SemsTable[(int) args->arg1].mboxID, NULL, 0);
+    if (SemsTable[(int) args->arg1].semId == -1) {
+        Terminate(420);
+    }
     if (result == -1)
         USLOSS_Console("semP(): Invalid params for MboxSend\n");
     args->arg4 = 0;
@@ -249,13 +252,44 @@ void semV(systemArgs *args)
         args->arg4 = -1;
         return;
     }
-    
-    int result = MboxCondReceive(SemsTable[(int) args->arg1].mboxID, NULL, 0);
+
+    int result = MboxCondReceive(SemsTable[(int) args->arg1].mboxID, NULL, MAX_MESSAGE);
     if (result == -1)
-        USLOSS_Console("semP(): Invalid params for MboxSend\n");
+        USLOSS_Console("semV(): Invalid params for MboxCondReceive\n");
     args->arg4 = 0;
 }
+/*
+ *Frees a semaphore.
+Input
+    arg1: semaphore handle.
+Output
+    arg4: -1 if semaphore handle is invalid, 1 if there were processes blocked on the semaphore, 0 otherwise.
+Any process waiting on a semaphore when it is freed should be terminated using the equivalent of the Terminate system call.
+ */
+void semFree(systemArgs *args)
+{
+    if (args->arg1 < 0 || args->arg1 > MAXSEMS) {
+        args->arg4 = -1;
+        return;
+    }
+    SemsTable[(int) args->arg1].semId = -1;
 
+    //1 if there were processes blocked on the semaphore
+    //check using a MboxCondSend if the mailbox is full
+    if(MboxCondSend(SemsTable[(int) args->arg1].mboxID, NULL, 0) == 1){
+        args->arg4 = 1;
+    } else{
+        //0 otherwise
+        args->arg4 = 0;
+    }
+
+    int result = MboxRelease(SemsTable[(int) args->arg1].mboxID);
+
+    if (result == -1)
+        USLOSS_Console("semFree(): Invalid params for MboxRelease\n");
+
+    SemsTable[(int) args->arg1].mboxID = -1;
+}
 /*
  * Returns the process ID of the currently running process.
    Output:  arg1: the process ID.

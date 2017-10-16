@@ -171,12 +171,18 @@ int SemV(int semaphore)
  *  Description: Free a semaphore.
  *
  *  Arguments:
- *
+    Input arg1: semaphore handle.
+    Output: arg4: -1 if semaphore handle is invalid, 1 if there were
+            processes blocked on the semaphore, 0 otherwise.
  */
 int SemFree(int semaphore)
 {
-    int something = 0;
-    return something;
+    USLOSS_Sysargs sysArg;
+    CHECKMODE;
+    sysArg.number = SYS_SEMFREE;
+    sysArg.arg1 = semaphore;
+    USLOSS_Syscall(&sysArg);
+    return sysArg.arg4;
 } /* end of SemFree */
 
 
