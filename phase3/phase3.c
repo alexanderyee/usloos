@@ -30,7 +30,7 @@ void semP(systemArgs *);
 void semV(systemArgs *);
 void getPID(systemArgs *);
 void semFree(systemArgs *);
-void getTimeofDay(systemArgs *)
+void getTimeofDay(systemArgs *);
 
 /* Data structures */
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
