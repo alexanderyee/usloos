@@ -109,7 +109,7 @@ int start2(char *arg)
 
 int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long priority)
 {
-	int pid = fork1(name,((int) (*)(char *)) spawnLaunch, NULL, stack_size, priority);
+	int pid = fork1(name,(int (*)(char *))spawnLaunch, NULL, stack_size, priority);
     ProcTable[pid % MAXPROC].pid = pid;
 	if (ProcTable[pid % MAXPROC].mboxID == -1){
          ProcTable[pid % MAXPROC].mboxID = MboxCreate(0, 50);
