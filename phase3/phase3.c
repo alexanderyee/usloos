@@ -238,7 +238,7 @@ void semP(systemArgs *args)
     int result = MboxSend(SemsTable[(int) args->arg1].mboxID, NULL, 0);
     if (SemsTable[(int) args->arg1].semId == -1) {
         systemArgs args;
-        args.arg1 = 420;
+        args.arg1 = 1;
         terminate(&args);
     }
     if (result == -1)
