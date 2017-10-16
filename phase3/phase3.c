@@ -28,7 +28,7 @@ void terminate(systemArgs *);
 void semCreate(systemArgs *);
 void semP(systemArgs *);
 void semV(systemArgs *);
-
+void getPID(systemArgs *args);
 
 /* Data structures */
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
@@ -58,7 +58,7 @@ int start2(char *arg)
     systemCallVec[SYS_SEMFREE] = (void (*) (systemArgs *)) SemFree;
     systemCallVec[SYS_GETTIMEOFDAY] = (void (*) (systemArgs *)) GetTimeofDay;
     systemCallVec[SYS_CPUTIME] = (void (*) (systemArgs *)) CPUTime;
-    systemCallVec[SYS_GETPID] = (void (*) (systemArgs *)) GetPID;
+    systemCallVec[SYS_GETPID] = (void (*) (systemArgs *)) getPID;
 
     for (i = 0; i < MAXPROC; i++) {
         ProcTable[i].mboxID = -1;
@@ -254,6 +254,15 @@ void semV(systemArgs *args)
     if (result == -1)
         USLOSS_Console("semP(): Invalid params for MboxSend\n");
     args->arg4 = 0;
+}
+
+/*
+ * Returns the process ID of the currently running process.
+   Output:  arg1: the process ID.
+ */
+void getPID(systemArgs *args)
+{
+    args->arg1 = getpid();
 }
 
 /* an error method to handle invalid syscalls
