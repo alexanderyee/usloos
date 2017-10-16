@@ -281,7 +281,8 @@ void semFree(systemArgs *args)
 
     //1 if there were processes blocked on the semaphore
     //check using a MboxCondSend if the mailbox is full
-    if(MboxCondSend(SemsTable[(int) args->arg1].mboxID, NULL, 0) == 1){
+    if(MboxCondSend(SemsTable[(int) args->arg1].mboxID, NULL, 0) == 1 ||
+        MboxCondSend(SemsTable[(int) args->arg1].mboxID, NULL, 0) == -1){
         args->arg4 = 1;
     } else{
         //0 otherwise
