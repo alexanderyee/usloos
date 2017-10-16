@@ -61,7 +61,7 @@ int start2(char *arg)
     }
 
     for(i = 0; i < MAXSEMS; i++){
-        SemsTable[i].semPid = -1;
+        SemsTable[i].semId = -1;
         SemsTable[i].mboxID = -1;
     }
 
