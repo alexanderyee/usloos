@@ -143,6 +143,7 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     if (ProcTable[getpid() % MAXPROC].priority > priority) {
         int status, childPid;
         childPid = waitReal(&status);
+        printf("wtf happens here?\n");
     }
     return pid;
 }
