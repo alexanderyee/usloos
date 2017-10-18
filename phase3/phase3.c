@@ -178,7 +178,7 @@ void spawnLaunch()
     // block ourselves if we have a lower priority, on our mailbox
     if (ProcTable[currentProc->parentPid % MAXPROC].priority < currentProc->priority && ProcTable[currentProc->parentPid % MAXPROC].status != BLOCKED) {
         printf("im child lol imma block myself\n");
-        ProcTable[currentProc->parentPid % MAXPROC].status = BLOCKED;
+        currentProc->status = BLOCKED;
         MboxReceive(currentProc->mboxID, NULL, MAX_MESSAGE);
     }
 
