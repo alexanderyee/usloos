@@ -1,4 +1,0 @@
-13c13
-< All processes completed.
----
-> quit(): process 4, 'start3', has active children. Halting...

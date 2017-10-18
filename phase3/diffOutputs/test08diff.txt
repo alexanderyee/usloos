@@ -1,4 +1,0 @@
-3c3
-< start3(): Correct result from last call to SemCreate()
----
-> start3(): ERROR: last call to SemCreate should have returned 0, but did not

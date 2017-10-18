@@ -1,0 +1,17 @@
+10,11d9
+< start3(): spawn 6
+< Child1(): After P attempt #2
+14,15c12,13
+< 
+< start3(): After V -- may appear before: Child1(): After P attempt #3
+---
+> Child1(): After P attempt #2
+> start3(): spawn 6
+19a18,21
+> 
+> start3(): After V -- may appear before: Child1(): After P attempt #3
+> 
+> start3(): status of quit child = 9
+25,26d26
+< 
+< start3(): status of quit child = 9

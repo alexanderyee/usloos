@@ -1,0 +1,108 @@
+7a8
+> Child2a(): starting the code for Child2a: pid=7
+8a10
+> Child2a(): starting the code for Child2a: pid=8
+9a12
+> Child2a(): starting the code for Child2a: pid=9
+10a14
+> Child2a(): starting the code for Child2a: pid=10
+11a16
+> Child2a(): starting the code for Child2a: pid=11
+12a18
+> Child2a(): starting the code for Child2a: pid=12
+13a20
+> Child2a(): starting the code for Child2a: pid=13
+14a22
+> Child2a(): starting the code for Child2a: pid=14
+15a24
+> Child2a(): starting the code for Child2a: pid=15
+16a26
+> Child2a(): starting the code for Child2a: pid=16
+17a28
+> Child2a(): starting the code for Child2a: pid=17
+18a30
+> Child2a(): starting the code for Child2a: pid=18
+19a32
+> Child2a(): starting the code for Child2a: pid=19
+20a34
+> Child2a(): starting the code for Child2a: pid=20
+21a36
+> Child2a(): starting the code for Child2a: pid=21
+22a38
+> Child2a(): starting the code for Child2a: pid=22
+23a40
+> Child2a(): starting the code for Child2a: pid=23
+24a42
+> Child2a(): starting the code for Child2a: pid=24
+25a44
+> Child2a(): starting the code for Child2a: pid=25
+26a46
+> Child2a(): starting the code for Child2a: pid=26
+27a48
+> Child2a(): starting the code for Child2a: pid=27
+28a50
+> Child2a(): starting the code for Child2a: pid=28
+29a52
+> Child2a(): starting the code for Child2a: pid=29
+30a54
+> Child2a(): starting the code for Child2a: pid=30
+31a56
+> Child2a(): starting the code for Child2a: pid=31
+32a58
+> Child2a(): starting the code for Child2a: pid=32
+33a60
+> Child2a(): starting the code for Child2a: pid=33
+34a62
+> Child2a(): starting the code for Child2a: pid=34
+35a64
+> Child2a(): starting the code for Child2a: pid=35
+36a66
+> Child2a(): starting the code for Child2a: pid=36
+37a68
+> Child2a(): starting the code for Child2a: pid=37
+38a70
+> Child2a(): starting the code for Child2a: pid=38
+39a72
+> Child2a(): starting the code for Child2a: pid=39
+40a74
+> Child2a(): starting the code for Child2a: pid=40
+41a76
+> Child2a(): starting the code for Child2a: pid=41
+42a78
+> Child2a(): starting the code for Child2a: pid=42
+43a80
+> Child2a(): starting the code for Child2a: pid=43
+44a82
+> Child2a(): starting the code for Child2a: pid=44
+45a84
+> Child2a(): starting the code for Child2a: pid=45
+46a86
+> Child2a(): starting the code for Child2a: pid=46
+47a88
+> Child2a(): starting the code for Child2a: pid=47
+48a90
+> Child2a(): starting the code for Child2a: pid=48
+49a92
+> Child2a(): starting the code for Child2a: pid=49
+51,69c94
+< Child2(): spawned attempt failed, pid = -1
+< Child2(): spawned attempt failed, pid = -1
+< Child2(): spawned attempt failed, pid = -1
+< Child2(): spawned attempt failed, pid = -1
+< Child2(): spawned attempt failed, pid = -1
+< Child2(): spawned attempt failed, pid = -1
+< 
+< Child2(): Terminating self and all my children
+< Child1(): spawned process 6
+< 
+< Child2b(): starting, pid = 56
+< Child2c(): starting the code for Child2c
+< Child2b(): spawned process 57
+< Child1(): spawned process 56
+< Child1(): child 56 returned status of 50
+< Child1(): done
+< start3(): child 5 returned status of 9
+< start3(): done
+< All processes completed.
+---
+> fork1(): pidCount 50 >= MAXPROC; should not see this!!!!!

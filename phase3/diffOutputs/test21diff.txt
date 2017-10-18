@@ -1,0 +1,20 @@
+6,8d5
+< Child2(): spawned process 7
+< Child2(): spawned process 8
+< Child2(): spawned process 9
+9a7
+> Child2(): spawned process 7
+12c10
+< Child2(): Wait result for child 7 has status 11
+---
+> Child2(): spawned process 8
+15c13,15
+< Child2(): Wait result for child 8 has status 11
+---
+> Child2(): spawned process 9
+> Child2(): Wait result for child 11 has status 11
+> Child2(): Wait result for child 11 has status 11
+18c18
+< Child2(): Wait result for child 9 has status 11
+---
+> Child2(): Wait result for child 11 has status 11

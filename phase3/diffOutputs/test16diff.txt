@@ -1,8 +1,0 @@
-7,11c7
-< start3(): After SemFree with processes blocked
-< start3(): status of quit child = 1
-< start3(): status of quit child = 1
-< start3(): Parent done
-< All processes completed.
----
-> start3(): test failed ... wrong value returned

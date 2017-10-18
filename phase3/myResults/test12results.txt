@@ -1,30 +1,30 @@
 start3(): started
 start3(): calling Spawn for Child1a
 Child1a(): starting
-Child1a(): current time of day = 24953264  Should be close, but does not have to be an exact match
-Child1a(): current CPU time = 24953264     Should be close, but does not have to be an exact match
-Child1a(): current time of day = 24953264  Should be close, but does not have to be an exact match
-Child1a(): current CPU time = 24953264     Should be close, but does not have to be an exact match
-Child1a(): current time of day = 24953264  Should be close, but does not have to be an exact match
-Child1a(): current CPU time = 24953264     Should be close, but does not have to be an exact match
+Child1a(): current time of day =  74  Should be close, but does not have to be an exact match
+Child1a(): current CPU time =  22     Should be close, but does not have to be an exact match
+Child1a(): current time of day =  86  Should be close, but does not have to be an exact match
+Child1a(): current CPU time =  36     Should be close, but does not have to be an exact match
+Child1a(): current time of day = 103  Should be close, but does not have to be an exact match
+Child1a(): current CPU time =  50     Should be close, but does not have to be an exact match
 Child1a(): done
 start3(): calling Spawn for Child1b
 Child1b(): starting
-Child1b(): current time of day = 25035200  Should be close, but does not have to be an exact match
-Child1b(): current CPU time = 25035200     Should be close, but does not have to be an exact match
-Child1b(): current time of day = 25035200  Should be close, but does not have to be an exact match
-Child1b(): current CPU time = 25035200     Should be close, but does not have to be an exact match
-Child1b(): current time of day = 25035200  Should be close, but does not have to be an exact match
-Child1b(): current CPU time = 25035200     Should be close, but does not have to be an exact match
+Child1b(): current time of day = 139  Should be close, but does not have to be an exact match
+Child1b(): current CPU time =  20     Should be close, but does not have to be an exact match
+Child1b(): current time of day = 154  Should be close, but does not have to be an exact match
+Child1b(): current CPU time =  36     Should be close, but does not have to be an exact match
+Child1b(): current time of day = 170  Should be close, but does not have to be an exact match
+Child1b(): current CPU time =  48     Should be close, but does not have to be an exact match
 Child1b(): done
 start3(): calling Spawn for Child1c
 Child1c(): starting
-Child1c(): current time of day = 25117136  Should be close, but does not have to be an exact match
-Child1c(): current CPU time = 25117136     Should be close, but does not have to be an exact match
-Child1c(): current time of day = 25117136  Should be close, but does not have to be an exact match
-Child1c(): current CPU time = 25117136     Should be close, but does not have to be an exact match
-Child1c(): current time of day = 25117136  Should be close, but does not have to be an exact match
-Child1c(): current CPU time = 25117136     Should be close, but does not have to be an exact match
+Child1c(): current time of day = 211  Should be close, but does not have to be an exact match
+Child1c(): current CPU time =  22     Should be close, but does not have to be an exact match
+Child1c(): current time of day = 225  Should be close, but does not have to be an exact match
+Child1c(): current CPU time =  37     Should be close, but does not have to be an exact match
+Child1c(): current time of day = 242  Should be close, but does not have to be an exact match
+Child1c(): current CPU time =  53     Should be close, but does not have to be an exact match
 Child1c(): done
 start3(): calling Spawn for Child2
 start3(): Parent done. Calling Terminate.

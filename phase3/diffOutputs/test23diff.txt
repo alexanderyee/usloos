@@ -1,0 +1,10 @@
+6a7,8
+> 
+> Child1(): spawned process 6
+7a10
+> Child2a(): starting the code for Child2a
+10,11c13
+< 
+< Child1(): spawned process 6
+---
+> Child2b(): starting the code for Child2b

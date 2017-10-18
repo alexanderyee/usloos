@@ -10,4 +10,4 @@ Child2(): starting, free'ing semaphore
 Child2(): done
 start3(): after spawn of Child2
 start3(): Parent done. Calling Terminate.
-quit(): process 4, 'start3', has active children. Halting...
+All processes completed.

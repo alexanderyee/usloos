@@ -40,7 +40,7 @@ int start3(char *arg)
    sem_result = SemFree(semaphore[105]);
 
    if (sem_result != 0)
-      USLOSS_Console("start3(): ERROR: SemFree should have returned -1, but did not\n");
+      USLOSS_Console("start3(): ERROR: SemFree should have returned 0, but did not\n");
 
    sem_result = SemCreate(0, &semaphore[MAXSEMS]);
 
@@ -50,7 +50,7 @@ int start3(char *arg)
       USLOSS_Console("start3(): ERROR: last call to SemCreate should have ");
       USLOSS_Console("returned 0, but did not\n");
    }
-   
+
    Terminate(8);
 
    return 0;
