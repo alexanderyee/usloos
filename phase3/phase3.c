@@ -66,6 +66,7 @@ int start2(char *arg)
     for (i = 0; i < MAXPROC; i++) {
         ProcTable[i].mboxID = -1;
         ProcTable[i].childPid = -1;
+        ProcTable[i].nextPid = -1;
     }
 
     for(i = 0; i < MAXSEMS; i++){
