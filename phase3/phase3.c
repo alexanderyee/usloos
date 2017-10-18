@@ -134,12 +134,12 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     // block if child is lower priority, else unblocks em
     MboxSend(ProcTable[pid % MAXPROC].mboxID, NULL, 0);
     printf("p%d, c%li\n", ProcTable[getpid() % MAXPROC].priority, priority);
-    // // if our child has a higher priority and isnt blocked, then let's block ourselves on their mbox
-    // if (ProcTable[currentProc->parentPid % MAXPROC].priority < currentProc->priority && ProcTable[currentProc->parentPid % MAXPROC].status != BLOCKED) {
-    //     printf("im child lol\n");
-    //     dumpProcesses();
-    //     MboxSend(ProcTable[currentProc->parentPid].mboxID, NULL, 0);
-    // }
+
+    // if our child has a higher priority and isnt blocked, then let's block ourselves on their mbox
+    if (ProcTable[currentProc->parentPid % MAXPROC].priority < currentProc->priority && ProcTable[currentProc->parentPid % MAXPROC].status != BLOCKED) {
+        int status, childPid;
+        childPid = waitReal(&status);
+    }
     return pid;
 }
 
@@ -167,39 +167,39 @@ void spawnLaunch()
     MboxReceive(currentProc->mboxID, NULL, MAX_MESSAGE);
     // fields should've been initialized by now, check to see if you need to
     // unblock the parent (since this proc should be run cuz priority)
-    dumpProcesses();
-    printf("c%d, p%d, pstatus%d\n", ProcTable[getpid() % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].status);
+    // dumpProcesses();
+    // printf("c%d, p%d, pstatus%d\n", ProcTable[getpid() % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].status);
 
-    // block parent if we have a higher priority, on our mailbox
-    if (ProcTable[currentProc->parentPid % MAXPROC].priority > currentProc->priority && ProcTable[currentProc->parentPid % MAXPROC].status != BLOCKED) {
-        printf("im child lol2\n");
-        ProcTable[currentProc->parentPid % MAXPROC].status = BLOCKED;
-        MboxSend(currentProc->mboxID, NULL, 0);
-    }
+    // // block parent if we have a higher priority, on our mailbox
+    // if (ProcTable[currentProc->parentPid % MAXPROC].priority > currentProc->priority && ProcTable[currentProc->parentPid % MAXPROC].status != BLOCKED) {
+    //     printf("im child lol2\n");
+    //     ProcTable[currentProc->parentPid % MAXPROC].status = BLOCKED;
+    //     MboxSend(currentProc->mboxID, NULL, 0);
+    // }
     int result;
     // Enable interrupts
 	//enableInterrupts();
 	setUserMode();
     // Call the function passed to fork1, and capture its return value
     result = currentProc->startFunc(currentProc->startArg);
-    // unblock the parent if they were blocked due to our priority
-    if (ProcTable[currentProc->parentPid % MAXPROC].priority > currentProc->priority) {
-        printf("im child lol\n");
-        ProcTable[currentProc->parentPid % MAXPROC].status = READY;
-        MboxReceive(currentProc->mboxID, NULL, MAX_MESSAGE);
-    }
+    // // unblock the parent if they were blocked due to our priority
+    // if (ProcTable[currentProc->parentPid % MAXPROC].priority > currentProc->priority) {
+    //     printf("im child lol\n");
+    //     ProcTable[currentProc->parentPid % MAXPROC].status = READY;
+    //     MboxReceive(currentProc->mboxID, NULL, MAX_MESSAGE);
+    // }
     // unblock the children if they were blocked due to our priority
     // use our mbox
-    if (currentProc->childPid != -1) {
-        procStruct *childPtr = &ProcTable[currentProc->childPid % MAXPROC];
-        do {
-            if (childPtr->priority > currentProc->priority) {
-                childPtr->status = READY;
-                MboxReceive(currentProc->mboxID, NULL, MAX_MESSAGE);
-            }
-            childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
-        } while (childPtr->nextPid != -1);
-    }
+    // if (currentProc->childPid != -1) {
+    //     procStruct *childPtr = &ProcTable[currentProc->childPid % MAXPROC];
+    //     do {
+    //         if (childPtr->priority > currentProc->priority) {
+    //             childPtr->status = READY;
+    //             MboxReceive(currentProc->mboxID, NULL, MAX_MESSAGE);
+    //         }
+    //         childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
+    //     } while (childPtr->nextPid != -1);
+    // }
 	Terminate(result);
 } /* spawnLaunch */
 
