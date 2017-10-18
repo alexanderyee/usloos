@@ -139,10 +139,10 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     MboxSend(ProcTable[pid % MAXPROC].mboxID, NULL, 0);
     // printf("p%d, c%li\n", ProcTable[getpid() % MAXPROC].priority, priority);
 
-    // if our child has a higher priority and isnt blocked, then let's block ourselves on their mbox
+    // if our child has a higher priority and isnt blocked, then let's block
+    // ourselves on their mbox
     if (ProcTable[getpid() % MAXPROC].priority > priority) {
-        int status, childPid;
-        childPid = waitReal(&status);
+        MboxSend(ProcTable[pid % MAXPROC].mboxID, 0, 0);
         printf("wtf happens here?\n");
     }
     return pid;
@@ -175,11 +175,11 @@ void spawnLaunch()
     // dumpProcesses();
     // printf("c%d, p%d, pstatus%d\n", ProcTable[getpid() % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].status);
 
-    // block ourselves if we have a lower priority, on our mailbox
+    // block ourselves if we have a lower priority, on parent's mailbox
     if (ProcTable[currentProc->parentPid % MAXPROC].priority < currentProc->priority && ProcTable[currentProc->parentPid % MAXPROC].status != BLOCKED) {
         printf("im child lol imma block myself\n");
         currentProc->status = BLOCKED;
-        MboxReceive(currentProc->mboxID, NULL, MAX_MESSAGE);
+        MboxSend(ProcTable[currentProc->parentPid % MAXPROC].mboxID, NULL, 0);
     }
 
     int result;
@@ -195,6 +195,8 @@ void spawnLaunch()
     //     ProcTable[currentProc->parentPid % MAXPROC].status = READY;
     //     MboxReceive(currentProc->mboxID, NULL, MAX_MESSAGE);
     // }
+    // might need this idk:
+    /*
     // unblock the children if they were blocked due to our priority
     // use their mbox
     if (currentProc->childPid != -1) {
@@ -207,6 +209,7 @@ void spawnLaunch()
             childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
         } while (childPtr->nextPid != -1);
     }
+*/
 	Terminate(result);
 } /* spawnLaunch */
 
@@ -234,13 +237,14 @@ int wait(systemArgs *args)
 
 void terminate(systemArgs *args)
 {
+    // TODO multiple children
     int childPid = ProcTable[getpid() % MAXPROC].childPid;
-	ProcTable[getpid() % MAXPROC].childPid = 0;
+	ProcTable[getpid() % MAXPROC].childPid = -1;
 	MboxRelease(ProcTable[getpid() % MAXPROC].mboxID);
 	ProcTable[getpid() % MAXPROC].mboxID = 0;
 	ProcTable[getpid() % MAXPROC].pid = 0;
     //if there is a child zap em
-    if (childPid != 0 && ProcTable[childPid % MAXPROC].pid != 0)
+    if (childPid != -1 && ProcTable[childPid % MAXPROC].pid != 0)
     {
         zap(childPid);
     }
