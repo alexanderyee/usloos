@@ -133,10 +133,10 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     }
     // block if child is lower priority, else unblocks em
     MboxSend(ProcTable[pid % MAXPROC].mboxID, NULL, 0);
-    printf("p%d, c%li\n", ProcTable[getpid() % MAXPROC].priority, priority);
+    // printf("p%d, c%li\n", ProcTable[getpid() % MAXPROC].priority, priority);
 
     // if our child has a higher priority and isnt blocked, then let's block ourselves on their mbox
-    if (ProcTable[currentProc->parentPid % MAXPROC].priority < currentProc->priority && ProcTable[currentProc->parentPid % MAXPROC].status != BLOCKED) {
+    if (ProcTable[getpid() % MAXPROC].priority < priority) {
         int status, childPid;
         childPid = waitReal(&status);
     }
