@@ -123,12 +123,15 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     ProcTable[pid % MAXPROC].parentPid = getpid();
     ProcTable[pid % MAXPROC].priority = priority;
     // TODO: implement multiple children
-    if (ProcTable[getpid() % MAXPROC].childPid == -1)
+    if (ProcTable[getpid() % MAXPROC].childPid == -1) {
+        printf("first child\n");
         ProcTable[getpid() % MAXPROC].childPid = pid;
-    else {
+    } else {
         procStruct *childPtr = &ProcTable[ProcTable[getpid() % MAXPROC].childPid % MAXPROC];
-        while (childPtr->nextPid != -1)
+        while (childPtr->nextPid != -1) {
+            printf("n child\n");
             childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
+        }
         ProcTable[childPtr->pid % MAXPROC].nextPid = pid;
     }
     // block if child is lower priority, else unblocks em
@@ -136,7 +139,7 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     // printf("p%d, c%li\n", ProcTable[getpid() % MAXPROC].priority, priority);
 
     // if our child has a higher priority and isnt blocked, then let's block ourselves on their mbox
-    if (ProcTable[getpid() % MAXPROC].priority < priority) {
+    if (ProcTable[getpid() % MAXPROC].priority > priority) {
         int status, childPid;
         childPid = waitReal(&status);
     }
