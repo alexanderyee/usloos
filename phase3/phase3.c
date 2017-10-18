@@ -66,6 +66,7 @@ int start2(char *arg)
     for (i = 0; i < MAXPROC; i++) {
         ProcTable[i].mboxID = -1;
         ProcTable[i].childPid = -1;
+		ProcTable[i].nextPid = -1;
     }
 
     for(i = 0; i < MAXSEMS; i++){
@@ -133,7 +134,6 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     }
     // block if child is lower priority, else unblocks em
     MboxSend(ProcTable[pid % MAXPROC].mboxID, NULL, 0);
-    printf("p%d, c%li\n", ProcTable[getpid() % MAXPROC].priority, priority);
     // // if our child has a higher priority and isnt blocked, then let's block ourselves on their mbox
     // if (ProcTable[currentProc->parentPid % MAXPROC].priority < currentProc->priority && ProcTable[currentProc->parentPid % MAXPROC].status != BLOCKED) {
     //     printf("im child lol\n");
@@ -167,22 +167,22 @@ void spawnLaunch()
     MboxReceive(currentProc->mboxID, NULL, MAX_MESSAGE);
     // fields should've been initialized by now, check to see if you need to
     // unblock the parent (since this proc should be run cuz priority)
-    dumpProcesses();
-    printf("c%d, p%d, pstatus%d\n", ProcTable[getpid() % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].status);
-
+    //dumpProcesses();
+    //printf("c%d, p%d, pstatus%d\n", ProcTable[getpid() % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].status);
+/*
     // block parent if we have a higher priority, on our mailbox
     if (ProcTable[currentProc->parentPid % MAXPROC].priority > currentProc->priority && ProcTable[currentProc->parentPid % MAXPROC].status != BLOCKED) {
         printf("im child lol2\n");
         ProcTable[currentProc->parentPid % MAXPROC].status = BLOCKED;
         MboxSend(currentProc->mboxID, NULL, 0);
-    }
+    } */
     int result;
     // Enable interrupts
 	//enableInterrupts();
 	setUserMode();
     // Call the function passed to fork1, and capture its return value
     result = currentProc->startFunc(currentProc->startArg);
-    // unblock the parent if they were blocked due to our priority
+ /*   // unblock the parent if they were blocked due to our priority
     if (ProcTable[currentProc->parentPid % MAXPROC].priority > currentProc->priority) {
         printf("im child lol\n");
         ProcTable[currentProc->parentPid % MAXPROC].status = READY;
@@ -200,6 +200,7 @@ void spawnLaunch()
             childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
         } while (childPtr->nextPid != -1);
     }
+*/
 	Terminate(result);
 } /* spawnLaunch */
 
@@ -227,13 +228,14 @@ int wait(systemArgs *args)
 
 void terminate(systemArgs *args)
 {
+	// TODO multiple children
     int childPid = ProcTable[getpid() % MAXPROC].childPid;
-	ProcTable[getpid() % MAXPROC].childPid = 0;
+	ProcTable[getpid() % MAXPROC].childPid = -1;
 	MboxRelease(ProcTable[getpid() % MAXPROC].mboxID);
 	ProcTable[getpid() % MAXPROC].mboxID = 0;
 	ProcTable[getpid() % MAXPROC].pid = 0;
     //if there is a child zap em
-    if (childPid != 0 && ProcTable[childPid % MAXPROC].pid != 0)
+    if (childPid != -1 && ProcTable[childPid % MAXPROC].pid != 0)
     {
         zap(childPid);
     }
