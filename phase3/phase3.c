@@ -254,7 +254,7 @@ void terminate(systemArgs *args)
     currentProc->parentPid = -1;
     if (childPid != -1) {
         procStruct *childPtr = &ProcTable[childPid % MAXPROC];
-        while (childPtr != NULL && childPtr->pid != 0)
+        while (childPtr != NULL && childPtr->pid != 0){
             zap(childPtr->pid);
             childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
         }
