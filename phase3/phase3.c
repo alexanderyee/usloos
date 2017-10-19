@@ -38,6 +38,8 @@ void cpuTime(systemArgs *);
 void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
 procStruct ProcTable[MAXPROC];
 semaphore SemsTable[MAXSEMS];
+
+/* start2: entry point for phase3 which spawns start3 */
 int start2(char *arg)
 {
     int pid, i, status;
@@ -76,44 +78,16 @@ int start2(char *arg)
         SemsTable[i].mboxID = -1;
     }
 
-    /*
-     * Create first user-level process and wait for it to finish.
-     * These are lower-case because they are not system calls;
-     * system calls cannot be invoked from kernel mode.
-     * Assumes kernel-mode versions of the system calls
-     * with lower-case names.  I.e., Spawn is the user-mode function
-     * called by the test cases; spawn is the kernel-mode function that
-     * is called by the syscallHandler; spawnReal is the function that
-     * contains the implementation and is called by spawn.
-     *
-     * Spawn() is in libuser.c.  It invokes USLOSS_Syscall()
-     * The system call handler calls a function named spawn() -- note lower
-     * case -- that extracts the arguments from the sysargs pointer, and
-     * checks them for possible errors.  This function then calls spawnReal().
-     *
-     * Here, we only call spawnReal(), since we are already in kernel mode.
-     *
-     * spawnReal() will create the process by using a call to fork1 to
-     * create a process executing the code in spawnLaunch().  spawnReal()
-     * and spawnLaunch() then coordinate the completion of the phase 3
-     * process table entries needed for the new process.  spawnReal() will
-     * return to the original caller of Spawn, while spawnLaunch() will
-     * begin executing the function passed to Spawn. spawnLaunch() will
-     * need to switch to user-mode before allowing user code to execute.
-     * spawnReal() will return to spawn(), which will put the return
-     * values back into the sysargs pointer, switch to user-mode, and
-     * return to the user code that called Spawn.
-     */
     pid = spawnReal("start3", start3, NULL, USLOSS_MIN_STACK, 3);
-
-    /* Call the waitReal version of your wait code here.
-     * You call waitReal (rather than Wait) because start2 is running
-     * in kernel (not user) mode.
-     */
     pid = waitReal(&status);
     return pid;
 } /* start2 */
 
+/*
+    spawnReal -- forks a process using given parameters. coordinates with
+                    spawnLaunch to initialize the process table fields using
+                    a created mutex mbox or spawnLaunch's created mutex mbox
+ */
 int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long priority)
 {
     procStruct *currentProc = &ProcTable[getpid() % MAXPROC];
@@ -128,6 +102,8 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     ProcTable[pid % MAXPROC].startArg = arg;
     ProcTable[pid % MAXPROC].parentPid = getpid();
     ProcTable[pid % MAXPROC].priority = priority;
+
+    // insert child into our child list
     if (currentProc->childPid == -1) {
         currentProc->childPid = pid;
     } else {
@@ -146,7 +122,8 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
         Terminate(69);
     }
     return pid;
-}
+} /* spawnReal */
+
 /*
  * Spawn
  * Create a user-level process. Use fork1 to create the process, then change
@@ -168,12 +145,11 @@ int spawn(systemArgs *args)
 }
 
 /* ------------------------------------------------------------------------
-   Name - launch
-   Purpose - Dummy function to enable interrupts and launch a given process
-             upon startup.
+   Name - spawnLaunch
+   Purpose - calls the func of the process, coordinates with spawnReal to
+                initialize process table fields.
    Parameters - none
    Returns - nothing
-   Side Effects - enable interrupts
    ------------------------------------------------------------------------ */
 void spawnLaunch()
 {
@@ -186,8 +162,6 @@ void spawnLaunch()
 	}
 
     int result;
-    // Enable interrupts
-	//enableInterrupts();
     if (isZapped()) {
         terminateReal(69);
     }
@@ -197,6 +171,11 @@ void spawnLaunch()
 	Terminate(result);
 } /* spawnLaunch */
 
+/*
+    waitReal -- calls join to retrieve the quitting child's pid and termination
+                status. Once a child quits, then the parent's child list is
+                modified to have the child deleted from the list.
+*/
 int waitReal(int *status)
 {
     ProcTable[getpid() % MAXPROC].status = BLOCKED;
@@ -211,6 +190,7 @@ int waitReal(int *status)
         ProcTable[getpid() % MAXPROC].childPid = ProcTable[ProcTable[getpid() % MAXPROC].childPid % MAXPROC].nextPid;
     } else { // child is at middle or end of list
         procStruct *childPtr2 = &ProcTable[ProcTable[getpid() % MAXPROC].childPid % MAXPROC];
+        // we know the child is terminated through mboxID being -1
         while (ProcTable[childPtr2->nextPid % MAXPROC].mboxID != -1) {
             childPtr2 = &ProcTable[childPtr2->nextPid % MAXPROC];
         }
@@ -220,20 +200,42 @@ int waitReal(int *status)
     ProcTable[pid % MAXPROC].nextPid = -1;
     ProcTable[getpid() % MAXPROC].status = READY;
 	return pid;
-}
+} /* waitReal */
 
+/* wait
+    Wait for a child process to terminate.
+    Output
+        arg1: process id of the terminating child.
+        arg2: the termination code of the child.
+*/
 int wait(systemArgs *args)
 {
     int pid = waitReal(args->arg2);
-    args->arg1 = (long) pid;
+    args->arg1 = (void *)(long) pid;
     return pid;
 }
 
+/*
+    Terminates the invoking process and all of its children, and synchronizes
+    with its parent’s Wait system call. Processes are terminated by zap’ing them.
+    When all user processes have terminated, your operating system should shut
+    down. Thus, after start3 terminates (or returns) all user processes should
+    have terminated. Since there should then be no runnable or blocked
+    processes, the kernel will halt.
+
+    Input
+    arg1: termination code for the process.
+*/
 void terminate(systemArgs *args)
 {
-    terminateReal(args->arg1);
-}
+    terminateReal((long) args->arg1);
+} /* terminate */
 
+/*
+    terminateReal -- resets the fields of the quitting process in our process
+                        table. Zaps any remaining children and quits with param
+                        status.
+ */
 void terminateReal(int status)
 {
     procStruct *currentProc = &ProcTable[getpid() % MAXPROC];
@@ -245,6 +247,8 @@ void terminateReal(int status)
     currentProc->status = 0;
     currentProc->parentPid = -1;
     currentProc->termCode = status;
+
+    // zap any remaining children
     if (childPid != -1) {
         procStruct *childPtr = &ProcTable[childPid % MAXPROC];
         while (childPtr != NULL && childPtr->pid != 0 && childPtr->termCode == 0){
@@ -255,9 +259,10 @@ void terminateReal(int status)
         }
     }
     quit(status);
-}
+} /* terminateReal */
+
 /*
- *Creates a user-level semaphore.
+  Creates a user-level semaphore.
     Input
         arg1: initial semaphore value.
     Output
@@ -272,21 +277,23 @@ void semCreate(systemArgs *args)
         if(SemsTable[i].semId == -1)
             break;
     }
+
+    // no open slots were found, return -1 in arg4
     if (i == MAXSEMS){
         args->arg4 = (void *) -1;
         return;
     }
 
-    int result = MboxCreate(args->arg1, 50);
+    int result = MboxCreate((long) args->arg1, 50);
     if (result == -1) {
-        args->arg4 = -1;
+        args->arg4 = (void *) -1;
         return;
     }
 	args->arg4 = 0;
-	args->arg2 = (long) i;
+	args->arg2 = (void *) (long) i;
     SemsTable[i].mboxID = result;
     SemsTable[i].semId = i;
-    SemsTable[i].value = args->arg1;
+    SemsTable[i].value = (long) args->arg1;
 }
 
 /*
@@ -296,22 +303,25 @@ void semCreate(systemArgs *args)
  */
 void semP(systemArgs *args)
 {
-    if (args->arg1 < 0 || (int) args->arg1 >= MAXSEMS) {
-        args->arg4 = -1;
+    if (args->arg1 < 0 || (long) args->arg1 >= MAXSEMS) {
+        args->arg4 = (void *) -1;
         return;
     }
-    SemsTable[(int) args->arg1].isBlocking = 1;
-    int result = MboxSend(SemsTable[(int) args->arg1].mboxID, NULL, 0);
-    SemsTable[(int) args->arg1].isBlocking = 0;
-    if (SemsTable[(int) args->arg1].semId == -1) {
+    // MboxSend could potentially block, set isBlocking flag just in case we are
+    // freeing a Sem that has blocked processes later on
+    SemsTable[(long) args->arg1].isBlocking = 1;
+    int result = MboxSend(SemsTable[(long) args->arg1].mboxID, NULL, 0);
+    SemsTable[(long) args->arg1].isBlocking = 0;
+
+    if (SemsTable[(long) args->arg1].semId == -1) {
         systemArgs args;
-        args.arg1 = 1;
+        args.arg1 = (void *) 1;
         terminate(&args);
     }
     if (result == -1)
         USLOSS_Console("semP(): Invalid params for MboxSend\n");
     args->arg4 = 0;
-}
+} /* semP */
 
 /*
  * Performs a “V” operation on a semaphore.
@@ -320,16 +330,17 @@ void semP(systemArgs *args)
  */
 void semV(systemArgs *args)
 {
-    if (args->arg1 < 0 || args->arg1 >= MAXSEMS) {
-        args->arg4 = -1;
+    if (args->arg1 < 0 || (long) args->arg1 >= MAXSEMS) {
+        args->arg4 = (void *) -1;
         return;
     }
 
-    int result = MboxCondReceive(SemsTable[(int) args->arg1].mboxID, NULL, MAX_MESSAGE);
+    int result = MboxCondReceive(SemsTable[(long) args->arg1].mboxID, NULL, MAX_MESSAGE);
     if (result == -1)
         USLOSS_Console("semV(): Invalid params for MboxCondReceive\n");
     args->arg4 = 0;
-}
+} /* semV */
+
 /*
  *Frees a semaphore.
 Input
@@ -340,46 +351,52 @@ Any process waiting on a semaphore when it is freed should be terminated using t
  */
 void semFree(systemArgs *args)
 {
-    if (args->arg1 < 0 || args->arg1 >= MAXSEMS) {
-        args->arg4 = -1;
+    if (args->arg1 < 0 || (long) args->arg1 >= MAXSEMS) {
+        args->arg4 = (void *) -1;
         return;
     }
-    SemsTable[(int) args->arg1].semId = -1;
+    SemsTable[(long) args->arg1].semId = -1;
 
     //1 if there were processes blocked on the semaphore
     //check using a MboxCondSend if the mailbox is full
 
-    if (SemsTable[(int) args->arg1].isBlocking) {
-        args->arg4 = 1;
+    if (SemsTable[(long) args->arg1].isBlocking) {
+        args->arg4 = (void *) 1;
     } else {
         //0 otherwise
-        args->arg4 = 0;
+        args->arg4 = (void *) 0;
     }
 
-    int result = MboxRelease(SemsTable[(int) args->arg1].mboxID);
+    int result = MboxRelease(SemsTable[(long) args->arg1].mboxID);
 
     if (result == -1)
         USLOSS_Console("semFree(): Invalid params for MboxRelease\n");
 
-    SemsTable[(int) args->arg1].mboxID = -1;
-}
+    SemsTable[(long) args->arg1].mboxID = -1;
+} /* semFree */
+
 /*
  * Returns the process ID of the currently running process.
    Output:  arg1: the process ID.
  */
 void getPID(systemArgs *args)
 {
-    args->arg1 = getpid();
-}
+    args->arg1 = (void *) (long) getpid();
+} /* getPID */
 
+/*
+ * Returns the value of USLOSS time-of-day clock.
+Output
+    arg1: the time of day.
+ */
 void getTimeofDay(systemArgs *args)
 {
-	int errCode = USLOSS_DeviceInput(USLOSS_CLOCK_DEV, 0, &(args->arg1));
+	int errCode = USLOSS_DeviceInput(USLOSS_CLOCK_DEV, 0, (int *) &(args->arg1));
 	if (errCode == USLOSS_DEV_INVALID) {
 		USLOSS_Console("readCurStartTime(): Device and unit invalid\n");
 		USLOSS_Halt(1);
 	}
-}
+} /* getTimeofDay */
 
 /*
  *  Routine:  cpuTime
@@ -393,8 +410,8 @@ void getTimeofDay(systemArgs *args)
  */
  void cpuTime(systemArgs *args)
  {
-    args->arg1 = readtime();
- }
+    args->arg1 = (void *) (long) readtime();
+} /* cpuTime */
 
 /* an error method to handle invalid syscalls
  * To clarify, we know it is an invalid syscall.
@@ -406,7 +423,7 @@ void nullsys3(systemArgs *args)
 {
     USLOSS_Console("nullsys(): Invalid syscall %d. Halting...\n", args->number);
     terminateReal(69);
-} /* nullsys */
+} /* nullsys3 */
 
 /*
  * checks if the OS is currently in kernel mode; halts if it isn't.
@@ -422,7 +439,8 @@ void check_kernel_mode(char * funcName)
              "%s(): called while in user mode, by process %d. Halting...\n", funcName, getpid());
          USLOSS_Halt(1);
     }
-}
+} /* check_kernel_mode */
+
 /*
  * sets the current mode to user mode.
  */
@@ -438,5 +456,4 @@ void setUserMode()
     newPSRValue = newPSRValue & 14;
     if (USLOSS_PsrSet(newPSRValue) == USLOSS_ERR_INVALID_PSR)
         USLOSS_Console("ERROR: Invalid PSR value set! was: %u\n", newPSRValue);
-
-}
+} /* setUserMode */
