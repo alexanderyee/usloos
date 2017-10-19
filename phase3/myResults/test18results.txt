@@ -8,12 +8,4 @@ Child2a(): starting
 Child2(): spawned process 8
 Child2b(): starting
 Child2(): spawned process 9
-Child2c(): starting
-Child1(): child 6 returned status of 10
-Child1(): spawned process 10
-Child3(): starting
-Child1(): child 10 returned status of 11
-Child1(): done
-start3(): child 5 returned status of 9
-start3(): done
-All processes completed.
+quit(): process 6, 'Child2', has active children. Halting...
