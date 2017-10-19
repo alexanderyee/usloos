@@ -179,11 +179,11 @@ void spawnLaunch()
     //printf("c%d, p%d, pstatus%d\n", ProcTable[getpid() % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].status);
 
     // block ourself if we have a lower priority, on parent mailbox
-    if (ProcTable[currentProc->parentPid % MAXPROC].status != BLOCKED &&
-            ProcTable[currentProc->parentPid % MAXPROC].priority < currentProc->priority) {
-        currentProc->status = BLOCKED;
-        MboxSend(ProcTable[currentProc->parentPid % MAXPROC].mboxID, NULL, 0);
-    }
+    // if (ProcTable[currentProc->parentPid % MAXPROC].status != BLOCKED &&
+    //         ProcTable[currentProc->parentPid % MAXPROC].priority < currentProc->priority) {
+    //     currentProc->status = BLOCKED;
+    //     MboxSend(ProcTable[currentProc->parentPid % MAXPROC].mboxID, NULL, 0);
+    // }
 
     int result;
     // Enable interrupts
@@ -220,6 +220,33 @@ void spawnLaunch()
 
 int waitReal(int *status)
 {
+    // go through our children to see if any have quit
+    int childPid = ProcTable[getpid() % MAXPROC].childPid;
+    if (childPid < 0) {
+        procStruct *childPtr = &ProcTable[childPid % MAXPROC];
+        while (childPtr->mboxID != -1 && childPtr->nextPid != -1){
+            childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
+        }
+        if (childPtr->mboxID == -1) {
+            int result = childPtr->pid;
+        	childPtr->pid = 0;
+            *status = childPtr->termCode;
+            // shift children
+            // child is our firstborn case
+            if (ProcTable[getpid() % MAXPROC].childPid == result) {
+                ProcTable[getpid() % MAXPROC].childPid = childPtr->nextPid;
+            } else { // child is at middle or end of list
+                procStruct *childPtr2 = &ProcTable[ProcTable[getpid() % MAXPROC].childPid % MAXPROC];
+                while (childPtr2->mboxID != -1) {
+                    childPtr2 = &ProcTable[childPtr2->nextPid % MAXPROC];
+                }
+                childPtr2->nextPid = childPtr->nextPid;
+            }
+            childPtr->nextPid = -1;
+            return result;
+        }
+
+    }
     ProcTable[getpid() % MAXPROC].status = BLOCKED;
     int pid = join(status);
     if(pid < 0)
@@ -246,12 +273,11 @@ void terminate(systemArgs *args)
     int childPid = currentProc->childPid;
 	currentProc->childPid = -1;
 	MboxRelease(currentProc->mboxID);
-	currentProc->mboxID = 0;
-	currentProc->pid = 0;
-    currentProc->nextPid = -1;
+	currentProc->mboxID = -1;
     currentProc->priority = 0;
     currentProc->status = 0;
     currentProc->parentPid = -1;
+    currentProc->termCode = (int) args->arg1;
     if (childPid != -1) {
         procStruct *childPtr = &ProcTable[childPid % MAXPROC];
         while (childPtr != NULL && childPtr->pid != 0){

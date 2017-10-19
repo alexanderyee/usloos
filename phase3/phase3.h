@@ -21,6 +21,7 @@ typedef struct procStruct
         int     nextPid;
         int     priority;
         int     status;
+        int     termCode;
 } procStruct;
 
 typedef struct semaphore
