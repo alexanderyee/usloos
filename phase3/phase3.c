@@ -188,11 +188,12 @@ void spawnLaunch()
     int result;
     // Enable interrupts
 	//enableInterrupts();
-	setUserMode();
-    // Call the function passed to fork1, and capture its return value
     if (isZapped()) {
         Terminate(69);
     }
+	setUserMode();
+    // Call the function passed to fork1, and capture its return value
+
     result = currentProc->startFunc(currentProc->startArg);
  /*   // unblock the parent if they were blocked due to our priority
     if (ProcTable[currentProc->parentPid % MAXPROC].priority > currentProc->priority) {
