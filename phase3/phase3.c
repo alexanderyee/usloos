@@ -222,7 +222,7 @@ int waitReal(int *status)
 {
     // go through our children to see if any have quit
     int childPid = ProcTable[getpid() % MAXPROC].childPid;
-    if (childPid < 0) {
+    if (childPid > 0) {
         procStruct *childPtr = &ProcTable[childPid % MAXPROC];
         while (childPtr->mboxID != -1 && childPtr->nextPid != -1){
             childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
@@ -254,7 +254,8 @@ int waitReal(int *status)
         USLOSS_Console("waitReal(): Invalid join %d. Halting...\n", pid);
         USLOSS_Halt(1);
     }
-
+    ProcTable[pid % MAXPROC].pid = 0;
+    ProcTable[pid % MAXPROC].nextPid = -1;
     ProcTable[getpid() % MAXPROC].status = READY;
     return pid;
 }
