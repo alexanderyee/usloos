@@ -125,10 +125,10 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     ProcTable[pid % MAXPROC].parentPid = getpid();
     ProcTable[pid % MAXPROC].priority = priority;
     // TODO: implement multiple children
-    if (ProcTable[getpid() % MAXPROC].childPid == -1) {
-        ProcTable[getpid() % MAXPROC].childPid = pid;
+    if (currentProc->childPid == -1) {
+        currentProc->childPid = pid;
     } else {
-        procStruct *childPtr = &ProcTable[ProcTable[getpid() % MAXPROC].childPid % MAXPROC];
+        procStruct *childPtr = &ProcTable[currentProc->childPid % MAXPROC];
         while (childPtr->nextPid != -1) {
             childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
         }
@@ -143,7 +143,9 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     //     dumpProcesses();
     //     MboxSend(ProcTable[currentProc->parentPid].mboxID, NULL, 0);
     // }
-
+    if (isZapped()) {
+        Terminate(69);
+    }
     return pid;
 }
 
@@ -187,7 +189,9 @@ void spawnLaunch()
 	//enableInterrupts();
 	setUserMode();
     // Call the function passed to fork1, and capture its return value
-
+    if (isZapped()) {
+        Terminate(69);
+    }
     result = currentProc->startFunc(currentProc->startArg);
  /*   // unblock the parent if they were blocked due to our priority
     if (ProcTable[currentProc->parentPid % MAXPROC].priority > currentProc->priority) {
@@ -236,17 +240,22 @@ int wait(systemArgs *args)
 
 void terminate(systemArgs *args)
 {
-	// TODO multiple children
-
-    int childPid = ProcTable[getpid() % MAXPROC].childPid;
-	ProcTable[getpid() % MAXPROC].childPid = -1;
-	MboxRelease(ProcTable[getpid() % MAXPROC].mboxID);
-	ProcTable[getpid() % MAXPROC].mboxID = 0;
-	ProcTable[getpid() % MAXPROC].pid = 0;
-    //if there is a child zap em
-    if (childPid != -1 && ProcTable[childPid % MAXPROC].pid != 0)
-    {
-        zap(childPid);
+    procStruct *currentProc = &ProcTable[getpid() % MAXPROC];
+    int childPid = currentProc->childPid;
+	currentProc->childPid = -1;
+	MboxRelease(currentProc->mboxID);
+	currentProc->mboxID = 0;
+	currentProc->pid = 0;
+    currentProc->nextPid = -1;
+    currentProc->priority = 0;
+    currentProc->status = 0;
+    currentProc->parentPid = -1;
+    if (childPid != -1) {
+        procStruct *childPtr = &ProcTable[childPid % MAXPROC];
+        do {
+            zap(childPtr->childPid);
+            childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
+        } while (childPtr->nextPid != -1);
     }
     quit((int) args->arg1);
 }
