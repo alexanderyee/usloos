@@ -281,7 +281,7 @@ void terminate(systemArgs *args)
     currentProc->termCode = (int) args->arg1;
     if (childPid != -1) {
         procStruct *childPtr = &ProcTable[childPid % MAXPROC];
-        while (childPtr != NULL && childPtr->pid != 0){
+        while (childPtr != NULL && childPtr->pid != 0 && childPtr->termCode == 0){
             zap(childPtr->pid);
             childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
         }
