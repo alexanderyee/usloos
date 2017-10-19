@@ -237,7 +237,7 @@ int waitReal(int *status)
                 ProcTable[getpid() % MAXPROC].childPid = childPtr->nextPid;
             } else { // child is at middle or end of list
                 procStruct *childPtr2 = &ProcTable[ProcTable[getpid() % MAXPROC].childPid % MAXPROC];
-                while (childPtr2->mboxID != -1) {
+                while (ProcTable[childPtr2->nextPid % MAXPROC].mboxID != -1) {
                     childPtr2 = &ProcTable[childPtr2->nextPid % MAXPROC];
                 }
                 childPtr2->nextPid = childPtr->nextPid;
@@ -253,6 +253,15 @@ int waitReal(int *status)
     {
         USLOSS_Console("waitReal(): Invalid join %d. Halting...\n", pid);
         USLOSS_Halt(1);
+    }
+    if (ProcTable[getpid() % MAXPROC].childPid == pid) {
+        ProcTable[getpid() % MAXPROC].childPid = ProcTable[ProcTable[getpid() % MAXPROC].childPid % MAXPROC].nextPid;
+    } else { // child is at middle or end of list
+        procStruct *childPtr2 = &ProcTable[ProcTable[getpid() % MAXPROC].childPid % MAXPROC];
+        while (ProcTable[childPtr2->nextPid % MAXPROC].mboxID != -1) {
+            childPtr2 = &ProcTable[childPtr2->nextPid % MAXPROC];
+        }
+        childPtr2->nextPid = ProcTable[pid % MAXPROC].nextPid;
     }
     ProcTable[pid % MAXPROC].pid = 0;
     ProcTable[pid % MAXPROC].nextPid = -1;
