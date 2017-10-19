@@ -135,8 +135,8 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
         }
         ProcTable[childPtr->pid % MAXPROC].nextPid = pid;
     }
-    // block if child is lower priority, else unblocks em
-    MboxSend(ProcTable[pid % MAXPROC].mboxID, NULL, 0);
+    // if our child is of higher priority, unblock em
+    //MboxSend(ProcTable[pid % MAXPROC].mboxID, NULL, 0);
 
     // if our child has a higher priority, then let's block ourselves on their mbox
     if (ProcTable[pid % MAXPROC].pid != 0 && priority < currentProc->priority) {
@@ -169,7 +169,9 @@ void spawnLaunch()
 	if (currentProc->mboxID == -1) {
 		currentProc->mboxID = MboxCreate(0, 50);
 	}
-    MboxReceive(currentProc->mboxID, NULL, MAX_MESSAGE);
+    // if we are running before our parent is done initalizing, block
+    if (currentProc->pid == 0)
+        MboxReceive(currentProc->mboxID, NULL, MAX_MESSAGE);
     // fields should've been initialized by now, check to see if you need to
     // unblock the parent (since this proc should be run cuz priority)
 
