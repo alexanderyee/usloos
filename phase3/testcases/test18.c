@@ -41,7 +41,7 @@ int start3(char *arg)
 } /* start3 */
 
 
-int Child1(char *arg) 
+int Child1(char *arg)
 {
     int pid;
     int status;
@@ -57,8 +57,7 @@ int Child1(char *arg)
 
     Spawn("Child3", Child3, "Child3", USLOSS_MIN_STACK, 5, &pid);
     USLOSS_Console("%s(): spawned process %d\n", arg, pid);
-
-    Wait(&pid, &status);
+	Wait(&pid, &status);
     USLOSS_Console("%s(): child %d returned status of %d\n", arg, pid, status);
 
     USLOSS_Console("%s(): done\n", arg);
@@ -67,7 +66,7 @@ int Child1(char *arg)
     return 0;
 } /* Child1 */
 
-int Child2(char *arg) 
+int Child2(char *arg)
 {
     int pid;
 
@@ -88,7 +87,7 @@ int Child2(char *arg)
     return 0;
 } /* Child2 */
 
-int Child3(char *arg) 
+int Child3(char *arg)
 {
     USLOSS_Console("%s(): starting\n", arg);
     Terminate(11);

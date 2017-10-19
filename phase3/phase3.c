@@ -25,6 +25,7 @@ int waitReal(int *);
 void setUserMode();
 void spawnLaunch();
 void terminate(systemArgs *);
+void terminateReal(int);
 void semCreate(systemArgs *);
 void semP(systemArgs *);
 void semV(systemArgs *);
@@ -116,7 +117,9 @@ int start2(char *arg)
 int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long priority)
 {
     procStruct *currentProc = &ProcTable[getpid() % MAXPROC];
-    int pid = fork1(name,(int (*)(char *))spawnLaunch, NULL, stack_size, priority);
+    int pid = fork1(name, (int (*)(char *))spawnLaunch, NULL, stack_size, priority);
+    if (pid < 0)
+        return pid;
     ProcTable[pid % MAXPROC].pid = pid;
 	if (ProcTable[pid % MAXPROC].mboxID == -1){
          ProcTable[pid % MAXPROC].mboxID = MboxCreate(0, 50);
@@ -125,7 +128,6 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     ProcTable[pid % MAXPROC].startArg = arg;
     ProcTable[pid % MAXPROC].parentPid = getpid();
     ProcTable[pid % MAXPROC].priority = priority;
-    // TODO: implement multiple children
     if (currentProc->childPid == -1) {
         currentProc->childPid = pid;
     } else {
@@ -135,8 +137,6 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
         }
         ProcTable[childPtr->pid % MAXPROC].nextPid = pid;
     }
-    // if our child is of higher priority, unblock em
-    //MboxSend(ProcTable[pid % MAXPROC].mboxID, NULL, 0);
 
     // if our child has a higher priority, then let's block ourselves on their mbox
     if (ProcTable[pid % MAXPROC].pid != 0 && priority < currentProc->priority) {
@@ -147,11 +147,23 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     }
     return pid;
 }
-
+/*
+ * Spawn
+ * Create a user-level process. Use fork1 to create the process, then change
+ * it over to user-mode. If thespawned function returns it should have the same
+ * effect as calling terminate.
+ * Input: arg1= address of the function to spawn,
+          arg2: parameter passed to spawned function.
+          arg3: stack size (in bytes).
+          arg4: priority.
+          arg5: character string containing process’s name.
+   Output: arg1: the PID of the newly created process; -1 if a process could not be created.
+           arg4: -1 if illegal values are given as input; 0 otherwise.
+ */
 int spawn(systemArgs *args)
 {
-    int ans = spawnReal(args->arg5, args->arg1, args->arg2, (long) args->arg3, args->arg4);
-    args->arg1 = (long) ans;
+    int ans = spawnReal(args->arg5, args->arg1, args->arg2, (long) args->arg3, (long) args->arg4);
+    args->arg1 = (void *) (long) ans;
     return ans;
 }
 
@@ -166,94 +178,35 @@ int spawn(systemArgs *args)
 void spawnLaunch()
 {
     procStruct *currentProc = &ProcTable[getpid() % MAXPROC];
+
+    // if we are running before our parent is done initalizing, block
 	if (currentProc->mboxID == -1) {
 		currentProc->mboxID = MboxCreate(0, 50);
-	}
-    // if we are running before our parent is done initalizing, block
-    if (currentProc->pid == 0)
         MboxReceive(currentProc->mboxID, NULL, MAX_MESSAGE);
-    // fields should've been initialized by now, check to see if you need to
-    // unblock the parent (since this proc should be run cuz priority)
-
-    //dumpProcesses();
-    //printf("c%d, p%d, pstatus%d\n", ProcTable[getpid() % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].status);
-
-    // block ourself if we have a lower priority, on parent mailbox
-    // if (ProcTable[currentProc->parentPid % MAXPROC].status != BLOCKED &&
-    //         ProcTable[currentProc->parentPid % MAXPROC].priority < currentProc->priority) {
-    //     currentProc->status = BLOCKED;
-    //     MboxSend(ProcTable[currentProc->parentPid % MAXPROC].mboxID, NULL, 0);
-    // }
+	}
 
     int result;
     // Enable interrupts
 	//enableInterrupts();
     if (isZapped()) {
-        Terminate(69);
+        terminateReal(69);
     }
 	setUserMode();
     // Call the function passed to fork1, and capture its return value
-
     result = currentProc->startFunc(currentProc->startArg);
- /*   // unblock the parent if they were blocked due to our priority
-    if (ProcTable[currentProc->parentPid % MAXPROC].priority > currentProc->priority) {
-        printf("im child lol\n");
-        ProcTable[currentProc->parentPid % MAXPROC].status = READY;
-        MboxReceive(currentProc->mboxID, NULL, MAX_MESSAGE);
-    }
-
-    // unblock the children if they were blocked due to our priority
-    // use their mbox
-    if (currentProc->childPid != -1) {
-        procStruct *childPtr = &ProcTable[currentProc->childPid % MAXPROC];
-        do {
-            if (childPtr->priority > currentProc->priority) {
-                childPtr->status = READY;
-                MboxSend(childPtr->mboxID, NULL, 0);
-            }
-            childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
-        } while (childPtr->nextPid != -1);
-    }
-*/
 	Terminate(result);
 } /* spawnLaunch */
 
 int waitReal(int *status)
 {
-    // go through our children to see if any have quit
-    int childPid = ProcTable[getpid() % MAXPROC].childPid;
-    if (childPid > 0) {
-        procStruct *childPtr = &ProcTable[childPid % MAXPROC];
-        while (childPtr->mboxID != -1 && childPtr->nextPid != -1){
-            childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
-        }
-        if (childPtr->mboxID == -1) {
-            int result = childPtr->pid;
-        	childPtr->pid = 0;
-            *status = childPtr->termCode;
-            // shift children
-            // child is our firstborn case
-            if (ProcTable[getpid() % MAXPROC].childPid == result) {
-                ProcTable[getpid() % MAXPROC].childPid = childPtr->nextPid;
-            } else { // child is at middle or end of list
-                procStruct *childPtr2 = &ProcTable[ProcTable[getpid() % MAXPROC].childPid % MAXPROC];
-                while (ProcTable[childPtr2->nextPid % MAXPROC].mboxID != -1) {
-                    childPtr2 = &ProcTable[childPtr2->nextPid % MAXPROC];
-                }
-                childPtr2->nextPid = childPtr->nextPid;
-            }
-            childPtr->nextPid = -1;
-            return result;
-        }
-
-    }
     ProcTable[getpid() % MAXPROC].status = BLOCKED;
-    int pid = join(status);
+	int pid = join(status);
     if(pid < 0)
     {
         USLOSS_Console("waitReal(): Invalid join %d. Halting...\n", pid);
         USLOSS_Halt(1);
     }
+    // search through children to delete
     if (ProcTable[getpid() % MAXPROC].childPid == pid) {
         ProcTable[getpid() % MAXPROC].childPid = ProcTable[ProcTable[getpid() % MAXPROC].childPid % MAXPROC].nextPid;
     } else { // child is at middle or end of list
@@ -266,12 +219,11 @@ int waitReal(int *status)
     ProcTable[pid % MAXPROC].pid = 0;
     ProcTable[pid % MAXPROC].nextPid = -1;
     ProcTable[getpid() % MAXPROC].status = READY;
-    return pid;
+	return pid;
 }
 
 int wait(systemArgs *args)
 {
-
     int pid = waitReal(args->arg2);
     args->arg1 = (long) pid;
     return pid;
@@ -279,23 +231,30 @@ int wait(systemArgs *args)
 
 void terminate(systemArgs *args)
 {
+    terminateReal(args->arg1);
+}
+
+void terminateReal(int status)
+{
     procStruct *currentProc = &ProcTable[getpid() % MAXPROC];
     int childPid = currentProc->childPid;
-	currentProc->childPid = -1;
-	MboxRelease(currentProc->mboxID);
-	currentProc->mboxID = -1;
+    currentProc->childPid = -1;
+    MboxRelease(currentProc->mboxID);
+    currentProc->mboxID = -1;
     currentProc->priority = 0;
     currentProc->status = 0;
     currentProc->parentPid = -1;
-    currentProc->termCode = (int) args->arg1;
+    currentProc->termCode = status;
     if (childPid != -1) {
         procStruct *childPtr = &ProcTable[childPid % MAXPROC];
         while (childPtr != NULL && childPtr->pid != 0 && childPtr->termCode == 0){
             zap(childPtr->pid);
+            if (childPtr->nextPid == -1)
+                break;
             childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
         }
     }
-    quit((int) args->arg1);
+    quit(status);
 }
 /*
  *Creates a user-level semaphore.
@@ -390,7 +349,6 @@ void semFree(systemArgs *args)
     //1 if there were processes blocked on the semaphore
     //check using a MboxCondSend if the mailbox is full
 
-    //if(MboxCondSend(SemsTable[(int) args->arg1].mboxID, NULL, 0) == -2){
     if (SemsTable[(int) args->arg1].isBlocking) {
         args->arg4 = 1;
     } else {
@@ -447,23 +405,8 @@ void getTimeofDay(systemArgs *args)
 void nullsys3(systemArgs *args)
 {
     USLOSS_Console("nullsys(): Invalid syscall %d. Halting...\n", args->number);
-    USLOSS_Halt(1);
+    terminateReal(69);
 } /* nullsys */
-
-/*
- * Spawn
- * Create a user-level process. Use fork1 to create the process, then change
- * it over to user-mode. If thespawned function returns it should have the same
- * effect as calling terminate.
- * Input: arg1= address of the function to spawn,
-          arg2: parameter passed to spawned function.
-          arg3: stack size (in bytes).
-          arg4: priority.
-          arg5: character string containing process’s name.
-   Output: arg1: the PID of the newly created process; -1 if a process could not be created.
-           arg4: -1 if illegal values are given as input; 0 otherwise.
- */
-
 
 /*
  * checks if the OS is currently in kernel mode; halts if it isn't.

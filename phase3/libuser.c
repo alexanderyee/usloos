@@ -77,7 +77,7 @@ int Wait(int *pid, int *status)
 	sysArg.arg1 = pid;
 	sysArg.arg2 = status;
     USLOSS_Syscall(&sysArg);
-
+    *pid = sysArg.arg1;
     return 0;
 
 } /* end of Wait */

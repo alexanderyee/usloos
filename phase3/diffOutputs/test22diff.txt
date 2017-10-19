@@ -1,7 +1,0 @@
-7,8d6
-< Child2(): spawned process 7
-< Child2(): terminating
-10a9,11
-> Child2(): spawned process 7
-> Child2(): terminating
-> Child2a(): starting the code for Child2a
