@@ -177,8 +177,9 @@ void spawnLaunch()
     //printf("c%d, p%d, pstatus%d\n", ProcTable[getpid() % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].status);
 
     // block ourself if we have a lower priority, on parent mailbox
-    if (ProcTable[currentProc->parentPid % MAXPROC].priority < currentProc->priority) {
-        ProcTable[currentProc->parentPid % MAXPROC].status = BLOCKED;
+    if (ProcTable[currentProc->parentPid % MAXPROC].status != BLOCKED &&
+            ProcTable[currentProc->parentPid % MAXPROC].priority < currentProc->priority) {
+        currentProc->status = BLOCKED;
         MboxSend(ProcTable[currentProc->parentPid % MAXPROC].mboxID, NULL, 0);
     }
 
