@@ -138,12 +138,10 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     // block if child is lower priority, else unblocks em
     MboxSend(ProcTable[pid % MAXPROC].mboxID, NULL, 0);
 
-    // // if our child has a higher priority and isnt blocked, then let's block ourselves on their mbox
-    // if (ProcTable[currentProc->parentPid % MAXPROC].priority < currentProc->priority && ProcTable[currentProc->parentPid % MAXPROC].status != BLOCKED) {
-    //     printf("im child lol\n");
-    //     dumpProcesses();
-    //     MboxSend(ProcTable[currentProc->parentPid].mboxID, NULL, 0);
-    // }
+    // if our child has a higher priority, then let's block ourselves on their mbox
+    if (ProcTable[pid % MAXPROC].pid != 0 && priority < currentProc->priority) {
+        MboxSend(ProcTable[pid % MAXPROC].mboxID, NULL, 0);
+    }
     if (isZapped()) {
         Terminate(69);
     }
@@ -177,13 +175,12 @@ void spawnLaunch()
 
     //dumpProcesses();
     //printf("c%d, p%d, pstatus%d\n", ProcTable[getpid() % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].status);
-/*
-    // block parent if we have a higher priority, on our mailbox
-    if (ProcTable[currentProc->parentPid % MAXPROC].priority > currentProc->priority && ProcTable[currentProc->parentPid % MAXPROC].status != BLOCKED) {
-        printf("im child lol2\n");
+
+    // block ourself if we have a lower priority, on parent mailbox
+    if (ProcTable[currentProc->parentPid % MAXPROC].priority < currentProc->priority) {
         ProcTable[currentProc->parentPid % MAXPROC].status = BLOCKED;
-        MboxSend(currentProc->mboxID, NULL, 0);
-    } */
+        MboxSend(ProcTable[currentProc->parentPid % MAXPROC].mboxID, NULL, 0);
+    }
 
     int result;
     // Enable interrupts
