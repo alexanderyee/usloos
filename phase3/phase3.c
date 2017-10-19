@@ -66,7 +66,7 @@ int start2(char *arg)
     for (i = 0; i < MAXPROC; i++) {
         ProcTable[i].mboxID = -1;
         ProcTable[i].childPid = -1;
-		    ProcTable[i].nextPid = -1;
+		ProcTable[i].nextPid = -1;
 
     }
 
@@ -255,7 +255,7 @@ void terminate(systemArgs *args)
     if (childPid != -1) {
         procStruct *childPtr = &ProcTable[childPid % MAXPROC];
         do {
-            zap(childPtr->childPid);
+            zap(childPtr->pid);
             childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
         } while (childPtr->nextPid != -1);
     }
