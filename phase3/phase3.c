@@ -66,7 +66,8 @@ int start2(char *arg)
     for (i = 0; i < MAXPROC; i++) {
         ProcTable[i].mboxID = -1;
         ProcTable[i].childPid = -1;
-		ProcTable[i].nextPid = -1;
+		    ProcTable[i].nextPid = -1;
+
     }
 
     for(i = 0; i < MAXSEMS; i++){
@@ -124,22 +125,27 @@ int spawnReal(char *name, int (*func)(char *), char *arg, long stack_size, long 
     ProcTable[pid % MAXPROC].parentPid = getpid();
     ProcTable[pid % MAXPROC].priority = priority;
     // TODO: implement multiple children
-    if (ProcTable[getpid() % MAXPROC].childPid == -1)
+    if (ProcTable[getpid() % MAXPROC].childPid == -1) {
+        printf("first child\n");
         ProcTable[getpid() % MAXPROC].childPid = pid;
-    else {
+    } else {
         procStruct *childPtr = &ProcTable[ProcTable[getpid() % MAXPROC].childPid % MAXPROC];
-        while (childPtr->nextPid != -1)
+        while (childPtr->nextPid != -1) {
+            printf("n child\n");
             childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
+        }
         ProcTable[childPtr->pid % MAXPROC].nextPid = pid;
     }
     // block if child is lower priority, else unblocks em
     MboxSend(ProcTable[pid % MAXPROC].mboxID, NULL, 0);
+
     // // if our child has a higher priority and isnt blocked, then let's block ourselves on their mbox
     // if (ProcTable[currentProc->parentPid % MAXPROC].priority < currentProc->priority && ProcTable[currentProc->parentPid % MAXPROC].status != BLOCKED) {
     //     printf("im child lol\n");
     //     dumpProcesses();
     //     MboxSend(ProcTable[currentProc->parentPid].mboxID, NULL, 0);
     // }
+
     return pid;
 }
 
@@ -167,6 +173,7 @@ void spawnLaunch()
     MboxReceive(currentProc->mboxID, NULL, MAX_MESSAGE);
     // fields should've been initialized by now, check to see if you need to
     // unblock the parent (since this proc should be run cuz priority)
+
     //dumpProcesses();
     //printf("c%d, p%d, pstatus%d\n", ProcTable[getpid() % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].priority, ProcTable[currentProc->parentPid % MAXPROC].status);
 /*
@@ -176,11 +183,13 @@ void spawnLaunch()
         ProcTable[currentProc->parentPid % MAXPROC].status = BLOCKED;
         MboxSend(currentProc->mboxID, NULL, 0);
     } */
+
     int result;
     // Enable interrupts
 	//enableInterrupts();
 	setUserMode();
     // Call the function passed to fork1, and capture its return value
+
     result = currentProc->startFunc(currentProc->startArg);
  /*   // unblock the parent if they were blocked due to our priority
     if (ProcTable[currentProc->parentPid % MAXPROC].priority > currentProc->priority) {
@@ -188,14 +197,15 @@ void spawnLaunch()
         ProcTable[currentProc->parentPid % MAXPROC].status = READY;
         MboxReceive(currentProc->mboxID, NULL, MAX_MESSAGE);
     }
+
     // unblock the children if they were blocked due to our priority
-    // use our mbox
+    // use their mbox
     if (currentProc->childPid != -1) {
         procStruct *childPtr = &ProcTable[currentProc->childPid % MAXPROC];
         do {
             if (childPtr->priority > currentProc->priority) {
                 childPtr->status = READY;
-                MboxReceive(currentProc->mboxID, NULL, MAX_MESSAGE);
+                MboxSend(childPtr->mboxID, NULL, 0);
             }
             childPtr = &ProcTable[childPtr->nextPid % MAXPROC];
         } while (childPtr->nextPid != -1);
@@ -229,6 +239,7 @@ int wait(systemArgs *args)
 void terminate(systemArgs *args)
 {
 	// TODO multiple children
+
     int childPid = ProcTable[getpid() % MAXPROC].childPid;
 	ProcTable[getpid() % MAXPROC].childPid = -1;
 	MboxRelease(ProcTable[getpid() % MAXPROC].mboxID);
