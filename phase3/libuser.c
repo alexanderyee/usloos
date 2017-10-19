@@ -77,7 +77,7 @@ int Wait(int *pid, int *status)
 	sysArg.arg1 = pid;
 	sysArg.arg2 = status;
     USLOSS_Syscall(&sysArg);
-    *pid = sysArg.arg1;
+    *pid = (long) sysArg.arg1;
     return 0;
 
 } /* end of Wait */
@@ -99,7 +99,7 @@ void Terminate(int status)
     USLOSS_Sysargs sysArg;
     CHECKMODE;
     sysArg.number = SYS_TERMINATE;
-    sysArg.arg1 = status;
+    sysArg.arg1 = (void *) (long) status;
     USLOSS_Syscall(&sysArg);
 } /* end of Terminate */
 
@@ -119,11 +119,11 @@ int SemCreate(int value, int *semaphore)
     if (value < 0)
         return -1;
     sysArg.number = SYS_SEMCREATE;
-    sysArg.arg1 = value;
+    sysArg.arg1 = (void *) (long) value;
     sysArg.arg2 = semaphore;
     USLOSS_Syscall(&sysArg);
-	*semaphore = sysArg.arg2;
-    return sysArg.arg4;
+	*semaphore = (long) sysArg.arg2;
+    return (long) sysArg.arg4;
 } /* end of SemCreate */
 
 
@@ -140,9 +140,9 @@ int SemP(int semaphore)
     USLOSS_Sysargs sysArg;
     CHECKMODE;
     sysArg.number = SYS_SEMP;
-    sysArg.arg1 = semaphore;
+    sysArg.arg1 = (void *) (long) semaphore;
     USLOSS_Syscall(&sysArg);
-    return sysArg.arg4;
+    return (long) sysArg.arg4;
 } /* end of SemP */
 
 
@@ -159,9 +159,9 @@ int SemV(int semaphore)
     USLOSS_Sysargs sysArg;
     CHECKMODE;
     sysArg.number = SYS_SEMV;
-    sysArg.arg1 = semaphore;
+    sysArg.arg1 = (void *) (long) semaphore;
     USLOSS_Syscall(&sysArg);
-    return sysArg.arg4;
+    return (long) sysArg.arg4;
 } /* end of SemV */
 
 
@@ -180,9 +180,9 @@ int SemFree(int semaphore)
     USLOSS_Sysargs sysArg;
     CHECKMODE;
     sysArg.number = SYS_SEMFREE;
-    sysArg.arg1 = semaphore;
+    sysArg.arg1 = (void *) (long) semaphore;
     USLOSS_Syscall(&sysArg);
-    return sysArg.arg4;
+    return (long) sysArg.arg4;
 } /* end of SemFree */
 
 
@@ -200,7 +200,7 @@ void GetTimeofDay(int *tod)
     CHECKMODE;
     sysArg.number = SYS_GETTIMEOFDAY;
     USLOSS_Syscall(&sysArg);
-    *tod = sysArg.arg1;
+    *tod = (long) sysArg.arg1;
 } /* end of GetTimeofDay */
 
 
@@ -220,7 +220,7 @@ void CPUTime(int *cpu)
     CHECKMODE;
     sysArg.number = SYS_CPUTIME;
     USLOSS_Syscall(&sysArg);
-    *cpu = sysArg.arg1;
+    *cpu = (long) sysArg.arg1;
 } /* end of CPUTime */
 
 
@@ -238,7 +238,7 @@ void GetPID(int *pid)
     CHECKMODE;
     sysArg.number = SYS_GETPID;
     USLOSS_Syscall(&sysArg);
-    *pid = sysArg.arg1;
+    *pid = (long) sysArg.arg1;
 } /* end of GetPID */
 
 /* end libuser.c */

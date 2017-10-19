@@ -178,7 +178,6 @@ void spawnLaunch()
 */
 int waitReal(int *status)
 {
-    ProcTable[getpid() % MAXPROC].status = BLOCKED;
 	int pid = join(status);
     if(pid < 0)
     {
@@ -198,7 +197,6 @@ int waitReal(int *status)
     }
     ProcTable[pid % MAXPROC].pid = 0;
     ProcTable[pid % MAXPROC].nextPid = -1;
-    ProcTable[getpid() % MAXPROC].status = READY;
 	return pid;
 } /* waitReal */
 
@@ -244,7 +242,6 @@ void terminateReal(int status)
     MboxRelease(currentProc->mboxID);
     currentProc->mboxID = -1;
     currentProc->priority = 0;
-    currentProc->status = 0;
     currentProc->parentPid = -1;
     currentProc->termCode = status;
 

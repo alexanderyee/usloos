@@ -20,7 +20,6 @@ typedef struct procStruct
         int     parentPid;
         int     nextPid;
         int     priority;
-        int     status;
         int     termCode;
 } procStruct;
 
