@@ -17,7 +17,7 @@
 
 extern  int  Sleep(int seconds);
 
-extern  int  DiskRead (void *diskBuffer, int unit, int track, int first, 
+extern  int  DiskRead (void *diskBuffer, int unit, int track, int first,
                        int sectors, int *status);
 extern  int  DiskWrite(void *diskBuffer, int unit, int track, int first,
                        int sectors, int *status);
@@ -28,6 +28,29 @@ extern  int  TermWrite(char *buffer, int bufferSize, int unitID,
                        int *numCharsRead);
 
 extern  int  start4(char *);
+
+typedef struct procStruct procStruct;
+typedef struct procStruct * procPtr;
+typedef struct procStruct
+{
+    int     pid;
+    int     mboxID;
+    int     childPid;
+    int     parentPid;
+    int     nextPid;
+    int     priority;
+    int     startSleepTime; /* system time of when the process started sleeping */
+
+} procStruct;
+
+typedef struct sleepNode sleepNode;
+typedef struct sleepNodePtr * sleepNode;
+typedef struct sleepNode
+{
+    procPtr proc;
+    sleepNodePtr next;
+
+} sleepNode;
 
 #define ERR_INVALID             -1
 #define ERR_OK                  0

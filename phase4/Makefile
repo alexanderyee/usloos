@@ -1,23 +1,24 @@
 PREFIX = ${HOME}
 
-TARGET = libphase3.a
-ASSIGNMENT = 452phase3
+TARGET = libphase4.a
+ASSIGNMENT = 452phase4
 CC = gcc
 AR = ar
 
-COBJS = phase3.o libuser.o
+COBJS = phase4.o libuser4.o
 CSRCS = ${COBJS:.o=.c}
 
 PHASE1LIB = patrickphase1
 PHASE2LIB = patrickphase2
+PHASE3LIB = patrickphase3
 #PHASE1LIB = patrickphase1debug
 #PHASE2LIB = patrickphase2debug
 
-HDRS = libuser.h sems.h phase1.h phase2.h phase3.h
+HDRS = libuser.h phase1.h phase2.h phase3.h phase4.h
 
 INCLUDE = ${PREFIX}/include
 
-CFLAGS = -Wall -g -std=gnu99 -I. -I${INCLUDE} 
+CFLAGS = -Wall -g -std=gnu99 -I. -I${INCLUDE}
 
 UNAME := $(shell uname -s)
 
@@ -30,13 +31,13 @@ LDFLAGS += -L. -L${PREFIX}/lib
 TESTDIR = testcases
 TESTS = test00 test01 test02 test03 test04 test05 test06 test07 test08 \
         test09 test10 test11 test12 test13 test14 test15 test16 test17 \
-        test18 test19 test20 test21 test22 test23 test24 test25 test26 
+        test18 test19 test20 test21 test22 test23
 
-LIBS = -l$(PHASE2LIB) -l$(PHASE1LIB) -lusloss3.6 -lphase3
+LIBS = -lusloss3.6 -l$(PHASE3LIB) -l$(PHASE2LIB) -l$(PHASE1LIB) -lphase4
 
 
 $(TARGET):	$(COBJS)
-		$(AR) -r $@ $(COBJS) 
+		$(AR) -r $@ $(COBJS)
 
 $(TESTS):	$(TARGET) p1.o
 	$(CC) $(CFLAGS) -c $(TESTDIR)/$@.c
@@ -49,5 +50,4 @@ clean:
 phase3.o: libuser.h
 
 submit: $(CSRCS) $(HDRS) Makefile
-	tar cvzf phase3.tgz $(CSRCS) $(HDRS) Makefile
-
+	tar cvzf phase4.tgz $(CSRCS) $(HDRS) Makefile

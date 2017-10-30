@@ -1,20 +1,32 @@
+/* ------------------------------------------------------------------------
+   phase4.c
+
+   University of Arizona
+   Computer Science 452
+
+   Katie Pan & Alex Yee
+   ------------------------------------------------------------------------ */
 #include <usloss.h>
+#include <libuser.h>
+#include <usyscall.h>
 #include <phase1.h>
 #include <phase2.h>
 #include <phase3.h>
 #include <phase4.h>
-#include <stdlib.h>
+#include <stdlib.h> /* needed for atoi() */
 
-int  semRunning;
+int	 	running;
+procStruct ProcTable[MAXPROC];
 
 static int	ClockDriver(char *);
 static int	DiskDriver(char *);
+int sleepReal(USLOSS_Sysargs *);
+void check_kernel_mode(char *);
 
-void
-start3(void)
+void start3(void)
 {
     char	name[128];
-    char        buf[10];
+    char    termbuf[10];
     int		i;
     int		clockPID;
     int		pid;
@@ -22,25 +34,32 @@ start3(void)
     /*
      * Check kernel mode here.
      */
+    check_kernel_mode("start3");
 
+    /* init ProcTable */
+    for (i = 0; i < MAXPROC; i++) {
+        ProcTable[i].pid = -1;
+    }
     /*
-     * Create clock device driver 
+     * Create clock device driver
      * I am assuming a semaphore here for coordination.  A mailbox can
      * be used instead -- your choice.
      */
-    semRunning = semcreateReal(0);
+    running = semcreateReal(0);
     clockPID = fork1("Clock driver", ClockDriver, NULL, USLOSS_MIN_STACK, 2);
     if (clockPID < 0) {
-	USLOSS_Console("start3(): Can't create clock driver\n");
-	USLOSS_Halt(1);
+	    USLOSS_Console("start3(): Can't create clock driver\n");
+        USLOSS_Halt(1);
     }
+    // initialize the process entry in our ProcTable
+
     /*
      * Wait for the clock driver to start. The idea is that ClockDriver
-     * will V the semaphore "semRunning" once it is running.
+     * will V the semaphore "running" once it is running.
      */
 
-    sempReal(semRunning);
-
+    sempReal(running);
+	char buf[69];
     /*
      * Create the disk device drivers here.  You may need to increase
      * the stack size depending on the complexity of your
@@ -80,25 +99,24 @@ start3(void)
 
     // eventually, at the end:
     quit(0);
-    
+
 }
 
-static int
-ClockDriver(char *arg)
+static int ClockDriver(char *arg)
 {
     int result;
     int status;
 
     // Let the parent know we are running and enable interrupts.
-    semvReal(semRunning);
+    semvReal(running);
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
 
     // Infinite loop until we are zap'd
     while(! isZapped()) {
-	result = waitDevice(USLOSS_CLOCK_DEV, 0, &status);
-	if (result != 0) {
-	    return 0;
-	}
+    	result = waitDevice(USLOSS_CLOCK_DEV, 0, &status);
+    	if (result != 0) {
+    	    return 0;
+	    }
 	/*
 	 * Compute the current time and wake up any processes
 	 * whose time has come.
@@ -106,8 +124,44 @@ ClockDriver(char *arg)
     }
 }
 
-static int
-DiskDriver(char *arg)
+static int DiskDriver(char *arg)
 {
     return 0;
+}
+
+int sleepReal(USLOSS_Sysargs * args)
+{
+    if (args->arg1 < 0) {
+        args->arg1 = -1;
+        return -1;
+    }
+
+
+}
+
+/*
+ * checks if the OS is currently in kernel mode; halts if it isn't.
+ * to clarify, we are checking if the OS is in kernel mode. If it isn't,
+ * we will terminate. Otherwise, we will continue, since it is a void
+ * function. This function will take in a char* funcName, which is the function
+ * name.
+ */
+void check_kernel_mode(char * funcName)
+{
+    if (!(USLOSS_PsrGet() & 1)) {
+        USLOSS_Console(
+             "%s(): called while in user mode, by process %d. Halting...\n", funcName, getpid());
+         USLOSS_Halt(1);
+    }
+} /* check_kernel_mode */
+
+/*
+ * initProc -- function that initializes the process entry in our phase4 ProcTable
+ *              initializes pid and the private mbox.
+ *      returns 0 on success, -1 if failure
+ */
+int initProc(int pid)
+{
+    ProcTable[pid % MAXPROC].pid = pid;
+
 }
