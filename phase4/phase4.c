@@ -13,6 +13,7 @@
 #include <phase2.h>
 #include <phase3.h>
 #include <phase4.h>
+#include <providedPrototypes.h>
 #include <stdlib.h> /* needed for atoi() */
 
 int	 	running;
@@ -27,7 +28,7 @@ void check_kernel_mode(char *);
 void start3(void)
 {
     char	name[128];
-    char    termbuf[10];
+    //char    termbuf[10];
     int		i;
     int		clockPID;
     int		pid;
@@ -150,7 +151,7 @@ static int DiskDriver(char *arg)
 int sleepReal(USLOSS_Sysargs * args)
 {
     if (args->arg1 < 0) {
-        args->arg1 = -1;
+        args->arg1 = (void *)(long) -1;
         return -1;
     }
 
@@ -207,7 +208,7 @@ int insert(procPtr p){
      		return 1;
 		}
    }
-   pQueues[i] = p;
+   sleepQueue[i] = p;
    return 0;
 }
 

@@ -1,4 +1,4 @@
-
+#include <usyscall.h>
 /*
  * interface for sleepReal.
  * int seconds -- # of seconds calling process should be asleep
@@ -9,7 +9,7 @@ int Sleep(int seconds)
 {
     USLOSS_Sysargs sysArg;
 
-    CHECKMODE;
+    // TODO check for kernel mode
     sysArg.number = SYS_SLEEP;
     sysArg.arg1 = (void *) (long) seconds;
     USLOSS_Syscall(&sysArg);
@@ -21,7 +21,7 @@ int DiskRead(void *dbuff, int unit, int track, int first, int sectors,
 {
     USLOSS_Sysargs sysArg;
 
-    CHECKMODE;
+    // TODO check for kernel mode
     sysArg.number = SYS_DISKREAD;
     //sysArg.arg1 = (void *) (long) seconds;
     return 0;
@@ -32,7 +32,7 @@ int DiskWrite(void *dbuff, int unit, int track, int first,
 {
     USLOSS_Sysargs sysArg;
 
-    CHECKMODE;
+    // TODO check for kernel mode
     sysArg.number = SYS_DISKWRITE;
     //sysArg.arg1 = (void *) (long) seconds;
     return 0;
