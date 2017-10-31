@@ -47,7 +47,8 @@ void start3(void)
     /* init ProcTable */
     for (i = 0; i < MAXPROC; i++) {
         ProcTable[i].pid = -1;
-    }
+    	sleepQueue[i] = NULL;
+	}
     /*
      * Create clock device driver
      * I am assuming a semaphore here for coordination.  A mailbox can
@@ -121,29 +122,40 @@ static int ClockDriver(char *arg)
 
     // Infinite loop until we are zap'd
     while(!isZapped()) {
-    	result = waitDevice(USLOSS_CLOCK_DEV, 0, &status);
+    	printf("isZeppleld\n");
+		result = waitDevice(USLOSS_CLOCK_DEV, 0, &status);
         //printf("status for waitDevice: %d\n", status);
         // if (result != 0) {
     	//     return 0;
 	    // }
+		printf("isZeppleld1\n");
+
         result = USLOSS_DeviceInput(USLOSS_CLOCK_DEV, 0, &status);
+		printf("isZeppleld2\n");
+
     	if (result == USLOSS_DEV_INVALID) {
     		USLOSS_Console("ClockDriver(): Device and unit invalid\n");
     		USLOSS_Halt(1);
     	}
         //printf("status for DeviceInput: %d\n", status);
         // look through all the sleeping procs, subtract the time.
-        while (i < MAXPROC && sleepQueue[i] != NULL) {
+		while (i < MAXPROC && sleepQueue[i] != NULL) {
+			printf("i: %d, lastSleepTime: %d, 1\n", i, sleepQueue[i]->lastSleepTime);
             if (sleepQueue[i]->lastSleepTime == 0) {
                 // init the start time
+				printf("buttholes\n");
                 sleepQueue[i]->lastSleepTime = status;
             } else {
                 sleepQueue[i]->sleepSecondsRemaining -= status - sleepQueue[i]->lastSleepTime;
                 sleepQueue[i]->lastSleepTime = status;
+				 printf("i: %d, lastSleepTime: %d, 2\n", i, sleepQueue[i]->lastSleepTime);
             }
             if (sleepQueue[i]->sleepSecondsRemaining <= 0) {
-                MboxSend(popAtIndex(i)->mboxID, NULL, 0);
+                printf("buttholes\n");
+				MboxSend(popAtIndex(i)->mboxID, NULL, 0);
+				printf("i: %d, lastSleepTime: %d, 3\n", i, sleepQueue[i]->lastSleepTime);
             }
+			printf("huh??\n");
             i++;
         }
 	/*
