@@ -122,9 +122,9 @@ static int ClockDriver(char *arg)
     while(! isZapped()) {
     	result = waitDevice(USLOSS_CLOCK_DEV, 0, &status);
         printf("status for waitDevice: %d\n", status);
-        if (result != 0) {
-    	    return 0;
-	    }
+        // if (result != 0) {
+    	//     return 0;
+	    // }
         result = USLOSS_DeviceInput(USLOSS_CLOCK_DEV, 0, &status);
     	if (result == USLOSS_DEV_INVALID) {
     		USLOSS_Console("ClockDriver(): Device and unit invalid\n");
