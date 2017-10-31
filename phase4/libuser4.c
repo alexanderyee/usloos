@@ -6,11 +6,19 @@
  * arg1 = seconds
  * arg1 after syscall: return value, 0 if successful, -1 if seconds is invalid.
  */
+
+#define CHECKMODE {    \
+    if (USLOSS_PsrGet() & USLOSS_PSR_CURRENT_MODE) { \
+        USLOSS_Console("Trying to invoke syscall from kernel\n"); \
+        USLOSS_Halt(1);  \
+    }  \
+}
+
 int Sleep(int seconds)
 {
     USLOSS_Sysargs sysArg;
-
-    // TODO check for kernel mode
+	
+	CHECKMODE;
     sysArg.number = SYS_SLEEP;
     sysArg.arg1 = (void *) (long) seconds;
     USLOSS_Syscall(&sysArg);
@@ -22,7 +30,7 @@ int DiskRead(void *dbuff, int unit, int track, int first, int sectors,
 {
     USLOSS_Sysargs sysArg;
 
-    // TODO check for kernel mode
+	CHECKMODE;
     sysArg.number = SYS_DISKREAD;
     //sysArg.arg1 = (void *) (long) seconds;
     return 0;
@@ -33,8 +41,8 @@ int DiskWrite(void *dbuff, int unit, int track, int first,
 {
     USLOSS_Sysargs sysArg;
 
-    // TODO check for kernel mode
-    sysArg.number = SYS_DISKWRITE;
+    CHECKMODE;
+	sysArg.number = SYS_DISKWRITE;
     //sysArg.arg1 = (void *) (long) seconds;
     return 0;
 }
@@ -43,7 +51,7 @@ int DiskSize(int unit, int *sector, int *track, int *disk)
 {
     USLOSS_Sysargs sysArg;
 
-    CHECKMODE;
+	CHECKMODE;
     sysArg.number = SYS_DISKSIZE;
     //sysArg.arg1 = (void *) (long) seconds;
     return 0;
