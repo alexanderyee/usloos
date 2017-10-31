@@ -19,7 +19,7 @@
 int	 	running;
 procStruct ProcTable[MAXPROC];
 procPtr    sleepQueue[MAXPROC];
-void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
+void (*systemCallVec[MAXSYSCALLS])(USLOSS_Sysargs *);
 
 static int ClockDriver(char *);
 static int DiskDriver(char *);
@@ -41,9 +41,6 @@ void start3(void)
      */
     check_kernel_mode("start3");
     // initalize the syscall handlers
-   for (i = 0; i < MAXSYSCALLS; i++) {
-       systemCallVec[i] = (void (*) (USLOSS_Sysargs *)) nullsys3;
-   }
    systemCallVec[SYS_SLEEP] = (void (*) (USLOSS_Sysargs *)) sleepReal;
 
     /* init ProcTable */
