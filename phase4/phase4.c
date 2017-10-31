@@ -27,6 +27,7 @@ int sleepReal(USLOSS_Sysargs *);
 void check_kernel_mode(char *);
 int enqueue(procPtr);
 procPtr pop(void);
+procPtr popAtIndex(int);
 
 void start3(void)
 {
@@ -111,17 +112,16 @@ void start3(void)
 
 static int ClockDriver(char *arg)
 {
-    int result;
-    int status;
+    int result, status, i = 0;
 
     // Let the parent know we are running and enable interrupts.
     semvReal(running);
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
 
     // Infinite loop until we are zap'd
-    while(! isZapped()) {
+    while(!isZapped()) {
     	result = waitDevice(USLOSS_CLOCK_DEV, 0, &status);
-        printf("status for waitDevice: %d\n", status);
+        //printf("status for waitDevice: %d\n", status);
         // if (result != 0) {
     	//     return 0;
 	    // }
@@ -130,9 +130,21 @@ static int ClockDriver(char *arg)
     		USLOSS_Console("ClockDriver(): Device and unit invalid\n");
     		USLOSS_Halt(1);
     	}
-        printf("status for DeviceInput: %d\n", status);
-
-
+        //printf("status for DeviceInput: %d\n", status);
+        // look through all the sleeping procs, subtract the time.
+        while (i < MAXPROC && sleepQueue[i] != NULL) {
+            if (sleepQueue[i]->lastSleepTime == 0) {
+                // init the start time
+                sleepQueue[i]->lastSleepTime = status;
+            } else {
+                sleepQueue[i]->sleepSecondsRemaining -= status - lastSleepTime;
+                sleepQueue[i]->lastSleepTime = status;
+            }
+            if (sleepQueue[i]->sleepSecondsRemaining <= 0) {
+                MboxSend(popAtIndex(i)->mboxID, NULL, 0);
+            }
+            i++;
+        }
 	/*
 	 * Compute the current time and wake up any processes
 	 * whose time has come.
@@ -163,7 +175,7 @@ int sleepReal(USLOSS_Sysargs * args)
     enqueue(&ProcTable[getpid() % MAXPROC]);
     // TODO don't ignore the result of enqueue
     ProcTable[getpid() % MAXPROC].sleepSecondsRemaining = (int) (long) args->arg1;
-    MboxSend(ProcTable[getpid() % MAXPROC].mboxID, NULL, 0);
+    MboxReceive(ProcTable[getpid() % MAXPROC].mboxID, NULL, MAX_MESSAGE);
 
     args->arg1 = 0;
     return 0;
@@ -231,5 +243,24 @@ procPtr pop()
         sleepQueue[i] = sleepQueue[i+1];
         i++;
     }
+    return result;
+}
+
+/*
+ * pop at a certain index
+ */
+procPtr popAtIndex(int index)
+{
+    int i = index;
+    procPtr result = sleepQueue[i];
+
+    if(result != NULL){
+        //shift everything else
+        while (i < (MAXPROC-1) && sleepQueue[i] != NULL) {
+            sleepQueue[i] = sleepQueue[i+1];
+            i++;
+        }
+    }
+
     return result;
 }

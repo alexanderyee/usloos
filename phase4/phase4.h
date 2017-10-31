@@ -36,6 +36,7 @@ typedef struct procStruct
     int     pid;
     int     mboxID;
     int     sleepSecondsRemaining; // number of seconds left to sleep. if > 0, then this process is asleep.
+    int     sleepStartTime;
 } procStruct;
 
 
