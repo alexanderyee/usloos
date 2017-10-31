@@ -17,7 +17,12 @@
 
 int	 	running;
 procStruct ProcTable[MAXPROC];
+<<<<<<< HEAD
 procPtr    sleepQueue[MAXPROC];
+=======
+procPtr sleepQueue[MAXPROC];
+
+>>>>>>> b836f521574abd5da84f4e1a1970ebbbe63b5434
 static int	ClockDriver(char *);
 static int	DiskDriver(char *);
 int sleepReal(USLOSS_Sysargs *);
@@ -128,15 +133,32 @@ static int DiskDriver(char *arg)
 {
     return 0;
 }
+<<<<<<< HEAD
 
 int sleepReal(USLOSS_Sysargs *args)
+=======
+/*
+ * Causes the calling process to become unrunnable for at least the 
+ * specified number of seconds, and not significantly longer. 
+ * The seconds must be non-negative.
+ *
+ * Return values:
+ *		-1: seconds is not valid
+ *		0: otherwise
+ */
+int sleepReal(USLOSS_Sysargs * args)
+>>>>>>> b836f521574abd5da84f4e1a1970ebbbe63b5434
 {
     if (args->arg1 < 0) {
         args->arg1 = -1;
         return -1;
     }
+<<<<<<< HEAD
 
     enqueue(ProcTable[getpid()])
+=======
+	
+>>>>>>> b836f521574abd5da84f4e1a1970ebbbe63b5434
 
     args->arg1 = 0;
     return 0;
@@ -154,7 +176,7 @@ void check_kernel_mode(char * funcName)
     if (!(USLOSS_PsrGet() & 1)) {
         USLOSS_Console(
              "%s(): called while in user mode, by process %d. Halting...\n", funcName, getpid());
-         USLOSS_Halt(1);
+        USLOSS_Halt(1);
     }
 } /* check_kernel_mode */
 
@@ -166,6 +188,7 @@ void check_kernel_mode(char * funcName)
 int initProc(int pid)
 {
     ProcTable[pid % MAXPROC].pid = pid;
+<<<<<<< HEAD
 }
 
 /*
@@ -196,4 +219,13 @@ procPtr pop()
         i++;
     }
     return result;
+=======
+	ProcTable[pid % MAXPROC].mboxID = MboxCreate(0, MAX_MESSAGE);
+	if (ProcTable[pid % MAXPROC].mboxID < 0) {
+		USLOSS_Console("initProc(): Failure creating private mailbox for process %d", pid);
+		return -1;
+	}
+	return 0;
+>>>>>>> b836f521574abd5da84f4e1a1970ebbbe63b5434
 }
+

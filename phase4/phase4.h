@@ -39,8 +39,7 @@ typedef struct procStruct
     int     parentPid;
     int     nextPid;
     int     priority;
-    int     startSleepTime; /* system time of when the process started sleeping */
-
+    int     sleepSecondsRemaining; // number of seconds left to sleep. if > 0, then this process is asleep.
 } procStruct;
 
 typedef struct sleepNode sleepNode;
