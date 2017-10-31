@@ -137,7 +137,7 @@ static int ClockDriver(char *arg)
                 // init the start time
                 sleepQueue[i]->lastSleepTime = status;
             } else {
-                sleepQueue[i]->sleepSecondsRemaining -= status - lastSleepTime;
+                sleepQueue[i]->sleepSecondsRemaining -= status - sleepQueue[i]->lastSleepTime;
                 sleepQueue[i]->lastSleepTime = status;
             }
             if (sleepQueue[i]->sleepSecondsRemaining <= 0) {
