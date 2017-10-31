@@ -74,14 +74,15 @@ void start3(void)
      * driver, and perhaps do something with the pid returned.
      */
 
-    for (i = 0; i < USLOSS_DISK_UNITS; i++) {
-        sprintf(buf, "%d", i);
-        pid = fork1(name, DiskDriver, buf, USLOSS_MIN_STACK, 2);
-        if (pid < 0) {
-            USLOSS_Console("start3(): Can't create term driver %d\n", i);
-            USLOSS_Halt(1);
-        }
-    }
+    //
+    // for (i = 0; i < USLOSS_DISK_UNITS; i++) {
+    //     sprintf(buf, "%d", i);
+    //     pid = fork1(name, DiskDriver, buf, USLOSS_MIN_STACK, 2);
+    //     if (pid < 0) {
+    //         USLOSS_Console("start3(): Can't create term driver %d\n", i);
+    //         USLOSS_Halt(1);
+    //     }
+    // }
 
     // May be other stuff to do here before going on to terminal drivers
 
