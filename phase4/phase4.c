@@ -17,7 +17,7 @@
 
 int	 	running;
 procStruct ProcTable[MAXPROC];
-
+procPtr    sleepQueue[MAXPROC];
 static int	ClockDriver(char *);
 static int	DiskDriver(char *);
 int sleepReal(USLOSS_Sysargs *);
@@ -129,14 +129,17 @@ static int DiskDriver(char *arg)
     return 0;
 }
 
-int sleepReal(USLOSS_Sysargs * args)
+int sleepReal(USLOSS_Sysargs *args)
 {
     if (args->arg1 < 0) {
         args->arg1 = -1;
         return -1;
     }
 
+    enqueue(ProcTable[getpid()])
 
+    args->arg1 = 0;
+    return 0;
 }
 
 /*
@@ -163,5 +166,34 @@ void check_kernel_mode(char * funcName)
 int initProc(int pid)
 {
     ProcTable[pid % MAXPROC].pid = pid;
+}
 
+/*
+ *
+ */
+int insert(procPtr p){
+    int i = 0;
+    while (i < MAXPROC && sleepQueue[i] != NULL) {
+    	i++;
+		if (i == MAXPROC) {
+      		USLOSS_Console("insert(): no more roomsies ;_;\n");
+     		return 1;
+		}
+   }
+   pQueues[i] = p;
+   return 0;
+}
+
+procPtr pop()
+{
+    int i = 0;
+    procPtr result = NULL;
+    if (sleepQueue[0] != NULL) {
+        result = sleepQueue[0];
+    }
+    while (i < (MAXPROC-1) && sleepQueue[i] != NULL) {
+        sleepQueue[i] = sleepQueue[i+1];
+        i++;
+    }
+    return result;
 }
