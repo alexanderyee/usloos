@@ -35,21 +35,9 @@ typedef struct procStruct
 {
     int     pid;
     int     mboxID;
-    int     childPid;
-    int     parentPid;
-    int     nextPid;
-    int     priority;
     int     sleepSecondsRemaining; // number of seconds left to sleep. if > 0, then this process is asleep.
 } procStruct;
 
-typedef struct sleepNode sleepNode;
-typedef struct sleepNodePtr * sleepNode;
-typedef struct sleepNode
-{
-    procPtr proc;
-    sleepNodePtr next;
-
-} sleepNode;
 
 #define ERR_INVALID             -1
 #define ERR_OK                  0

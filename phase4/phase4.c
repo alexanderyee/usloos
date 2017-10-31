@@ -17,14 +17,10 @@
 
 int	 	running;
 procStruct ProcTable[MAXPROC];
-<<<<<<< HEAD
 procPtr    sleepQueue[MAXPROC];
-=======
-procPtr sleepQueue[MAXPROC];
 
->>>>>>> b836f521574abd5da84f4e1a1970ebbbe63b5434
-static int	ClockDriver(char *);
-static int	DiskDriver(char *);
+static int ClockDriver(char *);
+static int DiskDriver(char *);
 int sleepReal(USLOSS_Sysargs *);
 void check_kernel_mode(char *);
 
@@ -119,9 +115,18 @@ static int ClockDriver(char *arg)
     // Infinite loop until we are zap'd
     while(! isZapped()) {
     	result = waitDevice(USLOSS_CLOCK_DEV, 0, &status);
-    	if (result != 0) {
+        printf("status for waitDevice: %d\n", status);
+        if (result != 0) {
     	    return 0;
 	    }
+        result = USLOSS_DeviceInput(USLOSS_CLOCK_DEV, 0, &status);
+    	if (result == USLOSS_DEV_INVALID) {
+    		USLOSS_Console("ClockDriver(): Device and unit invalid\n");
+    		USLOSS_Halt(1);
+    	}
+        printf("status for DeviceInput: %d\n", status);
+
+
 	/*
 	 * Compute the current time and wake up any processes
 	 * whose time has come.
@@ -133,13 +138,9 @@ static int DiskDriver(char *arg)
 {
     return 0;
 }
-<<<<<<< HEAD
-
-int sleepReal(USLOSS_Sysargs *args)
-=======
 /*
- * Causes the calling process to become unrunnable for at least the 
- * specified number of seconds, and not significantly longer. 
+ * Causes the calling process to become unrunnable for at least the
+ * specified number of seconds, and not significantly longer.
  * The seconds must be non-negative.
  *
  * Return values:
@@ -147,18 +148,16 @@ int sleepReal(USLOSS_Sysargs *args)
  *		0: otherwise
  */
 int sleepReal(USLOSS_Sysargs * args)
->>>>>>> b836f521574abd5da84f4e1a1970ebbbe63b5434
 {
     if (args->arg1 < 0) {
         args->arg1 = -1;
         return -1;
     }
-<<<<<<< HEAD
 
-    enqueue(ProcTable[getpid()])
-=======
-	
->>>>>>> b836f521574abd5da84f4e1a1970ebbbe63b5434
+    enqueue(ProcTable[getpid() % MAXPROC]);
+    // TODO don't ignore the result of enqueue
+    ProcTable[getpid() % MAXPROC].sleepSecondsRemaining = (int) (long) args->arg1;
+    MboxSend(ProcTable[getpid() % MAXPROC].mboxID, NULL, 0);
 
     args->arg1 = 0;
     return 0;
@@ -188,7 +187,12 @@ void check_kernel_mode(char * funcName)
 int initProc(int pid)
 {
     ProcTable[pid % MAXPROC].pid = pid;
-<<<<<<< HEAD
+    ProcTable[pid % MAXPROC].mboxID = MboxCreate(0, MAX_MESSAGE);
+    if (ProcTable[pid % MAXPROC].mboxID < 0) {
+        USLOSS_Console("initProc(): Failure creating private mailbox for process %d", pid);
+        return -1;
+    }
+    return 0;
 }
 
 /*
@@ -207,6 +211,9 @@ int insert(procPtr p){
    return 0;
 }
 
+/*
+ *
+ */
 procPtr pop()
 {
     int i = 0;
@@ -219,13 +226,4 @@ procPtr pop()
         i++;
     }
     return result;
-=======
-	ProcTable[pid % MAXPROC].mboxID = MboxCreate(0, MAX_MESSAGE);
-	if (ProcTable[pid % MAXPROC].mboxID < 0) {
-		USLOSS_Console("initProc(): Failure creating private mailbox for process %d", pid);
-		return -1;
-	}
-	return 0;
->>>>>>> b836f521574abd5da84f4e1a1970ebbbe63b5434
 }
-
