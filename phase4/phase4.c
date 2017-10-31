@@ -19,6 +19,7 @@
 int	 	running;
 procStruct ProcTable[MAXPROC];
 procPtr    sleepQueue[MAXPROC];
+void (*systemCallVec[MAXSYSCALLS])(systemArgs *);
 
 static int ClockDriver(char *);
 static int DiskDriver(char *);
@@ -39,7 +40,12 @@ void start3(void)
      * Check kernel mode here.
      */
     check_kernel_mode("start3");
-
+    // initalize the syscall handlers
+   for (i = 0; i < MAXSYSCALLS; i++) {
+       systemCallVec[i] = (void (*) (systemArgs *)) nullsys3;
+   }
+   systemCallVec[SYS_SLEEP] = (void (*) (systemArgs *)) sleepReal;
+   
     /* init ProcTable */
     for (i = 0; i < MAXPROC; i++) {
         ProcTable[i].pid = -1;
@@ -157,7 +163,7 @@ int sleepReal(USLOSS_Sysargs * args)
         return -1;
     }
 
-    enqueue(ProcTable[getpid() % MAXPROC]);
+    enqueue(&ProcTable[getpid() % MAXPROC]);
     // TODO don't ignore the result of enqueue
     ProcTable[getpid() % MAXPROC].sleepSecondsRemaining = (int) (long) args->arg1;
     MboxSend(ProcTable[getpid() % MAXPROC].mboxID, NULL, 0);
