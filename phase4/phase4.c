@@ -24,6 +24,8 @@ static int ClockDriver(char *);
 static int DiskDriver(char *);
 int sleepReal(USLOSS_Sysargs *);
 void check_kernel_mode(char *);
+int enqueue(procPtr);
+procPtr pop(void);
 
 void start3(void)
 {
@@ -199,7 +201,7 @@ int initProc(int pid)
 /*
  *
  */
-int insert(procPtr p){
+int enqueue(procPtr p){
     int i = 0;
     while (i < MAXPROC && sleepQueue[i] != NULL) {
     	i++;
