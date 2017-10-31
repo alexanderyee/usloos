@@ -1,4 +1,5 @@
 #include <usyscall.h>
+#include <usloss.h>
 /*
  * interface for sleepReal.
  * int seconds -- # of seconds calling process should be asleep
@@ -44,7 +45,7 @@ int DiskSize(int unit, int *sector, int *track, int *disk)
 
     CHECKMODE;
     sysArg.number = SYS_DISKSIZE;
-    sysArg.arg1 = (void *) (long) seconds;
+    //sysArg.arg1 = (void *) (long) seconds;
     return 0;
 }
 
