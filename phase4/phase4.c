@@ -42,10 +42,10 @@ void start3(void)
     check_kernel_mode("start3");
     // initalize the syscall handlers
    for (i = 0; i < MAXSYSCALLS; i++) {
-       systemCallVec[i] = (void (*) (systemArgs *)) nullsys3;
+       systemCallVec[i] = (void (*) (USLOSS_Sysargs *)) nullsys3;
    }
-   systemCallVec[SYS_SLEEP] = (void (*) (systemArgs *)) sleepReal;
-   
+   systemCallVec[SYS_SLEEP] = (void (*) (USLOSS_Sysargs *)) sleepReal;
+
     /* init ProcTable */
     for (i = 0; i < MAXPROC; i++) {
         ProcTable[i].pid = -1;
