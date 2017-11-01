@@ -149,7 +149,7 @@ static int ClockDriver(char *arg)
 				procPtr p = popAtIndex(i);
 				printf("buttholes3 semid = %d\n", p->semID);
 	            semvReal(p->semID);
-				printf("i: %d, lastSleepTime: %d, cond sed stat: %d 3\n", i, sleepQueue[i]->lastSleepTime, stat);
+				printf("i: %d, lastSleepTime: %d, 3\n", i, sleepQueue[i]->lastSleepTime);
             }
 			printf("huh??\n");
             i++;
