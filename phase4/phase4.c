@@ -100,7 +100,7 @@ void start3(void)
      * I'm assuming kernel-mode versions of the system calls
      * with lower-case first letters, as shown in provided_prototypes.h
      */
-    setUserMode();
+    //setUserMode();
     pid = spawnReal("start4", start4, NULL, 2 * USLOSS_MIN_STACK, 3);
     initProc(pid);
 	pid = waitReal(&status);
@@ -128,7 +128,7 @@ static int ClockDriver(char *arg)
     while(!isZapped()) {
         int status, i = 0;
 		result = waitDevice(USLOSS_CLOCK_DEV, 0, &status);
-        USLOSS_Console("status for waitDevice: %d\n", status);
+//        USLOSS_Console("status for waitDevice: %d\n", status);
         if (result != 0) {
     	    return 0;
 	    }
@@ -192,7 +192,7 @@ int sleepReal(USLOSS_Sysargs * args)
     USLOSS_Console("sleepReal enqueue result: %d\n", result);
  	// TODO don't ignore the result of enqueue
     USLOSS_Console("sleepReal enqueue result id: %d\n", ProcTable[getpid() % MAXPROC].semID);
-	ProcTable[getpid() % MAXPROC].sleepSecondsRemaining = (int) (long) args->arg1;
+	ProcTable[getpid() % MAXPROC].sleepSecondsRemaining = (int) (long) args->arg1 * 1000000;
     USLOSS_Console("mboxrecv b4\n");
 	sempReal(ProcTable[getpid() % MAXPROC].semID);
 	USLOSS_Console("mboxrecv aftor\n");
