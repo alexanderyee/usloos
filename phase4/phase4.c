@@ -43,8 +43,7 @@ void start3(void)
     check_kernel_mode("start3");
     // initalize the syscall handlers
    systemCallVec[SYS_SLEEP] = (void (*) (USLOSS_Sysargs *)) sleepReal;
-   // init mbox for it
-   MboxCreate(0, MAX_MESSAGE);
+
     /* init ProcTable */
     for (i = 0; i < MAXPROC; i++) {
         ProcTable[i].pid = -1;
@@ -115,7 +114,7 @@ void start3(void)
 
 static int ClockDriver(char *arg)
 {
-    int result, status, i = 0;
+    int result, i = 0;
 
     // Let the parent know we are running and enable interrupts.
     semvReal(running);
@@ -123,12 +122,13 @@ static int ClockDriver(char *arg)
 
     // Infinite loop until we are zap'd
     while(!isZapped()) {
+        int status;
     	printf("isZeppleld\n");
 		result = waitDevice(USLOSS_CLOCK_DEV, 0, &status);
-        //printf("status for waitDevice: %d\n", status);
-        // if (result != 0) {
-    	//     return 0;
-	    // }
+        printf("status for waitDevice: %d\n", status);
+        if (result != 0) {
+    	    return 0;
+	    }
 		printf("isZeppleld1\n");
 
         //printf("status for DeviceInput: %d\n", status);
@@ -156,6 +156,7 @@ static int ClockDriver(char *arg)
 	 * Compute the current time and wake up any processes
 	 * whose time has come.
 	 */
+
     }
 }
 
