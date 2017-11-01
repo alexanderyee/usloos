@@ -136,24 +136,24 @@ static int ClockDriver(char *arg)
         //printf("status for DeviceInput: %d\n", status);
         // look through all the sleeping procs, subtract the time.
 		while (i < MAXPROC && sleepQueue[i] != NULL) {
-			USLOSS_Console("i: %d, lastSleepTime: %d, 1\n", i, sleepQueue[i]->lastSleepTime);
+			//USLOSS_Console("i: %d, lastSleepTime: %d, 1\n", i, sleepQueue[i]->lastSleepTime);
             if (sleepQueue[i]->lastSleepTime == 0) {
                 // init the start time
-				USLOSS_Console("buttholes\n");
+			//	USLOSS_Console("buttholes\n");
                 sleepQueue[i]->lastSleepTime = status;
             } else {
                 sleepQueue[i]->sleepSecondsRemaining -= status - sleepQueue[i]->lastSleepTime;
                 sleepQueue[i]->lastSleepTime = status;
-				 USLOSS_Console("i: %d, lastSleepTime: %d, 2\n", i, sleepQueue[i]->lastSleepTime);
+				 // USLOSS_Console("i: %d, lastSleepTime: %d, 2\n", i, sleepQueue[i]->lastSleepTime);
             }
             if (sleepQueue[i]->sleepSecondsRemaining < 0) {
-                USLOSS_Console("buttholes2\n");
+                // USLOSS_Console("buttholes2\n");
 				procPtr p = popAtIndex(i);
-				USLOSS_Console("buttholes3 semid = %d\n", p->semID);
+				// USLOSS_Console("buttholes3 semid = %d\n", p->semID);
 	            semvReal(p->semID);
 				//USLOSS_Console("i: %d, lastSleepTime: %d, 3\n", i, sleepQueue[i]->lastSleepTime);
             }
-			USLOSS_Console("huh??\n");
+			// USLOSS_Console("huh??\n");
             i++;
         }
 	/*
@@ -179,24 +179,24 @@ static int DiskDriver(char *arg)
  */
 int sleepReal(USLOSS_Sysargs * args)
 {
-	USLOSS_Console("sleepReal0\n");
+	// USLOSS_Console("sleepReal0\n");
     if (args->arg1 < 0) {
         args->arg1 = (void *)(long) -1;
         return -1;
     }
 
-	USLOSS_Console("sleepReal1\n");
+	// USLOSS_Console("sleepReal1\n");
 
 	int result = enqueue(&ProcTable[getpid() % MAXPROC]);
 	long time;
-    USLOSS_Console("sleepReal enqueue result: %d\n", result);
+    // USLOSS_Console("sleepReal enqueue result: %d\n", result);
  	// TODO don't ignore the result of enqueue
-    USLOSS_Console("sleepReal enqueue result id: %d\n", ProcTable[getpid() % MAXPROC].semID);
+    // USLOSS_Console("sleepReal enqueue result id: %d\n", ProcTable[getpid() % MAXPROC].semID);
 	ProcTable[getpid() % MAXPROC].sleepSecondsRemaining = (int) (long) args->arg1 * 1000000;
-    USLOSS_Console("mboxrecv b4\n");
+    // USLOSS_Console("mboxrecv b4\n");
 	sempReal(ProcTable[getpid() % MAXPROC].semID);
-	USLOSS_Console("mboxrecv aftor\n");
-	USLOSS_Console("sleepReal2 time %ld\n", time);
+	// USLOSS_Console("mboxrecv aftor\n");
+	// USLOSS_Console("sleepReal2 time %ld\n", time);
     args->arg1 = 0;
     return 0;
 }
