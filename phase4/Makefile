@@ -13,7 +13,7 @@ PHASE2LIB = patrickphase2
 PHASE3LIB = patrickphase3
 #PHASE1LIB = patrickphase1debug
 #PHASE2LIB = patrickphase2debug
-
+#PHASE3LIB = patrickphase3debug
 HDRS = libuser.h phase1.h phase2.h phase3.h phase4.h
 
 INCLUDE = ${PREFIX}/include
