@@ -49,6 +49,7 @@ void start3(void)
         ProcTable[i].pid = -1;
     	sleepQueue[i] = NULL;
 	}
+	initProc(getpid());
     /*
      * Create clock device driver
      * I am assuming a semaphore here for coordination.  A mailbox can
@@ -100,7 +101,8 @@ void start3(void)
      * with lower-case first letters, as shown in provided_prototypes.h
      */
     pid = spawnReal("start4", start4, NULL, 4 * USLOSS_MIN_STACK, 3);
-    pid = waitReal(&status);
+    initProc(pid);
+	pid = waitReal(&status);
 
     /*
      * Zap the device drivers
@@ -114,7 +116,7 @@ void start3(void)
 
 static int ClockDriver(char *arg)
 {
-    int result, i = 0;
+    int result;
 
     // Let the parent know we are running and enable interrupts.
     semvReal(running);
@@ -122,14 +124,12 @@ static int ClockDriver(char *arg)
 
     // Infinite loop until we are zap'd
     while(!isZapped()) {
-        int status;
-    	printf("isZeppleld\n");
+        int status, i = 0;
 		result = waitDevice(USLOSS_CLOCK_DEV, 0, &status);
         printf("status for waitDevice: %d\n", status);
         if (result != 0) {
     	    return 0;
 	    }
-		printf("isZeppleld1\n");
 
         //printf("status for DeviceInput: %d\n", status);
         // look through all the sleeping procs, subtract the time.
@@ -144,10 +144,12 @@ static int ClockDriver(char *arg)
                 sleepQueue[i]->lastSleepTime = status;
 				 printf("i: %d, lastSleepTime: %d, 2\n", i, sleepQueue[i]->lastSleepTime);
             }
-            if (sleepQueue[i]->sleepSecondsRemaining <= 0) {
-                printf("buttholes\n");
-				MboxSend(popAtIndex(i)->mboxID, NULL, 0);
-				printf("i: %d, lastSleepTime: %d, 3\n", i, sleepQueue[i]->lastSleepTime);
+            if (sleepQueue[i]->sleepSecondsRemaining < 0) {
+                printf("buttholes2\n");
+				procPtr p = popAtIndex(i);
+				printf("buttholes3 mboxid = %d\n", p->mboxID);
+	//TODO
+				printf("i: %d, lastSleepTime: %d, cond sed stat: %d 3\n", i, sleepQueue[i]->lastSleepTime, stat);
             }
 			printf("huh??\n");
             i++;
@@ -175,16 +177,24 @@ static int DiskDriver(char *arg)
  */
 int sleepReal(USLOSS_Sysargs * args)
 {
+	printf("sleepReal0\n");
     if (args->arg1 < 0) {
         args->arg1 = (void *)(long) -1;
         return -1;
     }
 
-    enqueue(&ProcTable[getpid() % MAXPROC]);
-    // TODO don't ignore the result of enqueue
-    ProcTable[getpid() % MAXPROC].sleepSecondsRemaining = (int) (long) args->arg1;
-    MboxReceive(ProcTable[getpid() % MAXPROC].mboxID, NULL, MAX_MESSAGE);
+	printf("sleepReal1\n");
 
+	int result = enqueue(&ProcTable[getpid() % MAXPROC]);
+	long time;
+    printf("sleepReal enqueue result: %d\n", result);
+ 	// TODO don't ignore the result of enqueue
+    printf("sleepReal enqueue result id: %d\n", ProcTable[getpid() % MAXPROC].mboxID);
+	ProcTable[getpid() % MAXPROC].sleepSecondsRemaining = (int) (long) args->arg1;
+    printf("mboxrecv b4\n");
+	MboxReceive(ProcTable[getpid() % MAXPROC].mboxID, NULL, MAX_MESSAGE);
+	printf("mboxrecv aftor\n");
+	printf("sleepReal2 time %ld\n", time);
     args->arg1 = 0;
     return 0;
 }
