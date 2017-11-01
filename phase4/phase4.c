@@ -103,7 +103,6 @@ void start3(void)
     //setUserMode();
     pid = spawnReal("start4", start4, NULL, 2 * USLOSS_MIN_STACK, 3);
     initProc(pid);
-	pid = waitReal(&status);
     pid = waitReal(&status);
 
     /*
@@ -151,6 +150,7 @@ static int ClockDriver(char *arg)
 				procPtr p = popAtIndex(i);
 				// USLOSS_Console("buttholes3 semid = %d\n", p->semID);
 	            semvReal(p->semID);
+                continue;
 				//USLOSS_Console("i: %d, lastSleepTime: %d, 3\n", i, sleepQueue[i]->lastSleepTime);
             }
 			// USLOSS_Console("huh??\n");
@@ -186,7 +186,10 @@ int sleepReal(USLOSS_Sysargs * args)
     }
 
 	// USLOSS_Console("sleepReal1\n");
-
+    if (ProcTable[getpid() & MAXPROC] == -1) {
+        // process hasn't been initialized yet, let's fix that
+        initProc(getpid());
+    }
 	int result = enqueue(&ProcTable[getpid() % MAXPROC]);
 	long time;
     // USLOSS_Console("sleepReal enqueue result: %d\n", result);
