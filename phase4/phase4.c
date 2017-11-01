@@ -100,9 +100,11 @@ void start3(void)
      * I'm assuming kernel-mode versions of the system calls
      * with lower-case first letters, as shown in provided_prototypes.h
      */
-    pid = spawnReal("start4", start4, NULL, 4 * USLOSS_MIN_STACK, 3);
+    setUserMode();
+    pid = spawnReal("start4", start4, NULL, 2 * USLOSS_MIN_STACK, 3);
     initProc(pid);
 	pid = waitReal(&status);
+    pid = waitReal(&status);
 
     /*
      * Zap the device drivers
@@ -149,7 +151,7 @@ static int ClockDriver(char *arg)
 				procPtr p = popAtIndex(i);
 				USLOSS_Console("buttholes3 semid = %d\n", p->semID);
 	            semvReal(p->semID);
-				USLOSS_Console("i: %d, lastSleepTime: %d, 3\n", i, sleepQueue[i]->lastSleepTime);
+				//USLOSS_Console("i: %d, lastSleepTime: %d, 3\n", i, sleepQueue[i]->lastSleepTime);
             }
 			USLOSS_Console("huh??\n");
             i++;
@@ -282,3 +284,20 @@ procPtr popAtIndex(int index)
 
     return result;
 }
+
+/*
+ * sets the current mode to user mode.
+ */
+void setUserMode()
+{
+    check_kernel_mode("setUserMode");
+    unsigned int previousPSRValue = USLOSS_PsrGet();
+    // we need to store the current interrupt mode
+    unsigned int tempPsrCurrentInterruptTemp = previousPSRValue & 2;
+    // preserve the current interrupt
+    unsigned int newPSRValue = (previousPSRValue << 2) | tempPsrCurrentInterruptTemp;
+    // set user mode by making sure last bit is 0
+    newPSRValue = newPSRValue & 14;
+    if (USLOSS_PsrSet(newPSRValue) == USLOSS_ERR_INVALID_PSR)
+        USLOSS_Console("ERROR: Invalid PSR value set! was: %u\n", newPSRValue);
+} /* setUserMode */
