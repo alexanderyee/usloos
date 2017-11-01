@@ -147,8 +147,8 @@ static int ClockDriver(char *arg)
             if (sleepQueue[i]->sleepSecondsRemaining < 0) {
                 printf("buttholes2\n");
 				procPtr p = popAtIndex(i);
-				printf("buttholes3 mboxid = %d\n", p->mboxID);
-	//TODO
+				printf("buttholes3 semid = %d\n", p->semID);
+	            semvReal(p->semID);
 				printf("i: %d, lastSleepTime: %d, cond sed stat: %d 3\n", i, sleepQueue[i]->lastSleepTime, stat);
             }
 			printf("huh??\n");
@@ -189,10 +189,10 @@ int sleepReal(USLOSS_Sysargs * args)
 	long time;
     printf("sleepReal enqueue result: %d\n", result);
  	// TODO don't ignore the result of enqueue
-    printf("sleepReal enqueue result id: %d\n", ProcTable[getpid() % MAXPROC].mboxID);
+    printf("sleepReal enqueue result id: %d\n", ProcTable[getpid() % MAXPROC].semID);
 	ProcTable[getpid() % MAXPROC].sleepSecondsRemaining = (int) (long) args->arg1;
     printf("mboxrecv b4\n");
-	MboxReceive(ProcTable[getpid() % MAXPROC].mboxID, NULL, MAX_MESSAGE);
+	sempReal(ProcTable[getpid() % MAXPROC].semID);
 	printf("mboxrecv aftor\n");
 	printf("sleepReal2 time %ld\n", time);
     args->arg1 = 0;
@@ -223,8 +223,8 @@ void check_kernel_mode(char * funcName)
 int initProc(int pid)
 {
     ProcTable[pid % MAXPROC].pid = pid;
-    ProcTable[pid % MAXPROC].mboxID = MboxCreate(0, MAX_MESSAGE);
-    if (ProcTable[pid % MAXPROC].mboxID < 0) {
+    ProcTable[pid % MAXPROC].semID = semcreateReal(0);
+    if (ProcTable[pid % MAXPROC].semID < 0) {
         USLOSS_Console("initProc(): Failure creating private mailbox for process %d", pid);
         return -1;
     }
