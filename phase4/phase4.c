@@ -186,7 +186,7 @@ int sleepReal(USLOSS_Sysargs * args)
     }
 
 	// USLOSS_Console("sleepReal1\n");
-    if (ProcTable[getpid() & MAXPROC] == -1) {
+    if (ProcTable[getpid() & MAXPROC].pid == -1) {
         // process hasn't been initialized yet, let's fix that
         initProc(getpid());
     }
