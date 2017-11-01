@@ -43,7 +43,8 @@ void start3(void)
     check_kernel_mode("start3");
     // initalize the syscall handlers
    systemCallVec[SYS_SLEEP] = (void (*) (USLOSS_Sysargs *)) sleepReal;
-
+   // init mbox for it
+   MboxCreate(0, MAX_MESSAGE);
     /* init ProcTable */
     for (i = 0; i < MAXPROC; i++) {
         ProcTable[i].pid = -1;
@@ -130,13 +131,6 @@ static int ClockDriver(char *arg)
 	    // }
 		printf("isZeppleld1\n");
 
-        result = USLOSS_DeviceInput(USLOSS_CLOCK_DEV, 0, &status);
-		printf("isZeppleld2\n");
-
-    	if (result == USLOSS_DEV_INVALID) {
-    		USLOSS_Console("ClockDriver(): Device and unit invalid\n");
-    		USLOSS_Halt(1);
-    	}
         //printf("status for DeviceInput: %d\n", status);
         // look through all the sleeping procs, subtract the time.
 		while (i < MAXPROC && sleepQueue[i] != NULL) {
