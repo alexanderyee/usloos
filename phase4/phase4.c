@@ -232,7 +232,8 @@ int diskSizeReal(USLOSS_Sysargs * sysArg)
     deviceRequest.opr = USLOSS_DISK_TRACKS;
     deviceRequest.reg1 = (int *) sysArg->arg4;
 
-    USLOSS_DeviceOutput(USLOSS_DISK_DEV, sysArg->arg1, &deviceRequest);
+    USLOSS_DeviceOutput(USLOSS_DISK_DEV, (int) (long) sysArg->arg1, &deviceRequest);
+    printf("%d\n", *sysArg->arg4);
     return 0;
 }
 
