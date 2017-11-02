@@ -28,6 +28,7 @@ void check_kernel_mode(char *);
 int enqueue(procPtr);
 procPtr pop(void);
 procPtr popAtIndex(int);
+int diskSizeReal(USLOSS_Sysargs * );
 
 void start3(void)
 {
