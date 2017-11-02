@@ -71,7 +71,7 @@ int DiskSize(int unit, int *sector, int *track, int *disk)
     sysArg.arg1 = (void *) (long) unit;
     * sector = USLOSS_DISK_SECTOR_SIZE;
     * track = USLOSS_DISK_TRACK_SIZE;
-    sysArg.arg4 = (void *) disk;
+    sysArg.arg4 = disk;
     USLOSS_Syscall(&sysArg);
     return 0;
 }

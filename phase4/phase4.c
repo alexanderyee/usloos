@@ -228,12 +228,14 @@ int diskWriteReal(USLOSS_Sysargs * args)
  */
 int diskSizeReal(USLOSS_Sysargs * sysArg)
 {
+	int numTracks;
     USLOSS_DeviceRequest deviceRequest;
     deviceRequest.opr = USLOSS_DISK_TRACKS;
-    deviceRequest.reg1 = (int *) sysArg->arg4;
-
-    USLOSS_DeviceOutput(USLOSS_DISK_DEV, (int) (long) sysArg->arg1, &deviceRequest);
-    printf("%d\n", *sysArg->arg4);
+    deviceRequest.reg1 = &numTracks;
+	int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, (int) (long) sysArg->arg1, &deviceRequest);
+	waitDevice(USLOSS_DISK_DEV, (int) (long) sysArg->arg1, &result);
+	// TODO check the results of the above two
+	*((int *) sysArg->arg4) = numTracks;
     return 0;
 }
 
