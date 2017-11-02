@@ -230,7 +230,7 @@ int diskSizeReal(USLOSS_Sysargs * sysArg)
 {
     USLOSS_DeviceRequest deviceRequest;
     deviceRequest.opr = USLOSS_DISK_TRACKS;
-    deviceRequest.reg1 = sysArg->arg4;
+    deviceRequest.reg1 = (int *) sysArg->arg4;
 
     USLOSS_DeviceOutput(USLOSS_DISK_DEV, sysArg->arg1, &deviceRequest);
     return 0;
