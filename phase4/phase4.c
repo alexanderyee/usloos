@@ -43,6 +43,7 @@ void start3(void)
     check_kernel_mode("start3");
     // initalize the syscall handlers
    systemCallVec[SYS_SLEEP] = (void (*) (USLOSS_Sysargs *)) sleepReal;
+   systemCallVec[SYS_DISKSIZE] = (void (*) (USLOSS_Sysargs *)) diskSizeReal;
 
     /* init ProcTable */
     for (i = 0; i < MAXPROC; i++) {
@@ -230,7 +231,7 @@ int diskSizeReal(USLOSS_Sysargs * sysArg)
     deviceRequest.opr = USLOSS_DISK_TRACKS;
     deviceRequest.reg1 = sysArg->arg4;
 
-    USLOSS_Device_Output(USLOSS_DISK_DEV, sysArg->arg1, &deviceRequest);
+    USLOSS_DeviceOutput(USLOSS_DISK_DEV, sysArg->arg1, &deviceRequest);
     return 0;
 }
 
