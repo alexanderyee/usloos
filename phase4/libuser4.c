@@ -1,5 +1,7 @@
 #include <usyscall.h>
 #include <usloss.h>
+//for null
+#include <stdlib.h>
 
 
 #define CHECKMODE {    \
