@@ -76,15 +76,15 @@ void start3(void)
      * driver, and perhaps do something with the pid returned.
      */
 
-    //
-    // for (i = 0; i < USLOSS_DISK_UNITS; i++) {
-    //     sprintf(buf, "%d", i);
-    //     pid = fork1(name, DiskDriver, buf, USLOSS_MIN_STACK, 2);
-    //     if (pid < 0) {
-    //         USLOSS_Console("start3(): Can't create term driver %d\n", i);
-    //         USLOSS_Halt(1);
-    //     }
-    // }
+
+    for (i = 0; i < USLOSS_DISK_UNITS; i++) {
+        sprintf(buf, "%d", i);
+        pid = fork1(name, DiskDriver, buf, USLOSS_MIN_STACK, 2);
+        if (pid < 0) {
+            USLOSS_Console("start3(): Can't create term driver %d\n", i);
+            USLOSS_Halt(1);
+        }
+    }
 
     // May be other stuff to do here before going on to terminal drivers
 
@@ -127,33 +127,24 @@ static int ClockDriver(char *arg)
     while(!isZapped()) {
         int status, i = 0;
 		result = waitDevice(USLOSS_CLOCK_DEV, 0, &status);
-//        USLOSS_Console("status for waitDevice: %d\n", status);
         if (result != 0) {
     	    return 0;
 	    }
 
-        //printf("status for DeviceInput: %d\n", status);
         // look through all the sleeping procs, subtract the time.
 		while (i < MAXPROC && sleepQueue[i] != NULL) {
-			//USLOSS_Console("i: %d, lastSleepTime: %d, 1\n", i, sleepQueue[i]->lastSleepTime);
             if (sleepQueue[i]->lastSleepTime == 0) {
                 // init the start time
-			//	USLOSS_Console("buttholes\n");
                 sleepQueue[i]->lastSleepTime = status;
             } else {
                 sleepQueue[i]->sleepSecondsRemaining -= status - sleepQueue[i]->lastSleepTime;
                 sleepQueue[i]->lastSleepTime = status;
-				 // USLOSS_Console("i: %d, lastSleepTime: %d, 2\n", i, sleepQueue[i]->lastSleepTime);
             }
             if (sleepQueue[i]->sleepSecondsRemaining < 0) {
-                // USLOSS_Console("buttholes2\n");
 				procPtr p = popAtIndex(i);
-				// USLOSS_Console("buttholes3 semid = %d\n", p->semID);
 	            semvReal(p->semID);
                 continue;
-				//USLOSS_Console("i: %d, lastSleepTime: %d, 3\n", i, sleepQueue[i]->lastSleepTime);
             }
-			// USLOSS_Console("huh??\n");
             i++;
         }
 	/*
@@ -164,44 +155,86 @@ static int ClockDriver(char *arg)
     }
 }
 
-static int DiskDriver(char *arg)
-{
-    return 0;
-}
 /*
- * Causes the calling process to become unrunnable for at least the
- * specified number of seconds, and not significantly longer.
- * The seconds must be non-negative.
- *
- * Return values:
- *		-1: seconds is not valid
- *		0: otherwise
- */
+* Causes the calling process to become unrunnable for at least the
+* specified number of seconds, and not significantly longer.
+* The seconds must be non-negative.
+*
+* Return values:
+*		-1: seconds is not valid
+*		0: otherwise
+*/
 int sleepReal(USLOSS_Sysargs * args)
 {
-	// USLOSS_Console("sleepReal0\n");
     if (args->arg1 < 0) {
         args->arg1 = (void *)(long) -1;
         return -1;
     }
 
-	// USLOSS_Console("sleepReal1\n");
     if (ProcTable[getpid() & MAXPROC].pid == -1) {
         // process hasn't been initialized yet, let's fix that
         initProc(getpid());
     }
-	int result = enqueue(&ProcTable[getpid() % MAXPROC]);
-	long time;
-    // USLOSS_Console("sleepReal enqueue result: %d\n", result);
- 	// TODO don't ignore the result of enqueue
-    // USLOSS_Console("sleepReal enqueue result id: %d\n", ProcTable[getpid() % MAXPROC].semID);
-	ProcTable[getpid() % MAXPROC].sleepSecondsRemaining = (int) (long) args->arg1 * 1000000;
-    // USLOSS_Console("mboxrecv b4\n");
-	sempReal(ProcTable[getpid() % MAXPROC].semID);
-	// USLOSS_Console("mboxrecv aftor\n");
-	// USLOSS_Console("sleepReal2 time %ld\n", time);
+    int result = enqueue(&ProcTable[getpid() % MAXPROC]);
+    long time;
+    // TODO don't ignore the result of enqueue
+    ProcTable[getpid() % MAXPROC].sleepSecondsRemaining = (int) (long) args->arg1 * 1000000;
+    sempReal(ProcTable[getpid() % MAXPROC].semID);
     args->arg1 = 0;
     return 0;
+}
+
+/*
+ *
+ */
+static int DiskDriver(char *arg)
+{
+    return 0;
+}
+
+/*
+ * Reads sectors sectors from the disk indicated by unit, starting at track track and
+ * sector first. The sectors are copied into buffer. Your driver must handle a range of
+ * sectors specified by first and sectors that spans a track boundary (after reading the
+ * last sector in a track it should read the first sector in the next track).
+ * A file cannot wrap around the end of the disk.
+ *   sysArg.arg1 = dbuff;
+     sysArg.arg2 = unit;
+     sysArg.arg3 = track;
+     sysArg.arg4 = first;
+     sysArg.arg5 = sectors;
+ * Return values: (through arg1)
+ *  -1: invalid parameters
+ *  0: sectors were read successfully
+ *  >0: disk’s status register
+ */
+int diskReadReal(USLOSS_Sysargs * args)
+{
+
+}
+
+/*
+ *
+ */
+int diskWriteReal(USLOSS_Sysargs * args)
+{
+
+}
+
+/*
+ *
+ */
+int diskSizeReal(USLOSS_Sysargs * args)
+{
+    * sysArg.arg2 = USLOSS_DISK_SECTOR_SIZE;
+    * sysArg.arg3 = USLOSS_DISK_TRACK_SIZE;
+
+    USLOSS_DeviceRequest deviceRequest;
+    deviceRequest.opr = USLOSS_DISK_TRACKS;
+    deviceRequest.reg1 = sysArg.arg4;
+
+    USLOSS_Device_Output(USLOSS_DISK_DEV, sysArg.arg1, &deviceRequest);
+    return 0; 
 }
 
 /*

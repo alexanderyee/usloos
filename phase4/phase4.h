@@ -33,12 +33,24 @@ typedef struct procStruct procStruct;
 typedef struct procStruct * procPtr;
 typedef struct procStruct
 {
-    int     pid;
-    int     semID;
-    int     sleepSecondsRemaining; // number of seconds left to sleep. if > 0, then this process is asleep.
-    int     lastSleepTime;
+    int         pid;
+    int         semID;
+    int         sleepSecondsRemaining; // number of seconds left to sleep. if > 0, then this process is asleep.
+    int         lastSleepTime;
 } procStruct;
 
+typedef struct diskNode diskNode;
+typedef struct diskNode * diskNodePtr;
+typedef struct diskNode
+{
+    int         semID;
+    diskNode    * next;
+    void        * dbuff;
+    int         unit
+    int         track;
+    int         first;
+    int         sectors;
+} diskNode;
 
 #define ERR_INVALID             -1
 #define ERR_OK                  0
