@@ -46,7 +46,7 @@ typedef struct diskNode
     int         semID;
     diskNode    * next;
     void        * dbuff;
-    int         unit
+    int         unit;
     int         track;
     int         first;
     int         sectors;

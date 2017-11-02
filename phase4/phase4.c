@@ -224,17 +224,14 @@ int diskWriteReal(USLOSS_Sysargs * args)
 /*
  *
  */
-int diskSizeReal(USLOSS_Sysargs * args)
+int diskSizeReal(USLOSS_Sysargs * sysArg)
 {
-    * sysArg.arg2 = USLOSS_DISK_SECTOR_SIZE;
-    * sysArg.arg3 = USLOSS_DISK_TRACK_SIZE;
-
     USLOSS_DeviceRequest deviceRequest;
     deviceRequest.opr = USLOSS_DISK_TRACKS;
-    deviceRequest.reg1 = sysArg.arg4;
+    deviceRequest.reg1 = sysArg->arg4;
 
-    USLOSS_Device_Output(USLOSS_DISK_DEV, sysArg.arg1, &deviceRequest);
-    return 0; 
+    USLOSS_Device_Output(USLOSS_DISK_DEV, sysArg->arg1, &deviceRequest);
+    return 0;
 }
 
 /*
