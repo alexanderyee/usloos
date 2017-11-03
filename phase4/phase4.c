@@ -212,8 +212,10 @@ static int DiskDriver(char *arg)
  */
 int diskReadReal(USLOSS_Sysargs * args)
 {
+	
 
 }
+
 
 /*
  *
@@ -228,6 +230,13 @@ int diskWriteReal(USLOSS_Sysargs * args)
  */
 int diskSizeReal(USLOSS_Sysargs * sysArg)
 {
+	//check parameters are correct
+	if(sysArg->arg1 < 0 || sysArg->arg1 > 1){
+		USLOSS_Console("diskSizeReal() sysArg->arg1 is invalid\n");
+       	USLOSS_Halt(1);
+		return -1;
+	}
+
 	int numTracks;
     USLOSS_DeviceRequest deviceRequest;
     deviceRequest.opr = USLOSS_DISK_TRACKS;
