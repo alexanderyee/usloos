@@ -37,6 +37,7 @@ void check_kernel_mode(char *);
 int enqueue(procPtr);
 procPtr pop(void);
 procPtr popAtIndex(int);
+int initProc(int);
 int diskSizeReal(USLOSS_Sysargs * );
 
 void start3(void)
@@ -206,9 +207,17 @@ int sleepReal(USLOSS_Sysargs * args)
 static int DiskDriver(char *arg)
 {
     int unit = atoi(arg);
+    int sem = unit ? disk1Sem : disk0Sem;
     while(!isZapped()) {
-        sempReal(diskSem);
-    return 0;
+        sempReal(sem);
+        diskNodePtr request = unit ? &disk1Queue[0] : &disk0Queue[0];
+        int i;
+        for (i = request->first; i < request->sector; i++) {
+            if ()
+        }
+        // request fulfilled, dequeue it
+        dequeueRequest();
+        return 0;
     }
 }
 
@@ -231,25 +240,29 @@ static int DiskDriver(char *arg)
  */
 int diskReadReal(USLOSS_Sysargs * args)
 {
+    if (ProcTable[getpid() & MAXPROC].pid == -1) {
+        // process hasn't been initialized yet, let's fix that
+        initProc(getpid());
+    }
     int * sectorSize, numSectors, numTracks;
     void *dbuff = args->arg1;
     int unit = (int) (long) args->arg2;
     int track = (int) (long) args->arg3;
     int first = (int) (long) args->arg4;
     int sectors = (int) (long) args->arg5;
-
-    diskSizeReal(unit, sectorSize, numSectors, numTracks);
+    USLOSS_Sysargs sizeArgs;
+    sizeArgs.arg1 = unit;
+    sizeArgs.arg2 = sectorSize;
+    sizeArgs.arg3 = numSectors;
+    sizeArgs.arg4 = numTracks;
+    diskSizeReal(&sizeArgs);
     // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
-<<<<<<< HEAD
-    diskEnqueue(dbuff, unit, track, first, sectors);
-    
-=======
   	if(first < 0 || first >= numSectors){
 		USLOSS_Console("diskSizeReal() first is invalid\n");
         USLOSS_Halt(1);
-        return -1;	
+        return -1;
 	}
-	
+
 	if(sectors < 0 || sectors >= numSectors){
         USLOSS_Console("diskSizeReal() sectors is invalid\n");
         USLOSS_Halt(1);
@@ -262,7 +275,9 @@ int diskReadReal(USLOSS_Sysargs * args)
         return -1;
     }
 	diskEnqueue(dbuff, unit, track, first, sectors);
->>>>>>> 9127d6dc928802bdc7e0b83ec2ad46992a08d871
+    semvReal(unit ? disk1Sem : disk0Sem);
+    sempReal(ProcTable[getpid() % MAXPROC].semID);
+    return 0;
 }
 
 
@@ -271,7 +286,10 @@ int diskReadReal(USLOSS_Sysargs * args)
  */
 int diskWriteReal(USLOSS_Sysargs * args)
 {
-
+    if (ProcTable[getpid() & MAXPROC].pid == -1) {
+        // process hasn't been initialized yet, let's fix that
+        initProc(getpid());
+    }
 }
 
 /*
@@ -279,6 +297,10 @@ int diskWriteReal(USLOSS_Sysargs * args)
  */
 int diskSizeReal(USLOSS_Sysargs * sysArg)
 {
+    if (ProcTable[getpid() & MAXPROC].pid == -1) {
+        // process hasn't been initialized yet, let's fix that
+        initProc(getpid());
+    }
 	//check parameters are correct
 	if(sysArg->arg1 < 0 || sysArg->arg1 > 1){
 		USLOSS_Console("diskSizeReal() sysArg->arg1 is invalid\n");
@@ -293,6 +315,8 @@ int diskSizeReal(USLOSS_Sysargs * sysArg)
 	int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, (int) (long) sysArg->arg1, &deviceRequest);
 	waitDevice(USLOSS_DISK_DEV, (int) (long) sysArg->arg1, &result);
 	// TODO check the results of the above two
+    *((int *) sysArg->arg2) = USLOSS_DISK_SECTOR_SIZE;
+    *((int *) sysArg->arg3) = USLOSS_DISK_TRACK_SIZE;
 	*((int *) sysArg->arg4) = numTracks;
     return 0;
 }

@@ -69,8 +69,8 @@ int DiskSize(int unit, int *sector, int *track, int *disk)
 	CHECKMODE;
     sysArg.number = SYS_DISKSIZE;
     sysArg.arg1 = (void *) (long) unit;
-    * sector = USLOSS_DISK_SECTOR_SIZE;
-    * track = USLOSS_DISK_TRACK_SIZE;
+    sysArg.arg2 = sector;
+    sysArg.arg3 = track;
     sysArg.arg4 = disk;
     USLOSS_Syscall(&sysArg);
     return 0;
