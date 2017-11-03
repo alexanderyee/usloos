@@ -241,6 +241,7 @@ int diskReadReal(USLOSS_Sysargs * args)
     diskSizeReal(unit, sectorSize, numSectors, numTracks);
     // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
     diskEnqueue(dbuff, unit, track, first, sectors);
+    
 }
 
 /*
@@ -276,12 +277,24 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors) {
     diskNodePtr queue = unit ? disk1Queue : disk0Queue;
     diskNodePtr insertedNode;
     // find where to insert. use first, then sectors to see if it can fit
-    int i;
+    int i, j;
     for (i = 0; i < MAXPROC; i++) {
         if (queue[i].semID == -1) {
             // case where we reach an empty slot. just insert.
             insertedNode = queue[i];
-        } else if ()
+        } else if (i == MAXPROC - 1) {
+            // error case for too many requests
+            USLOSS_Console("Too many r/w requests for disk %d\n", unit);
+            break;
+        } else if (first >= queue[i-1].sectors && sectors <= queue[i].first) {
+            // case where 1) the first sector of this request is greater than the previous request's sector and
+            // 2) the last sector of this request is less than the next request's sector (request[i])
+            // insert in between these two. shift everything at i to the right
+            for (j = MAXPROC - 1; j > i; j--) {
+                queue[j] = queue[j-1];
+            }
+            insertedNode = queue[i];
+        }
     }
 
     insertedNode->semID = ProcTable[getpid() % MAXPROC].semID;
