@@ -38,7 +38,9 @@ int enqueue(procPtr);
 procPtr pop(void);
 procPtr popAtIndex(int);
 int initProc(int);
-int diskSizeReal(USLOSS_Sysargs * );
+int diskSizeReal(USLOSS_Sysargs *);
+int diskEnqueue(void *, int, int, int, int, int);
+int diskReadReal(USLOSS_Sysargs *);
 
 void start3(void)
 {
@@ -126,7 +128,8 @@ void start3(void)
      * Zap the device drivers
      */
     zap(clockPID);  // clock driver
-
+    zap(clockPID + 1); // disk 0
+    zap(clockPID + 2); // disk 1
     // eventually, at the end:
     quit(0);
 
@@ -211,12 +214,37 @@ static int DiskDriver(char *arg)
     while(!isZapped()) {
         sempReal(sem);
         diskNodePtr request = unit ? &disk1Queue[0] : &disk0Queue[0];
-        int i;
-        for (i = request->first; i < request->sector; i++) {
-            if ()
+        int i, isNextTrack = 0;
+        // seek to the track
+        USLOSS_DeviceRequest deviceRequest;
+        deviceRequest.opr = USLOSS_DISK_SEEK;
+        deviceRequest.reg1 = request->track;
+        int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
+        waitDevice(USLOSS_DISK_DEV, unit, &result);
+
+        for (i = 0; i < request->sectors; i++) {
+
+            if (request->op == READ) {
+               deviceRequest.opr = USLOSS_DISK_READ;
+               deviceRequest.reg1 = (i + request->first) % USLOSS_DISK_TRACK_SIZE;
+               if ((i + request->first) >= USLOSS_DISK_TRACK_SIZE && !isNextTrack) {
+                   // need to seek to next track
+                   USLOSS_DeviceRequest deviceRequestSeek;
+                   deviceRequest.opr = USLOSS_DISK_SEEK;
+                   deviceRequest.reg1 = request->track + 1;
+                   int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
+                   waitDevice(USLOSS_DISK_DEV, unit, &result);
+                   isNextTrack = 1;
+               }
+               deviceRequest.reg2 = request->dbuff + (i * USLOSS_DISK_SECTOR_SIZE);
+               int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
+               waitDevice(USLOSS_DISK_DEV, unit, &result);
+            }
+
         }
         // request fulfilled, dequeue it
         dequeueRequest();
+        //USLOSS_IntVec[USLOSS_DISK_INT];
         return 0;
     }
 }
@@ -274,7 +302,7 @@ int diskReadReal(USLOSS_Sysargs * args)
         USLOSS_Halt(1);
         return -1;
     }
-	diskEnqueue(dbuff, unit, track, first, sectors);
+	diskEnqueue(dbuff, unit, track, first, sectors, READ);
     semvReal(unit ? disk1Sem : disk0Sem);
     sempReal(ProcTable[getpid() % MAXPROC].semID);
     return 0;
@@ -325,7 +353,7 @@ int diskSizeReal(USLOSS_Sysargs * sysArg)
 /*
  *
  */
-int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors) {
+int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op) {
     // block all access to queue
     sempReal(unit ? disk1QueueSem : disk0QueueSem);
     diskNodePtr queue = unit ? disk1Queue : disk0Queue;
@@ -340,7 +368,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors) {
             // error case for too many requests
             USLOSS_Console("Too many r/w requests for disk %d\n", unit);
             break;
-        } else if (first >= queue[i-1].sectors && sectors <= queue[i].first) {
+        } else if (first >= queue[i-1].first + queue[i-1].sectors && first + sectors <= queue[i].first) {
             // case where 1) the first sector of this request is greater than the previous request's sector and
             // 2) the last sector of this request is less than the next request's sector (request[i])
             // insert in between these two. shift everything at i to the right
@@ -357,6 +385,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors) {
     insertedNode->track = track;
     insertedNode->first = first;
     insertedNode->sectors = sectors;
+    insertedNode->op = op;
     semvReal(unit ? disk1QueueSem : disk0QueueSem);
 
 }

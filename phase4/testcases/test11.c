@@ -2,7 +2,7 @@
     - note that the test script should clean out the disk file
     each time before running this test.
     Write three sectors to the disk and then read them back.
-    Do not span track boundaries. 
+    Do not span track boundaries.
 */
 
 #include <stdio.h>
@@ -58,5 +58,4 @@ int start4(char *arg)
     USLOSS_Console("start4(): Terminating\n");
     Terminate(24);
     return 0;
-} /* start4 */
-
+} /* start4 */ 

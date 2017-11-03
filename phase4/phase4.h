@@ -50,9 +50,13 @@ typedef struct diskNode
     int         track;
     int         first;
     int         sectors;
+    int         op;
 } diskNode;
 
 #define ERR_INVALID             -1
 #define ERR_OK                  0
+
+#define READ                    0
+#define WRITE                   1
 
 #endif /* _PHASE4_H */
