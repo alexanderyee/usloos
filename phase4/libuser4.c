@@ -89,19 +89,37 @@ int DiskSize(int unit, int *sector, int *track, int *disk)
 int TermRead(char *buff, int bsize, int unit_id, int *nread)
 {
     USLOSS_Sysargs sysArg;
+	
+	//check if parameters are invalid, if so return -1
+	if(buff == NULL || nread == NULL)
+		return -1;
 
     CHECKMODE;
     sysArg.number = SYS_TERMREAD;
-    //sysArg.arg1 = (void *) (long) seconds;
-    return 0;
+    sysArg.arg1 = buff;
+	sysArg.arg2 = (void *) (long) bsize;
+	sysArg.arg3 = (void *) (long) unit_id;
+	sysArg.arg4 = nread;
+	//USLOSS_Syscall(&sysArgs);
+	return 0;
+
 }
 
 int TermWrite(char *buff, int bsize, int unit_id, int *nwrite)
 {
     USLOSS_Sysargs sysArg;
+	
+	//check if parameters are invalid, if so return -1
+	if(buff == NULL || nwrite == NULL)
+		return -1;
 
     CHECKMODE;
     sysArg.number = SYS_TERMWRITE;
-    //sysArg.arg1 = (void *) (long) seconds;
-    return 0;
+    sysArg.arg1 = buff;
+    sysArg.arg2 = (void *) (long) bsize;
+    sysArg.arg3 = (void *) (long) unit_id;
+    sysArg.arg4 = nwrite;
+ 
+	return 0;
+
 }
