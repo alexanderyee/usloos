@@ -19,6 +19,15 @@
 int	 	running;
 procStruct ProcTable[MAXPROC];
 procPtr    sleepQueue[MAXPROC];
+diskNode   disk0Queue[MAXPROC];
+diskNode   disk1Queue[MAXPROC];
+int        disk0Count = 0;
+int        disk1Count = 0;
+int        disk0Sem;
+int        disk1Sem;
+int        disk0QueueSem;
+int        disk1QueueSem;
+
 void (*systemCallVec[MAXSYSCALLS])(USLOSS_Sysargs *);
 
 static int ClockDriver(char *);
@@ -50,6 +59,8 @@ void start3(void)
     for (i = 0; i < MAXPROC; i++) {
         ProcTable[i].pid = -1;
     	sleepQueue[i] = NULL;
+        disk0Queue[i].semID = -1;
+        disk1Queue[i].semID = -1;
 	}
 	initProc(getpid());
     /*
@@ -87,7 +98,10 @@ void start3(void)
             USLOSS_Halt(1);
         }
     }
-
+    disk0Sem = semcreateReal(0);
+    disk1Sem = semcreateReal(0);
+    disk0QueueSem = semcreateReal(1);
+    disk1QueueSem = semcreateReal(1);
     // May be other stuff to do here before going on to terminal drivers
 
     /*
@@ -191,8 +205,13 @@ int sleepReal(USLOSS_Sysargs * args)
  */
 static int DiskDriver(char *arg)
 {
+    int unit = atoi(arg);
+    while(!isZapped()) {
+        sempReal(diskSem);
     return 0;
+    }
 }
+
 
 /*
  * Reads sectors sectors from the disk indicated by unit, starting at track track and
@@ -212,8 +231,16 @@ static int DiskDriver(char *arg)
  */
 int diskReadReal(USLOSS_Sysargs * args)
 {
-	
+    int * sectorSize, numSectors, numTracks;
+    void *dbuff = args->arg1;
+    int unit = (int) (long) args->arg2;
+    int track = (int) (long) args->arg3;
+    int first = (int) (long) args->arg4;
+    int sectors = (int) (long) args->arg5;
 
+    diskSizeReal(unit, sectorSize, numSectors, numTracks);
+    // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
+    diskEnqueue(dbuff, unit, track, first, sectors);
 }
 
 
@@ -246,6 +273,33 @@ int diskSizeReal(USLOSS_Sysargs * sysArg)
 	// TODO check the results of the above two
 	*((int *) sysArg->arg4) = numTracks;
     return 0;
+}
+
+/*
+ *
+ */
+int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors) {
+    // block all access to queue
+    sempReal(unit ? disk1QueueSem : disk0QueueSem);
+    diskNodePtr queue = unit ? disk1Queue : disk0Queue;
+    diskNodePtr insertedNode;
+    // find where to insert. use first, then sectors to see if it can fit
+    int i;
+    for (i = 0; i < MAXPROC; i++) {
+        if (queue[i].semID == -1) {
+            // case where we reach an empty slot. just insert.
+            insertedNode = queue[i];
+        } else if ()
+    }
+
+    insertedNode->semID = ProcTable[getpid() % MAXPROC].semID;
+    insertedNode->dbuff = dbuff;
+    insertedNode->unit = unit;
+    insertedNode->track = track;
+    insertedNode->first = first;
+    insertedNode->sectors = sectors;
+    semvReal(unit ? disk1QueueSem : disk0QueueSem);
+
 }
 
 /*
