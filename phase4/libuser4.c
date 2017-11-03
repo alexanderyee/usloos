@@ -47,6 +47,9 @@ int DiskRead(void *dbuff, int unit, int track, int first, int sectors, int *stat
     return *status;
 }
 
+/*
+ * Interface for diskWriteReal
+ */
 int DiskWrite(void *dbuff, int unit, int track, int first,
                      int sectors,int *status)
 {
@@ -54,8 +57,15 @@ int DiskWrite(void *dbuff, int unit, int track, int first,
 
     CHECKMODE;
 	sysArg.number = SYS_DISKWRITE;
-    //sysArg.arg1 = (void *) (long) seconds;
-    return 0;
+    sysArg.arg1 = dbuff;
+    sysArg.arg2 = (void *) (long) unit;
+    sysArg.arg3 = (void *) (long) track;
+    sysArg.arg4 = (void *) (long) first;
+    sysArg.arg5 = (void *) (long) sectors;
+    USLOSS_Syscall(&sysArg);
+    *status = (int) (long) sysArg.arg1;
+    return *status;
+    
 }
 
 /*
@@ -79,19 +89,37 @@ int DiskSize(int unit, int *sector, int *track, int *disk)
 int TermRead(char *buff, int bsize, int unit_id, int *nread)
 {
     USLOSS_Sysargs sysArg;
+	
+	//check if parameters are invalid, if so return -1
+	if(buff == NULL || nread == NULL)
+		return -1;
 
     CHECKMODE;
     sysArg.number = SYS_TERMREAD;
-    //sysArg.arg1 = (void *) (long) seconds;
-    return 0;
+    sysArg.arg1 = buff;
+	sysArg.arg2 = (void *) (long) bsize;
+	sysArg.arg3 = (void *) (long) unit_id;
+	sysArg.arg4 = nread;
+	//USLOSS_Syscall(&sysArgs);
+	return 0;
+
 }
 
 int TermWrite(char *buff, int bsize, int unit_id, int *nwrite)
 {
     USLOSS_Sysargs sysArg;
+	
+	//check if parameters are invalid, if so return -1
+	if(buff == NULL || nwrite == NULL)
+		return -1;
 
     CHECKMODE;
     sysArg.number = SYS_TERMWRITE;
-    //sysArg.arg1 = (void *) (long) seconds;
-    return 0;
+    sysArg.arg1 = buff;
+    sysArg.arg2 = (void *) (long) bsize;
+    sysArg.arg3 = (void *) (long) unit_id;
+    sysArg.arg4 = nwrite;
+ 
+	return 0;
+
 }
