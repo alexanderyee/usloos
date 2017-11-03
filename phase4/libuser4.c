@@ -47,6 +47,9 @@ int DiskRead(void *dbuff, int unit, int track, int first, int sectors, int *stat
     return *status;
 }
 
+/*
+ * Interface for diskWriteReal
+ */
 int DiskWrite(void *dbuff, int unit, int track, int first,
                      int sectors,int *status)
 {
@@ -54,8 +57,15 @@ int DiskWrite(void *dbuff, int unit, int track, int first,
 
     CHECKMODE;
 	sysArg.number = SYS_DISKWRITE;
-    //sysArg.arg1 = (void *) (long) seconds;
-    return 0;
+    sysArg.arg1 = dbuff;
+    sysArg.arg2 = (void *) (long) unit;
+    sysArg.arg3 = (void *) (long) track;
+    sysArg.arg4 = (void *) (long) first;
+    sysArg.arg5 = (void *) (long) sectors;
+    USLOSS_Syscall(&sysArg);
+    *status = (int) (long) sysArg.arg1;
+    return *status;
+    
 }
 
 /*
