@@ -237,12 +237,12 @@ static int DiskDriver(char *arg)
                 deviceRequest.opr = USLOSS_DISK_WRITE;
             }
 
-            deviceRequest.reg1 = (i + request->first) % USLOSS_DISK_TRACK_SIZE;
+            deviceRequest.reg1 = (void *) (long) (i + request->first) % USLOSS_DISK_TRACK_SIZE;
             if ((i + request->first) >= USLOSS_DISK_TRACK_SIZE && !isNextTrack) {
                 // need to seek to next track
                 USLOSS_DeviceRequest deviceRequestSeek;
                 deviceRequestSeek.opr = USLOSS_DISK_SEEK;
-                deviceRequestSeek.reg1 = request->track + 1;
+                deviceRequestSeek.reg1 = (void *) (long) (request->track + 1);
                 int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequestSeek);
                 waitDevice(USLOSS_DISK_DEV, unit, &result);
                 isNextTrack = 1;
@@ -289,24 +289,24 @@ int diskReadReal(USLOSS_Sysargs * args)
     int sectors = (int) (long) args->arg5;
     USLOSS_Sysargs sizeArgs;
     sizeArgs.arg1 = args->arg2; // unit
-    sizeArgs.arg2 = (sectorSize;
+    sizeArgs.arg2 = sectorSize;
     sizeArgs.arg3 = numSectors;
     sizeArgs.arg4 = numTracks;
     diskSizeReal(&sizeArgs);
     // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
-  	if(first < 0 || first >= numSectors){
+  	if(first < 0 || first >= *numSectors){
 		USLOSS_Console("diskReadReal() first is invalid\n");
         USLOSS_Halt(1);
         return -1;
 	}
 
-	if(sectors < 0 || sectors >= numSectors){
+	if(sectors < 0 || sectors >= *numSectors){
         USLOSS_Console("diskReadReal() sectors is invalid\n");
         USLOSS_Halt(1);
         return -1;
     }
 
-	if(track < 0 || track >= numTracks){
+	if(track < 0 || track >= *numTracks){
         USLOSS_Console("diskReadReal() track is invalid\n");
         USLOSS_Halt(1);
         return -1;
@@ -352,19 +352,19 @@ int diskWriteReal(USLOSS_Sysargs * args)
     sizeArgs.arg4 = numTracks;
     diskSizeReal(&sizeArgs);
     // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
-    if(first < 0 || first >= numSectors){
+    if(first < 0 || first >= *numSectors){
         USLOSS_Console("diskWriteReal() first is invalid\n");
         USLOSS_Halt(1);
         return -1;
     }
 
-    if(sectors < 0 || sectors >= numSectors){
+    if(sectors < 0 || sectors >= *numSectors){
         USLOSS_Console("diskWriteReal() sectors is invalid\n");
         USLOSS_Halt(1);
         return -1;
     }
 
-    if(track < 0 || track >= numTracks){
+    if(track < 0 || track >= *numTracks){
         USLOSS_Console("diskWriteReal() track is invalid\n");
         USLOSS_Halt(1);
         return -1;
