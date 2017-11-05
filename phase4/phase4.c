@@ -52,7 +52,7 @@ void start3(void)
     char	name[128];
     //char    termbuf[10];
     int		i;
-    int		clockPID;
+    int		clockPID, disk0PID, disk1PID;
     int		pid;
     int		status;
     /*
@@ -107,6 +107,11 @@ void start3(void)
             USLOSS_Console("start3(): Can't create term driver %d\n", i);
             USLOSS_Halt(1);
         }
+        else if (i == 0) {
+            disk0PID = pid;
+        } else {
+            disk1PID = pid;
+        }
     }
     disk0Sem = semcreateReal(0);
     disk1Sem = semcreateReal(0);
@@ -130,13 +135,15 @@ void start3(void)
     pid = spawnReal("start4", start4, NULL, 2 * USLOSS_MIN_STACK, 3);
     initProc(pid);
     pid = waitReal(&status);
-
+    dumpProcesses();
     /*
      * Zap the device drivers
      */
     zap(clockPID);  // clock driver
-    zap(clockPID + 1); // disk 0
-    zap(clockPID + 2); // disk 1
+    zap(disk0PID); // disk 0
+    zap(disk1PID); // disk 1
+    dumpProcesses();
+
     // eventually, at the end:
     quit(0);
 
@@ -218,8 +225,6 @@ int sleepReal(USLOSS_Sysargs * args)
  */
 static int DiskDriver(char *arg)
 {
-    if (isDebug)
-        USLOSS_Console("DiskDriver started\n");
     int unit = atoi(arg);
     int sem = unit ? disk1Sem : disk0Sem;
     while(!isZapped()) {
@@ -314,6 +319,7 @@ int diskReadReal(USLOSS_Sysargs * args)
 	diskEnqueue(dbuff, unit, track, first, sectors, READ);
     semvReal(unit ? disk1Sem : disk0Sem);
     sempReal(ProcTable[getpid() % MAXPROC].semID);
+    args->arg1 = 0;
     return 0;
 }
 
@@ -368,6 +374,7 @@ int diskWriteReal(USLOSS_Sysargs * args)
 	diskEnqueue(dbuff, unit, track, first, sectors, WRITE);
     semvReal(unit ? disk1Sem : disk0Sem);
     sempReal(ProcTable[getpid() % MAXPROC].semID);
+    args->arg1 = 0;
     return 0;
 
 
@@ -448,8 +455,6 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     insertedNode->first = first;
     insertedNode->sectors = sectors;
     insertedNode->op = op;
-    if (isDebug)
-        USLOSS_Console("Enqueued node.\n");
     semvReal(unit ? disk1QueueSem : disk0QueueSem);
     return 0;
 }
@@ -483,7 +488,7 @@ int diskDequeue(int unit) {
             queue[i] = queue[i+1];
         }
     }
-    sempReal(unit ? disk1QueueSem : disk0QueueSem);
+    semvReal(unit ? disk1QueueSem : disk0QueueSem);
     return resultSemID;
 }
 
