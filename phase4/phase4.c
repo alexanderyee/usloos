@@ -249,9 +249,9 @@ static int DiskDriver(char *arg)
                 isNextTrack = 1;
             }
             deviceRequest.reg2 = request->dbuff + (i * USLOSS_DISK_SECTOR_SIZE);
-
-            if (isDebug)
-                USLOSS_Console("DiskDriver bout to r/w from disk %d at track %d, sector %d into dbuff %ld\n", unit, request->track, (i + request->first) % USLOSS_DISK_TRACK_SIZE,  request->dbuff + (i * USLOSS_DISK_SECTOR_SIZE));
+            
+            //if (isDebug)
+            //    USLOSS_Console("DiskDriver bout to r/w from disk %d at track %d, sector %d into dbuff %ld\n", unit, request->track, (i + request->first) % USLOSS_DISK_TRACK_SIZE,  request->dbuff + (i * USLOSS_DISK_SECTOR_SIZE));
             int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
             waitDevice(USLOSS_DISK_DEV, unit, &result);
         }
@@ -343,40 +343,40 @@ int diskWriteReal(USLOSS_Sysargs * args)
         // process hasn't been initialized yet, let's fix that
         initProc(getpid());
     }
-    int * sectorSize, * numSectors, * numTracks;
+    int sectorSize, numSectors, numTracks;
     void *dbuff = args->arg1;
     int unit = (int) (long) args->arg2;
     int track = (int) (long) args->arg3;
     int first = (int) (long) args->arg4;
     int sectors = (int) (long) args->arg5;
-    USLOSS_Sysargs sizeArgs;
-    sizeArgs.arg1 = args->arg2;
-    sizeArgs.arg2 = sectorSize;
-    sizeArgs.arg3 = numSectors;
-    sizeArgs.arg4 = numTracks;
-    diskSizeReal(&sizeArgs);
+	printf("FUCKKKK writeDiskReal1\n");
+    diskSizeRealActually(unit, &sectorSize, &numSectors, &numTracks);
     // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
-    if(first < 0 || first >= *numSectors){
+    printf("FUCKKKK writeDiskReal\n");
+	if(first < 0 || first >= numSectors){
         USLOSS_Console("diskWriteReal() first is invalid\n");
         USLOSS_Halt(1);
         return -1;
     }
 
-    if(sectors < 0 || sectors >= *numSectors){
+    if(sectors < 0 || sectors >= numSectors){
         USLOSS_Console("diskWriteReal() sectors is invalid\n");
         USLOSS_Halt(1);
         return -1;
     }
 
-    if(track < 0 || track >= *numTracks){
+    if(track < 0 || track >= numTracks){
         USLOSS_Console("diskWriteReal() track is invalid\n");
         USLOSS_Halt(1);
         return -1;
     }
-    diskEnqueue(dbuff, unit, track, first, sectors, WRITE);
+    if (isDebug)
+		printf("hi my name is writeDiskReal\n");
+	diskEnqueue(dbuff, unit, track, first, sectors, WRITE);
     semvReal(unit ? disk1Sem : disk0Sem);
     sempReal(ProcTable[getpid() % MAXPROC].semID);
     return 0;
+
 
 }
 
@@ -386,30 +386,43 @@ int diskWriteReal(USLOSS_Sysargs * args)
  */
 int diskSizeReal(USLOSS_Sysargs * sysArg)
 {
+	printf("1\n");
     if (ProcTable[getpid() & MAXPROC].pid == -1) {
         // process hasn't been initialized yet, let's fix that
         initProc(getpid());
     }
+	printf("2\n");
 	//check parameters are correct
 	if( (int) (long) sysArg->arg1 < 0 || (int) (long) sysArg->arg1 > 1){
 		USLOSS_Console("diskSizeReal() sysArg->arg1 is invalid\n");
        	USLOSS_Halt(1);
 		return -1;
 	}
+	diskSizeRealActually((int) (long) sysArg->arg1, (int *) sysArg->arg2,(int *) sysArg->arg3, (int *) sysArg->arg4);
+    return 0;
+}
 
+/*
+ *
+ */
+int diskSizeRealActually(int unit, int * sectorSize, int * trackSize, int * diskSize) 
+{
 	int numTracks;
     USLOSS_DeviceRequest deviceRequest;
     deviceRequest.opr = USLOSS_DISK_TRACKS;
     deviceRequest.reg1 = &numTracks;
-	int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, (int) (long) sysArg->arg1, &deviceRequest);
-	waitDevice(USLOSS_DISK_DEV, (int) (long) sysArg->arg1, &result);
-	// TODO check the results of the above two
-    *((int *) sysArg->arg2) = USLOSS_DISK_SECTOR_SIZE;
-    *((int *) sysArg->arg3) = USLOSS_DISK_TRACK_SIZE;
-	*((int *) sysArg->arg4) = numTracks;
+    printf("heeeey\n");
+	int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
+    waitDevice(USLOSS_DISK_DEV, unit, &result);
+    *sectorSize = USLOSS_DISK_SECTOR_SIZE;
+    printf("5a\n"); 
+    *trackSize = USLOSS_DISK_TRACK_SIZE;
+    printf("5b\n");
+    *diskSize = numTracks;
+    printf("6\n");
     return 0;
-}
 
+}
 /*
  *
  */
