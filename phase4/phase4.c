@@ -237,7 +237,7 @@ static int DiskDriver(char *arg)
                 deviceRequest.opr = USLOSS_DISK_WRITE;
             }
 
-            deviceRequest.reg1 = (void *) (long) (i + request->first) % USLOSS_DISK_TRACK_SIZE;
+            deviceRequest.reg1 = (void *) (long) ((i + request->first) % USLOSS_DISK_TRACK_SIZE);
             if ((i + request->first) >= USLOSS_DISK_TRACK_SIZE && !isNextTrack) {
                 // need to seek to next track
                 USLOSS_DeviceRequest deviceRequestSeek;
@@ -431,7 +431,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
             for (j = MAXPROC - 1; j > i; j--) {
                 queue[j] = queue[j-1];
             }
-            insertedNode = &aqueue[i];
+            insertedNode = &queue[i];
         }
     }
 
