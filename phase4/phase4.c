@@ -441,7 +441,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     }
 
     insertedNode->semID = ProcTable[getpid() % MAXPROC].semID;
-    printf("what is my getpid %d and semId %d\n", getpid(), ProcTable[getpid() % MAXPROC].semID);
+    printf("what is my getpid %d and semId %d and i %d\n", getpid(), ProcTable[getpid() % MAXPROC].semID, i);
     insertedNode->dbuff = dbuff;
     insertedNode->unit = unit;
     insertedNode->track = track;
@@ -458,6 +458,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
  *
  */
 int diskDequeue(int unit) {
+    printf("diskDequeue");
     sempReal(unit ? disk1QueueSem : disk0QueueSem);
     diskNodePtr queue = unit ? disk1Queue : disk0Queue;
     int resultSemID = -1;
