@@ -45,7 +45,7 @@ int diskEnqueue(void *, int, int, int, int, int);
 int diskDequeue(int);
 int diskReadReal(USLOSS_Sysargs *);
 int diskWriteReal(USLOSS_Sysargs *);
-int diskSizeRealActually(int, int *, int *, int *)
+int diskSizeRealActually(int, int *, int *, int *);
 
 void start3(void)
 {
