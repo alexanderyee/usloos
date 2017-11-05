@@ -142,9 +142,6 @@ void start3(void)
     zap(clockPID);  // clock driver
     zap(disk0PID); // disk 0
     zap(disk1PID); // disk 1
-    pid = join(&status);
-    pid = join(&status);
-    pid = join(&status);
 
     dumpProcesses();
 
@@ -191,6 +188,8 @@ static int ClockDriver(char *arg)
 	 */
 
     }
+
+    quit(0);
     return 0;
 }
 
@@ -269,6 +268,7 @@ static int DiskDriver(char *arg)
         semvReal(diskDequeue(unit));
         //USLOSS_IntVec[USLOSS_DISK_INT];
     }
+    quit(0);
     return 0;
 }
 
