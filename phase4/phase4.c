@@ -139,12 +139,19 @@ void start3(void)
     /*
      * Zap the device drivers
      */
+	printf("%d, %d, %d\n", clockPID, disk0PID, disk1PID);
     zap(clockPID);  // clock driver
     zap(disk0PID); // disk 0
     zap(disk1PID); // disk 1
-
     dumpProcesses();
-
+	join(&status);
+	join(&status);
+	join(&status);
+	semfreeReal(running);
+	semfreeReal(disk0Sem);
+	semfreeReal(disk1Sem);
+    semfreeReal(disk0QueueSem);
+    semfreeReal(disk1QueueSem);
     // eventually, at the end:
     quit(0);
 
@@ -188,7 +195,7 @@ static int ClockDriver(char *arg)
 	 */
 
     }
-
+	printf("is clock quitting\n");
     quit(0);
     return 0;
 }
@@ -268,6 +275,7 @@ static int DiskDriver(char *arg)
         semvReal(diskDequeue(unit));
         //USLOSS_IntVec[USLOSS_DISK_INT];
     }
+	USLOSS_Console("am i quitting?\n");
     quit(0);
     return 0;
 }
