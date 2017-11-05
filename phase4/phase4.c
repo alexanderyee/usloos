@@ -249,7 +249,7 @@ static int DiskDriver(char *arg)
                 isNextTrack = 1;
             }
             deviceRequest.reg2 = request->dbuff + (i * USLOSS_DISK_SECTOR_SIZE);
-            
+
             //if (isDebug)
             //    USLOSS_Console("DiskDriver bout to r/w from disk %d at track %d, sector %d into dbuff %ld\n", unit, request->track, (i + request->first) % USLOSS_DISK_TRACK_SIZE,  request->dbuff + (i * USLOSS_DISK_SECTOR_SIZE));
             int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
@@ -285,18 +285,13 @@ int diskReadReal(USLOSS_Sysargs * args)
         // process hasn't been initialized yet, let's fix that
         initProc(getpid());
     }
-    int * sectorSize, * numSectors, * numTracks;
+    int sectorSize, numSectors, numTracks;
     void *dbuff = args->arg1;
     int unit = (int) (long) args->arg2;
     int track = (int) (long) args->arg3;
     int first = (int) (long) args->arg4;
     int sectors = (int) (long) args->arg5;
-    USLOSS_Sysargs sizeArgs;
-    sizeArgs.arg1 = args->arg2; // unit
-    sizeArgs.arg2 = sectorSize;
-    sizeArgs.arg3 = numSectors;
-    sizeArgs.arg4 = numTracks;
-    diskSizeReal(&sizeArgs);
+    diskSizeRealActually(unit, &sectorSize, &numSectors, &numTracks);
     // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
   	if(first < 0 || first >= *numSectors){
 		USLOSS_Console("diskReadReal() first is invalid\n");
@@ -349,10 +344,8 @@ int diskWriteReal(USLOSS_Sysargs * args)
     int track = (int) (long) args->arg3;
     int first = (int) (long) args->arg4;
     int sectors = (int) (long) args->arg5;
-	printf("FUCKKKK writeDiskReal1\n");
     diskSizeRealActually(unit, &sectorSize, &numSectors, &numTracks);
     // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
-    printf("FUCKKKK writeDiskReal\n");
 	if(first < 0 || first >= numSectors){
         USLOSS_Console("diskWriteReal() first is invalid\n");
         USLOSS_Halt(1);
@@ -386,12 +379,10 @@ int diskWriteReal(USLOSS_Sysargs * args)
  */
 int diskSizeReal(USLOSS_Sysargs * sysArg)
 {
-	printf("1\n");
     if (ProcTable[getpid() & MAXPROC].pid == -1) {
         // process hasn't been initialized yet, let's fix that
         initProc(getpid());
     }
-	printf("2\n");
 	//check parameters are correct
 	if( (int) (long) sysArg->arg1 < 0 || (int) (long) sysArg->arg1 > 1){
 		USLOSS_Console("diskSizeReal() sysArg->arg1 is invalid\n");
@@ -405,21 +396,17 @@ int diskSizeReal(USLOSS_Sysargs * sysArg)
 /*
  *
  */
-int diskSizeRealActually(int unit, int * sectorSize, int * trackSize, int * diskSize) 
+int diskSizeRealActually(int unit, int * sectorSize, int * trackSize, int * diskSize)
 {
 	int numTracks;
     USLOSS_DeviceRequest deviceRequest;
     deviceRequest.opr = USLOSS_DISK_TRACKS;
     deviceRequest.reg1 = &numTracks;
-    printf("heeeey\n");
 	int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
     waitDevice(USLOSS_DISK_DEV, unit, &result);
     *sectorSize = USLOSS_DISK_SECTOR_SIZE;
-    printf("5a\n"); 
     *trackSize = USLOSS_DISK_TRACK_SIZE;
-    printf("5b\n");
     *diskSize = numTracks;
-    printf("6\n");
     return 0;
 
 }
@@ -459,6 +446,8 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     insertedNode->first = first;
     insertedNode->sectors = sectors;
     insertedNode->op = op;
+    if (isDebug)
+        USLOSS_Console("Enqueued node.\n");
     semvReal(unit ? disk1QueueSem : disk0QueueSem);
     return 0;
 }
@@ -468,7 +457,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
  */
 int diskDequeue(int unit) {
     sempReal(unit ? disk1QueueSem : disk0QueueSem);
-    diskNodePtr queue = queue = unit ? disk1Queue : disk0Queue;
+    diskNodePtr queue = unit ? disk1Queue : disk0Queue;
     int resultSemID = -1;
     if (queue[0].semID == -1) {
         USLOSS_Console("diskDequeue: Invalid dequeue\n");
