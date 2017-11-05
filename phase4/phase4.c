@@ -313,9 +313,13 @@ int diskReadReal(USLOSS_Sysargs * args)
         USLOSS_Halt(1);
         return -1;
     }
+    printf("1\n");
 	diskEnqueue(dbuff, unit, track, first, sectors, READ);
+    printf("2\n");
     semvReal(unit ? disk1Sem : disk0Sem);
+    printf("3\n");
     sempReal(ProcTable[getpid() % MAXPROC].semID);
+    printf("4\n");
     return 0;
 }
 
@@ -424,6 +428,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     // find where to insert. use first, then sectors to see if it can fit
     int i, j;
     for (i = 0; i < MAXPROC; i++) {
+        printf("enqueue loop\n");
         if (queue[i].semID == -1) {
             // case where we reach an empty slot. just insert.
             insertedNode = &queue[i];
@@ -488,7 +493,7 @@ int diskDequeue(int unit) {
             queue[i] = queue[i+1];
         }
     }
-
+    sempReal(unit ? disk1QueueSem : disk0QueueSem);
     return resultSemID;
 }
 
