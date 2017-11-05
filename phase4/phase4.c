@@ -292,9 +292,7 @@ int diskReadReal(USLOSS_Sysargs * args)
     int track = (int) (long) args->arg3;
     int first = (int) (long) args->arg4;
     int sectors = (int) (long) args->arg5;
-    printf("why u fucking up hmmq \n");
     diskSizeRealActually(unit, &sectorSize, &numSectors, &numTracks);
-    printf("why u fucking up hmm \n");
     // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
   	if(first < 0 || first >= numSectors){
 		USLOSS_Console("diskReadReal() first is invalid\n");
@@ -313,13 +311,9 @@ int diskReadReal(USLOSS_Sysargs * args)
         USLOSS_Halt(1);
         return -1;
     }
-    printf("1\n");
 	diskEnqueue(dbuff, unit, track, first, sectors, READ);
-    printf("2\n");
     semvReal(unit ? disk1Sem : disk0Sem);
-    printf("3\n");
     sempReal(ProcTable[getpid() % MAXPROC].semID);
-    printf("4\n");
     return 0;
 }
 
@@ -370,8 +364,7 @@ int diskWriteReal(USLOSS_Sysargs * args)
         USLOSS_Halt(1);
         return -1;
     }
-    if (isDebug)
-		printf("hi my name is writeDiskReal\n");
+
 	diskEnqueue(dbuff, unit, track, first, sectors, WRITE);
     semvReal(unit ? disk1Sem : disk0Sem);
     sempReal(ProcTable[getpid() % MAXPROC].semID);
@@ -428,7 +421,6 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     // find where to insert. use first, then sectors to see if it can fit
     int i, j;
     for (i = 0; i < MAXPROC; i++) {
-        printf("enqueue loop\n");
         if (queue[i].semID == -1) {
             // case where we reach an empty slot. just insert.
             insertedNode = &queue[i];
@@ -450,7 +442,6 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     }
 
     insertedNode->semID = ProcTable[getpid() % MAXPROC].semID;
-    printf("what is my getpid %d and semId %d and i %d\n", getpid(), ProcTable[getpid() % MAXPROC].semID, i);
     insertedNode->dbuff = dbuff;
     insertedNode->unit = unit;
     insertedNode->track = track;
@@ -467,7 +458,6 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
  *
  */
 int diskDequeue(int unit) {
-    printf("diskDequeue");
     sempReal(unit ? disk1QueueSem : disk0QueueSem);
     diskNodePtr queue = unit ? disk1Queue : disk0Queue;
     int resultSemID = -1;
