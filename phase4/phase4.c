@@ -15,6 +15,7 @@
 #include <phase4.h>
 #include <providedPrototypes.h>
 #include <stdlib.h> /* needed for atoi() */
+#include <stdio.h> /* needed for sprintf() */
 
 int	 	running;
 procStruct ProcTable[MAXPROC];
@@ -42,6 +43,7 @@ int diskSizeReal(USLOSS_Sysargs *);
 int diskEnqueue(void *, int, int, int, int, int);
 int diskDequeue(int);
 int diskReadReal(USLOSS_Sysargs *);
+int diskWriteReal(USLOSS_Sysargs *);
 
 void start3(void)
 {
@@ -176,6 +178,7 @@ static int ClockDriver(char *arg)
 	 */
 
     }
+    return 0;
 }
 
 /*
@@ -199,8 +202,9 @@ int sleepReal(USLOSS_Sysargs * args)
         initProc(getpid());
     }
     int result = enqueue(&ProcTable[getpid() % MAXPROC]);
-    long time;
-    // TODO don't ignore the result of enqueue
+    if (result == -1) {
+        return -1;
+    }
     ProcTable[getpid() % MAXPROC].sleepSecondsRemaining = (int) (long) args->arg1 * 1000000;
     sempReal(ProcTable[getpid() % MAXPROC].semID);
     args->arg1 = 0;
@@ -221,7 +225,7 @@ static int DiskDriver(char *arg)
         // seek to the track
         USLOSS_DeviceRequest deviceRequest;
         deviceRequest.opr = USLOSS_DISK_SEEK;
-        deviceRequest.reg1 = request->track;
+        deviceRequest.reg1 = (void *) (long) request->track;
         int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
         waitDevice(USLOSS_DISK_DEV, unit, &result);
 
@@ -237,9 +241,9 @@ static int DiskDriver(char *arg)
             if ((i + request->first) >= USLOSS_DISK_TRACK_SIZE && !isNextTrack) {
                 // need to seek to next track
                 USLOSS_DeviceRequest deviceRequestSeek;
-                deviceRequest.opr = USLOSS_DISK_SEEK;
-                deviceRequest.reg1 = request->track + 1;
-                int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
+                deviceRequestSeek.opr = USLOSS_DISK_SEEK;
+                deviceRequestSeek.reg1 = request->track + 1;
+                int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequestSeek);
                 waitDevice(USLOSS_DISK_DEV, unit, &result);
                 isNextTrack = 1;
             }
@@ -250,8 +254,8 @@ static int DiskDriver(char *arg)
         // request fulfilled, dequeue it and unblock that proc
         semvReal(diskDequeue(unit));
         //USLOSS_IntVec[USLOSS_DISK_INT];
-        return 0;
     }
+    return 0;
 }
 
 
@@ -277,15 +281,15 @@ int diskReadReal(USLOSS_Sysargs * args)
         // process hasn't been initialized yet, let's fix that
         initProc(getpid());
     }
-    int * sectorSize, numSectors, numTracks;
+    int * sectorSize, * numSectors, * numTracks;
     void *dbuff = args->arg1;
     int unit = (int) (long) args->arg2;
     int track = (int) (long) args->arg3;
     int first = (int) (long) args->arg4;
     int sectors = (int) (long) args->arg5;
     USLOSS_Sysargs sizeArgs;
-    sizeArgs.arg1 = unit;
-    sizeArgs.arg2 = sectorSize;
+    sizeArgs.arg1 = args->arg2; // unit
+    sizeArgs.arg2 = (sectorSize;
     sizeArgs.arg3 = numSectors;
     sizeArgs.arg4 = numTracks;
     diskSizeReal(&sizeArgs);
@@ -335,14 +339,14 @@ int diskWriteReal(USLOSS_Sysargs * args)
         // process hasn't been initialized yet, let's fix that
         initProc(getpid());
     }
-    int * sectorSize, numSectors, numTracks;
+    int * sectorSize, * numSectors, * numTracks;
     void *dbuff = args->arg1;
     int unit = (int) (long) args->arg2;
     int track = (int) (long) args->arg3;
     int first = (int) (long) args->arg4;
     int sectors = (int) (long) args->arg5;
     USLOSS_Sysargs sizeArgs;
-    sizeArgs.arg1 = unit;
+    sizeArgs.arg1 = args->arg2;
     sizeArgs.arg2 = sectorSize;
     sizeArgs.arg3 = numSectors;
     sizeArgs.arg4 = numTracks;
@@ -383,7 +387,7 @@ int diskSizeReal(USLOSS_Sysargs * sysArg)
         initProc(getpid());
     }
 	//check parameters are correct
-	if(sysArg->arg1 < 0 || sysArg->arg1 > 1){
+	if( (int) (long) sysArg->arg1 < 0 || (int) (long) sysArg->arg1 > 1){
 		USLOSS_Console("diskSizeReal() sysArg->arg1 is invalid\n");
        	USLOSS_Halt(1);
 		return -1;
@@ -415,11 +419,11 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     for (i = 0; i < MAXPROC; i++) {
         if (queue[i].semID == -1) {
             // case where we reach an empty slot. just insert.
-            insertedNode = queue[i];
+            insertedNode = &queue[i];
         } else if (i == MAXPROC - 1) {
             // error case for too many requests
             USLOSS_Console("Too many r/w requests for disk %d\n", unit);
-            break;
+            return -1;
         } else if (first >= queue[i-1].first + queue[i-1].sectors && first + sectors <= queue[i].first) {
             // case where 1) the first sector of this request is greater than the previous request's sector and
             // 2) the last sector of this request is less than the next request's sector (request[i])
@@ -427,7 +431,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
             for (j = MAXPROC - 1; j > i; j--) {
                 queue[j] = queue[j-1];
             }
-            insertedNode = queue[i];
+            insertedNode = &aqueue[i];
         }
     }
 
@@ -439,7 +443,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     insertedNode->sectors = sectors;
     insertedNode->op = op;
     semvReal(unit ? disk1QueueSem : disk0QueueSem);
-
+    return 0;
 }
 
 /*
@@ -472,7 +476,7 @@ int diskDequeue(int unit) {
         }
     }
 
-    return 0;
+    return resultSemID;
 }
 
 /*
