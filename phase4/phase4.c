@@ -40,6 +40,7 @@ procPtr popAtIndex(int);
 int initProc(int);
 int diskSizeReal(USLOSS_Sysargs *);
 int diskEnqueue(void *, int, int, int, int, int);
+int diskDequeue(int);
 int diskReadReal(USLOSS_Sysargs *);
 
 void start3(void)
@@ -57,6 +58,8 @@ void start3(void)
     // initalize the syscall handlers
    systemCallVec[SYS_SLEEP] = (void (*) (USLOSS_Sysargs *)) sleepReal;
    systemCallVec[SYS_DISKSIZE] = (void (*) (USLOSS_Sysargs *)) diskSizeReal;
+   systemCallVec[SYS_DISKREAD] = (void (*) (USLOSS_Sysargs *)) diskReadReal;
+   systemCallVec[SYS_DISKWRITE] = (void (*) (USLOSS_Sysargs *)) diskWriteReal;
 
     /* init ProcTable */
     for (i = 0; i < MAXPROC; i++) {
@@ -225,22 +228,24 @@ static int DiskDriver(char *arg)
         for (i = 0; i < request->sectors; i++) {
 
             if (request->op == READ) {
-               deviceRequest.opr = USLOSS_DISK_READ;
-               deviceRequest.reg1 = (i + request->first) % USLOSS_DISK_TRACK_SIZE;
-               if ((i + request->first) >= USLOSS_DISK_TRACK_SIZE && !isNextTrack) {
-                   // need to seek to next track
-                   USLOSS_DeviceRequest deviceRequestSeek;
-                   deviceRequest.opr = USLOSS_DISK_SEEK;
-                   deviceRequest.reg1 = request->track + 1;
-                   int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
-                   waitDevice(USLOSS_DISK_DEV, unit, &result);
-                   isNextTrack = 1;
-               }
-               deviceRequest.reg2 = request->dbuff + (i * USLOSS_DISK_SECTOR_SIZE);
-               int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
-               waitDevice(USLOSS_DISK_DEV, unit, &result);
+                deviceRequest.opr = USLOSS_DISK_READ;
+            } else {
+                deviceRequest.opr = USLOSS_DISK_WRITE;
             }
 
+            deviceRequest.reg1 = (i + request->first) % USLOSS_DISK_TRACK_SIZE;
+            if ((i + request->first) >= USLOSS_DISK_TRACK_SIZE && !isNextTrack) {
+                // need to seek to next track
+                USLOSS_DeviceRequest deviceRequestSeek;
+                deviceRequest.opr = USLOSS_DISK_SEEK;
+                deviceRequest.reg1 = request->track + 1;
+                int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
+                waitDevice(USLOSS_DISK_DEV, unit, &result);
+                isNextTrack = 1;
+            }
+            deviceRequest.reg2 = request->dbuff + (i * USLOSS_DISK_SECTOR_SIZE);
+            int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
+            waitDevice(USLOSS_DISK_DEV, unit, &result);
         }
         // request fulfilled, dequeue it and unblock that proc
         semvReal(diskDequeue(unit));
@@ -286,19 +291,19 @@ int diskReadReal(USLOSS_Sysargs * args)
     diskSizeReal(&sizeArgs);
     // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
   	if(first < 0 || first >= numSectors){
-		USLOSS_Console("diskSizeReal() first is invalid\n");
+		USLOSS_Console("diskReadReal() first is invalid\n");
         USLOSS_Halt(1);
         return -1;
 	}
 
 	if(sectors < 0 || sectors >= numSectors){
-        USLOSS_Console("diskSizeReal() sectors is invalid\n");
+        USLOSS_Console("diskReadReal() sectors is invalid\n");
         USLOSS_Halt(1);
         return -1;
     }
 
 	if(track < 0 || track >= numTracks){
-        USLOSS_Console("diskSizeReal() track is invalid\n");
+        USLOSS_Console("diskReadReal() track is invalid\n");
         USLOSS_Halt(1);
         return -1;
     }
@@ -310,7 +315,19 @@ int diskReadReal(USLOSS_Sysargs * args)
 
 
 /*
- *
+ * Writes sectors sectors to the disk indicated by unit , starting at track track and sector
+ * first . The contents of the sectors are read from buffer . Like diskRead , your driver
+ * must handle a range of sectors specified by first and sectors that spans a track
+ * boundary. A file cannot wrap around the end of the disk.
+     sysArg.arg1 = dbuff;
+     sysArg.arg2 = unit;
+     sysArg.arg3 = track;
+     sysArg.arg4 = first;
+     sysArg.arg5 = sectors;
+ * Return values:
+ * -1: invalid parameters
+ *  0: sectors were written successfully
+ * >0: disk’s status register
  */
 int diskWriteReal(USLOSS_Sysargs * args)
 {
@@ -318,6 +335,41 @@ int diskWriteReal(USLOSS_Sysargs * args)
         // process hasn't been initialized yet, let's fix that
         initProc(getpid());
     }
+    int * sectorSize, numSectors, numTracks;
+    void *dbuff = args->arg1;
+    int unit = (int) (long) args->arg2;
+    int track = (int) (long) args->arg3;
+    int first = (int) (long) args->arg4;
+    int sectors = (int) (long) args->arg5;
+    USLOSS_Sysargs sizeArgs;
+    sizeArgs.arg1 = unit;
+    sizeArgs.arg2 = sectorSize;
+    sizeArgs.arg3 = numSectors;
+    sizeArgs.arg4 = numTracks;
+    diskSizeReal(&sizeArgs);
+    // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
+    if(first < 0 || first >= numSectors){
+        USLOSS_Console("diskWriteReal() first is invalid\n");
+        USLOSS_Halt(1);
+        return -1;
+    }
+
+    if(sectors < 0 || sectors >= numSectors){
+        USLOSS_Console("diskWriteReal() sectors is invalid\n");
+        USLOSS_Halt(1);
+        return -1;
+    }
+
+    if(track < 0 || track >= numTracks){
+        USLOSS_Console("diskWriteReal() track is invalid\n");
+        USLOSS_Halt(1);
+        return -1;
+    }
+    diskEnqueue(dbuff, unit, track, first, sectors, WRITE);
+    semvReal(unit ? disk1Sem : disk0Sem);
+    sempReal(ProcTable[getpid() % MAXPROC].semID);
+    return 0;
+
 }
 
 
