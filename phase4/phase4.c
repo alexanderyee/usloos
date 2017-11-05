@@ -17,6 +17,7 @@
 #include <stdlib.h> /* needed for atoi() */
 #include <stdio.h> /* needed for sprintf() */
 
+int     isDebug = 1;
 int	 	running;
 procStruct ProcTable[MAXPROC];
 procPtr    sleepQueue[MAXPROC];
@@ -216,6 +217,8 @@ int sleepReal(USLOSS_Sysargs * args)
  */
 static int DiskDriver(char *arg)
 {
+    if (isDebug)
+        USLOSS_Console("DiskDriver started\n");
     int unit = atoi(arg);
     int sem = unit ? disk1Sem : disk0Sem;
     while(!isZapped()) {
@@ -228,14 +231,12 @@ static int DiskDriver(char *arg)
         deviceRequest.reg1 = (void *) (long) request->track;
         int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
         waitDevice(USLOSS_DISK_DEV, unit, &result);
-
+        if (request->op == READ) {
+            deviceRequest.opr = USLOSS_DISK_READ;
+        } else {
+            deviceRequest.opr = USLOSS_DISK_WRITE;
+        }
         for (i = 0; i < request->sectors; i++) {
-
-            if (request->op == READ) {
-                deviceRequest.opr = USLOSS_DISK_READ;
-            } else {
-                deviceRequest.opr = USLOSS_DISK_WRITE;
-            }
 
             deviceRequest.reg1 = (void *) (long) ((i + request->first) % USLOSS_DISK_TRACK_SIZE);
             if ((i + request->first) >= USLOSS_DISK_TRACK_SIZE && !isNextTrack) {
@@ -248,6 +249,9 @@ static int DiskDriver(char *arg)
                 isNextTrack = 1;
             }
             deviceRequest.reg2 = request->dbuff + (i * USLOSS_DISK_SECTOR_SIZE);
+
+            if (isDebug)
+                USLOSS_Console("DiskDriver bout to r/w from disk %d at track %d, sector %d into dbuff %ld\n", unit, request->track, (i + request->first) % USLOSS_DISK_TRACK_SIZE),  request->dbuff + (i * USLOSS_DISK_SECTOR_SIZE));
             int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
             waitDevice(USLOSS_DISK_DEV, unit, &result);
         }
