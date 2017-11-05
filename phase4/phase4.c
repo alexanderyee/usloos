@@ -141,12 +141,15 @@ void start3(void)
      */
 	printf("%d, %d, %d\n", clockPID, disk0PID, disk1PID);
     zap(clockPID);  // clock driver
+	join(&status);
     zap(disk0PID); // disk 0
+    semvReal(disk0Sem);
+    join(&status);
     zap(disk1PID); // disk 1
     dumpProcesses();
-	join(&status);
-	join(&status);
-	join(&status);
+
+    semvReal(disk1Sem);
+    join(&status);
 	semfreeReal(running);
 	semfreeReal(disk0Sem);
 	semfreeReal(disk1Sem);
@@ -240,6 +243,8 @@ static int DiskDriver(char *arg)
     while(!isZapped()) {
         sempReal(sem);
         diskNodePtr request = unit ? &disk1Queue[0] : &disk0Queue[0];
+        if (request->semID == -1) // quit case
+            break;
         int i, isNextTrack = 0;
         // seek to the track
         USLOSS_DeviceRequest deviceRequest;
