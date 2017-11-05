@@ -142,6 +142,10 @@ void start3(void)
     zap(clockPID);  // clock driver
     zap(disk0PID); // disk 0
     zap(disk1PID); // disk 1
+    pid = waitReal(&status);
+    pid = waitReal(&status);
+    pid = waitReal(&status);
+    
     dumpProcesses();
 
     // eventually, at the end:
