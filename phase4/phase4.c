@@ -425,6 +425,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
         if (queue[i].semID == -1) {
             // case where we reach an empty slot. just insert.
             insertedNode = &queue[i];
+            break;
         } else if (i == MAXPROC - 1) {
             // error case for too many requests
             USLOSS_Console("Too many r/w requests for disk %d\n", unit);
@@ -437,6 +438,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
                 queue[j] = queue[j-1];
             }
             insertedNode = &queue[i];
+            break;
         }
     }
 
