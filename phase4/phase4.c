@@ -242,8 +242,8 @@ static int DiskDriver(char *arg)
             }
 
         }
-        // request fulfilled, dequeue it
-        dequeueRequest();
+        // request fulfilled, dequeue it and unblock that proc
+        semvReal(diskDequeue(unit));
         //USLOSS_IntVec[USLOSS_DISK_INT];
         return 0;
     }
@@ -388,6 +388,39 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     insertedNode->op = op;
     semvReal(unit ? disk1QueueSem : disk0QueueSem);
 
+}
+
+/*
+ *
+ */
+int diskDequeue(int unit) {
+    sempReal(unit ? disk1QueueSem : disk0QueueSem);
+    diskNodePtr queue = queue = unit ? disk1Queue : disk0Queue;
+    int resultSemID = -1;
+    if (queue[0].semID == -1) {
+        USLOSS_Console("diskDequeue: Invalid dequeue\n");
+        return -1;
+    } else {
+        resultSemID = queue[0].semID;
+    }
+
+    int i;
+    for (i = 0; i < MAXPROC; i++) {
+        if (i == MAXPROC - 1) {
+            // reset the fields
+            queue[i].semID = -1;
+            queue[i].dbuff = NULL;
+            queue[i].unit = 0;
+            queue[i].track = 0;
+            queue[i].first = 0;
+            queue[i].sectors = 0;
+            queue[i].op = 0;
+        } else {
+            queue[i] = queue[i+1];
+        }
+    }
+
+    return 0;
 }
 
 /*
