@@ -292,7 +292,9 @@ int diskReadReal(USLOSS_Sysargs * args)
     int track = (int) (long) args->arg3;
     int first = (int) (long) args->arg4;
     int sectors = (int) (long) args->arg5;
+    printf("why u fucking up hmmq \n");
     diskSizeRealActually(unit, &sectorSize, &numSectors, &numTracks);
+    printf("why u fucking up hmm \n");
     // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
   	if(first < 0 || first >= numSectors){
 		USLOSS_Console("diskReadReal() first is invalid\n");
