@@ -46,6 +46,8 @@ int diskDequeue(int);
 int diskReadReal(USLOSS_Sysargs *);
 int diskWriteReal(USLOSS_Sysargs *);
 int diskSizeRealActually(int, int *, int *, int *);
+int termReadReal(USLOSS_Sysargs * );
+int termWriteReal(USLOSS_Sysargs * );
 
 void start3(void)
 {
@@ -64,6 +66,8 @@ void start3(void)
    systemCallVec[SYS_DISKSIZE] = (void (*) (USLOSS_Sysargs *)) diskSizeReal;
    systemCallVec[SYS_DISKREAD] = (void (*) (USLOSS_Sysargs *)) diskReadReal;
    systemCallVec[SYS_DISKWRITE] = (void (*) (USLOSS_Sysargs *)) diskWriteReal;
+   systemCallVec[SYS_TERMREAD] = (void (*) (USLOSS_Sysargs *)) termReadReal;
+   systemCallVec[SYS_TERMWRITE] = (void (*) (USLOSS_Sysargs *)) termWriteReal;
 
     /* init ProcTable */
     for (i = 0; i < MAXPROC; i++) {
@@ -505,6 +509,20 @@ int diskDequeue(int unit) {
     }
     semvReal(unit ? disk1QueueSem : disk0QueueSem);
     return resultSemID;
+}
+
+/*
+ * TermReadReal
+ */
+int termReadReal(USLOSS_Sysargs * sysArg){
+    return 0;
+}
+
+ /*
+  * TermWriteReal
+  */
+int termWriteReal(USLOSS_Sysargs * sysArg){
+      return 0;
 }
 
 /*
