@@ -135,7 +135,6 @@ void start3(void)
     pid = spawnReal("start4", start4, NULL, 2 * USLOSS_MIN_STACK, 3);
     initProc(pid);
     pid = waitReal(&status);
-    dumpProcesses();
     /*
      * Zap the device drivers
      */
