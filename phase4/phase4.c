@@ -127,7 +127,7 @@ void start3(void)
     disk1QueueSem = semcreateReal(1);
     // May be other stuff to do here before going on to terminal drivers
     if (isDebug) {
-        USLOSS_Console("DiskDriver processes initialized.\n")
+        USLOSS_Console("DiskDriver processes initialized.\n");
         dumpProcesses();
     }
     /*
@@ -250,7 +250,9 @@ static int DiskDriver(char *arg)
     int unit = atoi(arg);
     int sem = unit ? disk1Sem : disk0Sem;
     semvReal(running);
-
+    if (isDebug) {
+        USLOSS_Console("Disk %d initialized\n", unit);
+    }
     while(!isZapped()) {
         sempReal(sem);
         if (isDebug) {
@@ -447,6 +449,7 @@ int diskWriteReal(USLOSS_Sysargs * args)
     if (isDebug) {
         USLOSS_Console("diskWriteReal() blocking on private mbox, pid %d, semID %d\n", getpid(), ProcTable[getpid() % MAXPROC].semID);
     }
+    dumpProcesses();
     sempReal(ProcTable[getpid() % MAXPROC].semID);
     if (isDebug) {
         USLOSS_Console("diskWriteReal() unblocked proc %d\n", getpid());
@@ -499,11 +502,11 @@ int diskSizeRealActually(int unit, int * sectorSize, int * trackSize, int * disk
  */
 int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op) {
     if (isDebug) {
-        USLOSS_Console("diskEnqueue() called for unit %d, op %s, track %d.\n Proc %d blocking on semp.", unit, (op ? "WRITE" : "READ"), track, getpid());
+        USLOSS_Console("diskEnqueue() called for unit %d, op %s, track %d. Proc %d blocking on semp.\n", unit, (op ? "WRITE" : "READ"), track, getpid());
     }// block all access to queue
     sempReal(unit ? disk1QueueSem : disk0QueueSem);
     if (isDebug) {
-        USLOSS_Console("diskEnqueue() unblocked Proc %d.", getpid());
+        USLOSS_Console("diskEnqueue() unblocked Proc %d.\n", getpid());
     }
     diskNodePtr queue = unit ? disk1Queue : disk0Queue;
     diskNodePtr insertedNode;
@@ -713,4 +716,3 @@ void setUserMode()
     if (USLOSS_PsrSet(newPSRValue) == USLOSS_ERR_INVALID_PSR)
         USLOSS_Console("ERROR: Invalid PSR value set! was: %u\n", newPSRValue);
 } /* setUserMode */
-
