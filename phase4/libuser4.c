@@ -100,8 +100,9 @@ int TermRead(char *buff, int bsize, int unit_id, int *nread)
 	sysArg.arg2 = (void *) (long) bsize;
 	sysArg.arg3 = (void *) (long) unit_id;
 	sysArg.arg4 = nread;
-	//USLOSS_Syscall(&sysArgs);
-	return 0;
+	USLOSS_Syscall(&sysArgs);
+    nread = (long) sysArgs.arg2;
+	return (long) sysArgs.arg4;
 
 }
 
