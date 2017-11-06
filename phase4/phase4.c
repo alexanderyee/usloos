@@ -110,7 +110,7 @@ void start3(void)
         sprintf(buf, "%d", i);
         pid = fork1(name, DiskDriver, buf, USLOSS_MIN_STACK, 2);
         if (pid < 0) {
-            USLOSS_Console("start3(): Can't create term driver %d\n", i);
+            USLOSS_Console("start3(): Can't create disk driver %d\n", i);
             USLOSS_Halt(1);
         }
         else if (i == 0) {
@@ -126,7 +126,10 @@ void start3(void)
     disk0QueueSem = semcreateReal(1);
     disk1QueueSem = semcreateReal(1);
     // May be other stuff to do here before going on to terminal drivers
-
+    if (isDebug) {
+        USLOSS_Console("DiskDriver processes initialized.\n")
+        dumpProcesses();
+    }
     /*
      * Create terminal device drivers.
      */
@@ -153,7 +156,7 @@ void start3(void)
     zap(disk0PID); // disk 0
     join(&status);
 
-        semvReal(disk1Sem);
+    semvReal(disk1Sem);
     zap(disk1PID); // disk 1
 
     join(&status);
@@ -247,11 +250,15 @@ static int DiskDriver(char *arg)
     int unit = atoi(arg);
     int sem = unit ? disk1Sem : disk0Sem;
     semvReal(running);
+
     while(!isZapped()) {
         sempReal(sem);
-
+        if (isDebug) {
+            USLOSS_Console("DiskDriver%d called\n", unit);
+        }
         diskNodePtr request = unit ? &disk1Queue[0] : &disk0Queue[0];
-        printf("diskdriver woke, processing request with semID %d, track %d, first %d\n", request->semID, request->track, request->first);
+        if (isDebug)
+            printf("diskdriver woke, processing request with semID %d, track %d, first %d\n", request->semID, request->track, request->first);
         if (request->semID == -1) // quit case
             break;
         int i, isNextTrack = 0;
@@ -265,10 +272,12 @@ static int DiskDriver(char *arg)
             }
             deviceRequest.opr = USLOSS_DISK_SEEK;
             deviceRequest.reg1 = (void *) (long) request->track;
-
-            USLOSS_Console("DiskDriver gonna seek to track %d\n", request->track);
+            if (isDebug)
+                USLOSS_Console("DiskDriver gonna seek to track %d, proc %d, unit %d\n", request->track, getpid(), unit);
             int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
             waitDevice(USLOSS_DISK_DEV, unit, &result);
+            if (isDebug)
+                USLOSS_Console("DiskDriver seeked to track %d proc %d, unit %d\n", request->track, getpid(), unit);
         }
 
         if (request->op == READ) {
@@ -289,19 +298,26 @@ static int DiskDriver(char *arg)
                 } else {
                     currDisk0Track = request->track + 1;
                 }
+                if (isDebug) {
+                    USLOSS_Console("DiskDriver(): gonna seek to next track %d cuz overlap\n", request->track + 1);
+                }
                 int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequestSeek);
                 waitDevice(USLOSS_DISK_DEV, unit, &result);
                 isNextTrack = 1;
             }
             deviceRequest.reg2 = request->dbuff + (i * USLOSS_DISK_SECTOR_SIZE);
 
-            //if (isDebug)
-            //    USLOSS_Console("DiskDriver bout to r/w from disk %d at track %d, sector %d into dbuff %ld\n", unit, request->track, (i + request->first) % USLOSS_DISK_TRACK_SIZE,  request->dbuff + (i * USLOSS_DISK_SECTOR_SIZE));
+            if (isDebug)
+                USLOSS_Console("DiskDriver bout to r/w from disk %d at track %d, sector %d into dbuff %ld\n", unit, request->track, (i + request->first) % USLOSS_DISK_TRACK_SIZE,  request->dbuff + (i * USLOSS_DISK_SECTOR_SIZE));
             int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
             waitDevice(USLOSS_DISK_DEV, unit, &result);
         }
+        int reqSemID = diskDequeue(unit);
+        if (isDebug) {
+            USLOSS_Console("DiskDriver(): fulfilled request for proc %d, unblocking it (semID = %d)\n", getpid(), reqSemID);
+        }
         // request fulfilled, dequeue it and unblock that proc
-        semvReal(diskDequeue(unit));
+        semvReal(reqSemID);
         //USLOSS_IntVec[USLOSS_DISK_INT];
     }
 
@@ -357,8 +373,17 @@ int diskReadReal(USLOSS_Sysargs * args)
         USLOSS_Halt(1);
         return -1;
     }
+    if (isDebug) {
+        USLOSS_Console("diskReadReal() called for unit %d, track %d, first %d, sectors %d, pid %d\n", unit, track, first, sectors, getpid());
+    }
 	diskEnqueue(dbuff, unit, track, first, sectors, READ);
+    if (isDebug) {
+        USLOSS_Console("diskReadReal() waking up disk %d\n", unit);
+    }
     semvReal(unit ? disk1Sem : disk0Sem);
+    if (isDebug) {
+        USLOSS_Console("diskReadReal() blocking on private mbox, pid %d, semID %d", getpid(), ProcTable[getpid() % MAXPROC].semID);
+    }
     sempReal(ProcTable[getpid() % MAXPROC].semID);
     args->arg1 = 0;
     return 0;
@@ -411,12 +436,21 @@ int diskWriteReal(USLOSS_Sysargs * args)
         USLOSS_Halt(1);
         return -1;
     }
-
+    if (isDebug) {
+        USLOSS_Console("diskWriteReal() called for unit %d, track %d, first %d, sectors %d, pid %d\n", unit, track, first, sectors, getpid());
+    }
 	diskEnqueue(dbuff, unit, track, first, sectors, WRITE);
-    printf("gonna semv on unit %d by pid %d\n", unit, getpid());
-    dumpProcesses();
+    if (isDebug) {
+        USLOSS_Console("diskWriteReal() waking up disk %d\n", unit);
+    }
     semvReal(unit ? disk1Sem : disk0Sem);
+    if (isDebug) {
+        USLOSS_Console("diskWriteReal() blocking on private mbox, pid %d, semID %d\n", getpid(), ProcTable[getpid() % MAXPROC].semID);
+    }
     sempReal(ProcTable[getpid() % MAXPROC].semID);
+    if (isDebug) {
+        USLOSS_Console("diskWriteReal() unblocked proc %d\n", getpid());
+    }
     args->arg1 = 0;
     return 0;
 
@@ -464,9 +498,13 @@ int diskSizeRealActually(int unit, int * sectorSize, int * trackSize, int * disk
  *
  */
 int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op) {
-    printf("diskEnqueue(): calling semp by proc %d\n", getpid());
-    // block all access to queue
+    if (isDebug) {
+        USLOSS_Console("diskEnqueue() called for unit %d, op %s, track %d.\n Proc %d blocking on semp.", unit, (op ? "WRITE" : "READ"), track, getpid());
+    }// block all access to queue
     sempReal(unit ? disk1QueueSem : disk0QueueSem);
+    if (isDebug) {
+        USLOSS_Console("diskEnqueue() unblocked Proc %d.", getpid());
+    }
     diskNodePtr queue = unit ? disk1Queue : disk0Queue;
     diskNodePtr insertedNode;
     // find where to insert. use first, then sectors to see if it can fit
@@ -499,8 +537,9 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     insertedNode->first = first;
     insertedNode->sectors = sectors;
     insertedNode->op = op;
-    printf("diskEnqueue(): calling semv by proc %d\n", getpid());
-
+    if (isDebug) {
+        printf("diskEnqueue(): calling semv by proc %d on unit %d queue\n", getpid(), unit);
+    }
     semvReal(unit ? disk1QueueSem : disk0QueueSem);
     return 0;
 }
@@ -509,7 +548,13 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
  *
  */
 int diskDequeue(int unit) {
+    if (isDebug) {
+        USLOSS_Console("diskDequeue() called for unit %d. Proc %d blocking on semp.", unit, getpid());
+    }
     sempReal(unit ? disk1QueueSem : disk0QueueSem);
+    if (isDebug) {
+        USLOSS_Console("diskDequeue() unit %d unblocked Proc %d\n", unit, getpid());
+    }
     diskNodePtr queue = unit ? disk1Queue : disk0Queue;
     int resultSemID = -1;
     if (queue[0].semID == -1) {
@@ -533,6 +578,9 @@ int diskDequeue(int unit) {
         } else {
             queue[i] = queue[i+1];
         }
+    }
+    if (isDebug) {
+        USLOSS_Console("diskDequeue() unit %d unblocking the queue\n", unit, getpid());
     }
     semvReal(unit ? disk1QueueSem : disk0QueueSem);
     return resultSemID;
