@@ -562,8 +562,6 @@ int termWriteReal(USLOSS_Sysargs * sysArg){
 
     ProcTable[pid % MAXPROC].pid = pid;
 
-
-
     return 0;
 }
 
