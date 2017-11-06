@@ -141,6 +141,7 @@ void start3(void)
      */
 	printf("%d, %d, %d\n", clockPID, disk0PID, disk1PID);
     zap(clockPID);  // clock driver
+	printf("hullo\n");
 	join(&status);
     zap(disk0PID); // disk 0
     semvReal(disk0Sem);
