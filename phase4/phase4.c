@@ -31,6 +31,8 @@ int        disk0QueueSem;
 int        disk1QueueSem;
 int        currDisk0Track = -1;
 int        currDisk1Track = -1;
+int        disk0Tracks = -1;
+int        disk1Tracks = -1;
 
 void (*systemCallVec[MAXSYSCALLS])(USLOSS_Sysargs *);
 
@@ -248,11 +250,17 @@ static int DiskDriver(char *arg)
 {
     int unit = atoi(arg);
     int sem = unit ? disk1Sem : disk0Sem;
+    // initialize the number of tracks the disk has
+    USLOSS_DeviceRequest deviceRequest;
+    deviceRequest.opr = USLOSS_DISK_TRACKS;
+    deviceRequest.reg1 = &(unit ? disk1Tracks : disk0Tracks);
+	int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
+    waitDevice(USLOSS_DISK_DEV, unit, &result);
     semvReal(running);
     while(!isZapped()) {
 	    if (isDebug) {
 	        USLOSS_Console("Disk %d initialized. blocking on sem %d\n", unit, sem);
-   		}  
+   		}
         sempReal(sem);
         if (isDebug) {
             USLOSS_Console("DiskDriver%d called\n", unit);
@@ -484,15 +492,9 @@ int diskSizeReal(USLOSS_Sysargs * sysArg)
  */
 int diskSizeRealActually(int unit, int * sectorSize, int * trackSize, int * diskSize)
 {
-	int numTracks;
-    USLOSS_DeviceRequest deviceRequest;
-    deviceRequest.opr = USLOSS_DISK_TRACKS;
-    deviceRequest.reg1 = &numTracks;
-	int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
-    waitDevice(USLOSS_DISK_DEV, unit, &result);
     *sectorSize = USLOSS_DISK_SECTOR_SIZE;
     *trackSize = USLOSS_DISK_TRACK_SIZE;
-    *diskSize = numTracks;
+    *diskSize = unit ? disk1Tracks : disk0Tracks;
     return 0;
 
 }
