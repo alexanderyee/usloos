@@ -590,6 +590,7 @@ int diskDequeue(int unit) {
  * TermReadReal
  */
 int termReadReal(USLOSS_Sysargs * sysArg){
+
     return 0;
 }
 
@@ -597,7 +598,19 @@ int termReadReal(USLOSS_Sysargs * sysArg){
   * TermWriteReal
   */
 int termWriteReal(USLOSS_Sysargs * sysArg){
-      return 0;
+    int pid = getpid();
+    char * buff = sysArg->arg1;
+    int bsize = (int) (long) sysArg->arg2;
+    int unit_id = (int) (long) sysArg->arg3;
+
+    //check bounds are correct
+    if(unit_id < 0 || unit_id > USLOSS_DISK_INT || bsize < 0 || bsize > MAXLINE + 1){
+        return -1;
+    }
+
+    ProcTable[pid % MAXPROC].pid = pid;
+
+    return 0;
 }
 
 /*
@@ -700,3 +713,4 @@ void setUserMode()
     if (USLOSS_PsrSet(newPSRValue) == USLOSS_ERR_INVALID_PSR)
         USLOSS_Console("ERROR: Invalid PSR value set! was: %u\n", newPSRValue);
 } /* setUserMode */
+
