@@ -29,6 +29,8 @@ int        disk0Sem;
 int        disk1Sem;
 int        disk0QueueSem;
 int        disk1QueueSem;
+int        currDisk0Track = -1;
+int        currDisk1Track = -1;
 
 void (*systemCallVec[MAXSYSCALLS])(USLOSS_Sysargs *);
 
@@ -116,6 +118,8 @@ void start3(void)
         } else {
             disk1PID = pid;
         }
+
+        sempReal(running);
     }
     disk0Sem = semcreateReal(0);
     disk1Sem = semcreateReal(0);
@@ -242,18 +246,31 @@ static int DiskDriver(char *arg)
 {
     int unit = atoi(arg);
     int sem = unit ? disk1Sem : disk0Sem;
+    semvReal(running);
     while(!isZapped()) {
         sempReal(sem);
+
         diskNodePtr request = unit ? &disk1Queue[0] : &disk0Queue[0];
+        printf("diskdriver woke, processing request with semID %d, track %d, first %d\n", request->semID, request->track, request->first);
         if (request->semID == -1) // quit case
             break;
         int i, isNextTrack = 0;
         // seek to the track
         USLOSS_DeviceRequest deviceRequest;
-        deviceRequest.opr = USLOSS_DISK_SEEK;
-        deviceRequest.reg1 = (void *) (long) request->track;
-        int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
-        waitDevice(USLOSS_DISK_DEV, unit, &result);
+        if (request->track != (unit ? currDisk1Track : currDisk0Track)) {
+            if (unit) {
+                currDisk1Track = request->track;
+            } else {
+                currDisk0Track = request->track;
+            }
+            deviceRequest.opr = USLOSS_DISK_SEEK;
+            deviceRequest.reg1 = (void *) (long) request->track;
+
+            USLOSS_Console("DiskDriver gonna seek to track %d\n", request->track);
+            int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
+            waitDevice(USLOSS_DISK_DEV, unit, &result);
+        }
+
         if (request->op == READ) {
             deviceRequest.opr = USLOSS_DISK_READ;
         } else {
@@ -267,6 +284,11 @@ static int DiskDriver(char *arg)
                 USLOSS_DeviceRequest deviceRequestSeek;
                 deviceRequestSeek.opr = USLOSS_DISK_SEEK;
                 deviceRequestSeek.reg1 = (void *) (long) (request->track + 1);
+                if (unit) {
+                    currDisk1Track = request->track + 1;
+                } else {
+                    currDisk0Track = request->track + 1;
+                }
                 int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequestSeek);
                 waitDevice(USLOSS_DISK_DEV, unit, &result);
                 isNextTrack = 1;
@@ -391,6 +413,8 @@ int diskWriteReal(USLOSS_Sysargs * args)
     }
 
 	diskEnqueue(dbuff, unit, track, first, sectors, WRITE);
+    printf("gonna semv on unit %d by pid %d\n", unit, getpid());
+    dumpProcesses();
     semvReal(unit ? disk1Sem : disk0Sem);
     sempReal(ProcTable[getpid() % MAXPROC].semID);
     args->arg1 = 0;
@@ -440,6 +464,7 @@ int diskSizeRealActually(int unit, int * sectorSize, int * trackSize, int * disk
  *
  */
 int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op) {
+    printf("diskEnqueue(): calling semp by proc %d\n", getpid());
     // block all access to queue
     sempReal(unit ? disk1QueueSem : disk0QueueSem);
     diskNodePtr queue = unit ? disk1Queue : disk0Queue;
@@ -474,6 +499,8 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     insertedNode->first = first;
     insertedNode->sectors = sectors;
     insertedNode->op = op;
+    printf("diskEnqueue(): calling semv by proc %d\n", getpid());
+
     semvReal(unit ? disk1QueueSem : disk0QueueSem);
     return 0;
 }
