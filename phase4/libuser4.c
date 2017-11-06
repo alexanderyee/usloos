@@ -101,7 +101,7 @@ int TermRead(char *buff, int bsize, int unit_id, int *nread)
 	sysArg.arg3 = (void *) (long) unit_id;
 	sysArg.arg4 = nread;
 	USLOSS_Syscall(&sysArg);
-    nread = (long) sysArg.arg2;
+    nread = sysArg.arg2;
 	return (long) sysArg.arg4;
 }
 
@@ -120,7 +120,7 @@ int TermWrite(char *buff, int bsize, int unit_id, int *nwrite)
     sysArg.arg3 = (void *) (long) unit_id;
     sysArg.arg4 = nwrite;
     USLOSS_Syscall(&sysArg);
-    nwrite = (long) sysArg.arg2;
+    nwrite = sysArg.arg2;
 	return (long) sysArg.arg4;
 
 	return 0;
