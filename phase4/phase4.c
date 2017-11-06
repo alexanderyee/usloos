@@ -525,7 +525,8 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
             USLOSS_Console("Too many r/w requests for disk %d\n", unit);
             return -1;
         } else if ((queue[i-1].track <= track || queue[i-1].track == (unit ? disk1Tracks : disk0Tracks) - 1)
-            && (queue[i].track >= track || track == (unit ? disk1Tracks : disk0Tracks) - 1)) {
+        && (queue[i].track >= track || track == (unit ? disk1Tracks : disk0Tracks) - 1)
+        && i >= 1) {
             // case where 1) the track of this request is greater than the previous request's track and
             // the track of this request is less than or equal to the next request's track (or the max tracks)
             // insert in between these two. shift everything at i to the right
