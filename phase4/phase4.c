@@ -104,7 +104,10 @@ void start3(void)
      * the stack size depending on the complexity of your
      * driver, and perhaps do something with the pid returned.
      */
-
+	disk0Sem = semcreateReal(0);
+    disk1Sem = semcreateReal(0);
+    disk0QueueSem = semcreateReal(1);
+    disk1QueueSem = semcreateReal(1);
 
     for (i = 0; i < USLOSS_DISK_UNITS; i++) {
         sprintf(buf, "%d", i);
@@ -121,10 +124,6 @@ void start3(void)
 
         sempReal(running);
     }
-    disk0Sem = semcreateReal(0);
-    disk1Sem = semcreateReal(0);
-    disk0QueueSem = semcreateReal(1);
-    disk1QueueSem = semcreateReal(1);
     // May be other stuff to do here before going on to terminal drivers
     if (isDebug) {
         USLOSS_Console("DiskDriver processes initialized.\n");
@@ -250,10 +249,10 @@ static int DiskDriver(char *arg)
     int unit = atoi(arg);
     int sem = unit ? disk1Sem : disk0Sem;
     semvReal(running);
-    if (isDebug) {
-        USLOSS_Console("Disk %d initialized\n", unit);
-    }
     while(!isZapped()) {
+	    if (isDebug) {
+	        USLOSS_Console("Disk %d initialized. blocking on sem %d\n", unit, sem);
+   		}  
         sempReal(sem);
         if (isDebug) {
             USLOSS_Console("DiskDriver%d called\n", unit);
@@ -443,7 +442,7 @@ int diskWriteReal(USLOSS_Sysargs * args)
     }
 	diskEnqueue(dbuff, unit, track, first, sectors, WRITE);
     if (isDebug) {
-        USLOSS_Console("diskWriteReal() waking up disk %d\n", unit);
+        USLOSS_Console("diskWriteReal() waking up disk %d at sem %d\n", unit, (unit ? disk1Sem : disk0Sem));
     }
     semvReal(unit ? disk1Sem : disk0Sem);
     if (isDebug) {
