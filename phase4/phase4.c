@@ -129,7 +129,6 @@ void start3(void)
     // May be other stuff to do here before going on to terminal drivers
     if (isDebug) {
         USLOSS_Console("DiskDriver processes initialized.\n");
-        dumpProcesses();
     }
     /*
      * Create terminal device drivers.
@@ -460,7 +459,6 @@ int diskWriteReal(USLOSS_Sysargs * args)
     if (isDebug) {
         USLOSS_Console("diskWriteReal() blocking on private mbox, pid %d, semID %d\n", getpid(), ProcTable[getpid() % MAXPROC].semID);
     }
-    dumpProcesses();
     sempReal(ProcTable[getpid() % MAXPROC].semID);
     if (isDebug) {
         USLOSS_Console("diskWriteReal() unblocked proc %d\n", getpid());
