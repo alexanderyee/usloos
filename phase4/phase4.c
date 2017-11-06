@@ -253,13 +253,17 @@ static int DiskDriver(char *arg)
     // initialize the number of tracks the disk has
     USLOSS_DeviceRequest deviceRequest;
     deviceRequest.opr = USLOSS_DISK_TRACKS;
-    deviceRequest.reg1 = &(unit ? disk1Tracks : disk0Tracks);
+    if (unit) {
+        deviceRequest.reg1 = &disk1Tracks;
+    } else {
+        deviceRequest.reg1 = &disk0Tracks;
+    }
 	int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
     waitDevice(USLOSS_DISK_DEV, unit, &result);
     semvReal(running);
     while(!isZapped()) {
 	    if (isDebug) {
-	        USLOSS_Console("Disk %d initialized. blocking on sem %d\n", unit, sem);
+	        USLOSS_Console("Disk %d initialized with numTracks = %d. blocking on sem %d\n", unit, unit ? disk1Tracks : disk0Tracks, sem);
    		}
         sempReal(sem);
         if (isDebug) {
