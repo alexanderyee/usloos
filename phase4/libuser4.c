@@ -54,6 +54,8 @@ int DiskWrite(void *dbuff, int unit, int track, int first,
                      int sectors,int *status)
 {
     USLOSS_Sysargs sysArg;
+    if (dbuff == NULL)
+        return -1;
 
     CHECKMODE;
 	sysArg.number = SYS_DISKWRITE;

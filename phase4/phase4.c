@@ -366,6 +366,10 @@ int diskReadReal(USLOSS_Sysargs * args)
     int track = (int) (long) args->arg3;
     int first = (int) (long) args->arg4;
     int sectors = (int) (long) args->arg5;
+
+    if(unit < 0 || unit >= USLOSS_DISK_UNITS)
+        return -1;
+        
     diskSizeRealActually(unit, &sectorSize, &numSectors, &numTracks);
     // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
   	if(first < 0 || first >= numSectors){
@@ -429,6 +433,10 @@ int diskWriteReal(USLOSS_Sysargs * args)
     int track = (int) (long) args->arg3;
     int first = (int) (long) args->arg4;
     int sectors = (int) (long) args->arg5;
+
+    if(unit < 0 || unit >= USLOSS_DISK_UNITS)
+        return -1;
+
     diskSizeRealActually(unit, &sectorSize, &numSectors, &numTracks);
     // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
 	if(first < 0 || first >= numSectors){
