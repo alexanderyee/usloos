@@ -297,7 +297,7 @@ static int DiskDriver(char *arg)
         } else {
             deviceRequest.opr = USLOSS_DISK_WRITE;
         }
-        for (i = 0; i < request->sectors; i++) {
+        for (i = 0; i < request->sectors; i++) {4
 
             deviceRequest.reg1 = (void *) (long) ((i + request->first) % USLOSS_DISK_TRACK_SIZE);
             if ((i + request->first) >= USLOSS_DISK_TRACK_SIZE && !isNextTrack) {
@@ -514,7 +514,10 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     diskNodePtr queue = unit ? disk1Queue : disk0Queue;
     diskNodePtr insertedNode;
     // find where to insert. use first, then sectors to see if it can fit
-    int i, j;
+    int i, j, pivot = 0, insertFlag = 0;
+    if (queue[0].semID != -1 && queue[0].track < track) {
+        insertFlag = 1;
+    }
     for (i = 0; i < MAXPROC; i++) {
         if (queue[i].semID == -1) {
             // case where we reach an empty slot. just insert.
@@ -524,17 +527,33 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
             // error case for too many requests
             USLOSS_Console("Too many r/w requests for disk %d\n", unit);
             return -1;
-        } else if ((queue[i-1].track <= track || queue[i-1].track == (unit ? disk1Tracks : disk0Tracks) - 1)
-        && (queue[i].track >= track || track == (unit ? disk1Tracks : disk0Tracks) - 1)
-        && i >= 1) {
+        } else if (i >= 1 && track < queue[i] && track > queue[i-1]) {
             // case where 1) the track of this request is greater than the previous request's track and
             // the track of this request is less than or equal to the next request's track (or the max tracks)
             // insert in between these two. shift everything at i to the right
-            for (j = MAXPROC - 1; j > i; j--) {
-                queue[j] = queue[j-1];
-            }
+
+            // if(){
+            //     int k = 0;
+            //     while(k < lowIndex){
+            //         if(queue[k].track > tempTrack){
+            //             break;
+            //         }
+            //         k++;
+            //         //insert at k
+            //         while(k+1 < MAXPROC){
+            //             queue[]
+            //         }
+            //     }
+            // } else{
+            //
+            // }
+            // for (j = MAXPROC - 1; j > i; j--) {
+            //     queue[j] = queue[j-1];
+            // }
             insertedNode = &queue[i];
-            break;
+            // break;
+            //  5 3 9 0 7 2 1 6
+            //  5 7 9 0 3
         }
     }
 
