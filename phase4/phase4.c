@@ -514,7 +514,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     diskNodePtr queue = unit ? disk1Queue : disk0Queue;
     diskNodePtr insertedNode;
     // find where to insert. use first, then sectors to see if it can fit
-    int i, j, pivot = 0, insertFlag = 0;
+    int i, j, pivot = -1, insertFlag = 0;
     if (queue[0].semID != -1 && queue[0].track < track) {
         insertFlag = 1;
     }
@@ -527,7 +527,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
             // error case for too many requests
             USLOSS_Console("Too many r/w requests for disk %d\n", unit);
             return -1;
-        } else if (i >= 1 && track < queue[i].track && track > queue[i-1].track) {
+        } else if (i >= 1 && track < queue[i].track && insertFlag) {
             // case where 1) the track of this request is greater than the previous request's track and
             // the track of this request is less than or equal to the next request's track (or the max tracks)
             // insert in between these two. shift everything at i to the right
@@ -547,13 +547,19 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
             // } else{
             //
             // }
-            // for (j = MAXPROC - 1; j > i; j--) {
-            //     queue[j] = queue[j-1];
-            // }
+            for (j = MAXPROC - 1; j > i; j--) {
+                if (queue[j].semID == -1) {
+                    USLOSS_Console("Too many r/w requests for disk %d\n", unit);
+                    return -1;
+                }
+                queue[j] = queue[j-1];
+            }
             insertedNode = &queue[i];
-            // break;
+            break;
             //  5 3 9 0 7 2 1 6
             //  5 7 9 0 3
+        } else if (i >= 1 && queue[i] < queue[i-1]) {
+            insertFlag = 1;
         }
     }
 
