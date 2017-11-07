@@ -655,7 +655,7 @@ int termReadReal(USLOSS_Sysargs * sysArg){
 
     //check bounds are correct
     if(unit_id < 0 || unit_id > USLOSS_DISK_INT || bsize < 0 || bsize > MAXLINE){
-        sysArg->arg4 = -1;
+        sysArg->arg4 = (void *) (long) -1;
         return -1;
     }
 
@@ -673,7 +673,7 @@ int termWriteReal(USLOSS_Sysargs * sysArg){
 
     //check bounds are correct
     if(unit_id < 0 || unit_id > USLOSS_DISK_INT || bsize < 0 || bsize > MAXLINE + 1){
-        sysArg->arg4 = -1;
+        sysArg->arg4 = (void *) (long) -1;
         return -1;
     }
 
