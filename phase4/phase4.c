@@ -547,11 +547,11 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
             // } else{
             //
             // }
+            if (queue[MAXPROC - 1].semID != -1) {
+                USLOSS_Console("Too many r/w requests for disk %d\n", unit);
+                return -1;
+            }
             for (j = MAXPROC - 1; j > i; j--) {
-                if (queue[j].semID == -1) {
-                    USLOSS_Console("Too many r/w requests for disk %d\n", unit);
-                    return -1;
-                }
                 queue[j] = queue[j-1];
             }
             insertedNode = &queue[i];
