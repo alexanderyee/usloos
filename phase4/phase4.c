@@ -518,14 +518,14 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     int i = 0, j, pivot = unit ? disk1Tracks : disk0Tracks, pivotIndex = MAXPROC, insertFlag = 0;
     // find the smallest. this takes O(n) lol
     while (queue[i].semID != -1) {
-        if (queue[i].track <= pivot) {
+        if (queue[i].track < pivot) {
             pivot = queue[i].track;
             pivotIndex = i;
         }
         i++;
     }
     printf("pivot is %d\n", pivot);
-    if (track <= pivot && queue[0].semID != -1  && pivotIndex != 0 && track <= queue[0].track) {
+    if (track < pivot && queue[0].semID != -1  && pivotIndex != 0 && track <= queue[0].track) {
         printf("going to insert before the pibot lol\n");
         if (queue[MAXPROC - 1].semID != -1) {
             USLOSS_Console("Too many r/w requests for disk %d\n", unit);
@@ -553,8 +553,9 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
                // error case for too many requests
                USLOSS_Console("Too many r/w requests for disk %d\n", unit);
                return -1;
-           } else if (i >= 1 && (queue[i].track >= track || i == pivotIndex )) {
-               if (queue[MAXPROC - 1].semID != -1) {
+           } else if (i >= 1 && (queue[i].track > track || (i == pivotIndex && insertFlag))) {
+
+			 if (queue[MAXPROC - 1].semID != -1) {
                    USLOSS_Console("Too many r/w requests for disk %d\n", unit);
                    return -1;
                }
@@ -583,7 +584,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
         for (i = 0; i < MAXPROC-1; i++) {
             if (queue[i].semID == -1)
                 break;
-            printf("%d ", queue[i].track);
+            printf("%d ", queue[i].first);
         }printf("\n");
     semvReal(unit ? disk1QueueSem : disk0QueueSem);
     return 0;
