@@ -369,7 +369,7 @@ int diskReadReal(USLOSS_Sysargs * args)
 
     if(unit < 0 || unit >= USLOSS_DISK_UNITS)
         return -1;
-        
+
     diskSizeRealActually(unit, &sectorSize, &numSectors, &numTracks);
     // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
   	if(first < 0 || first >= numSectors){
@@ -441,19 +441,19 @@ int diskWriteReal(USLOSS_Sysargs * args)
     // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
 	if(first < 0 || first >= numSectors){
         //USLOSS_Console("diskWriteReal() first is invalid\n");
-        //USLOSS_Halt(1);
+        USLOSS_Halt(1);
         return -1;
     }
 
     if(sectors < 0 || sectors >= numSectors){
         //USLOSS_Console("diskWriteReal() sectors is invalid\n");
-        //USLOSS_Halt(1);
+        USLOSS_Halt(1);
         return -1;
     }
 
     if(track < 0 || track >= numTracks){
         //USLOSS_Console("diskWriteReal() track is invalid\n");
-        //USLOSS_Halt(1);
+        USLOSS_Halt(1);
         return -1;
     }
 
