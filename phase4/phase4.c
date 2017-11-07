@@ -297,7 +297,7 @@ static int DiskDriver(char *arg)
         } else {
             deviceRequest.opr = USLOSS_DISK_WRITE;
         }
-        for (i = 0; i < request->sectors; i++) {4
+        for (i = 0; i < request->sectors; i++) {
 
             deviceRequest.reg1 = (void *) (long) ((i + request->first) % USLOSS_DISK_TRACK_SIZE);
             if ((i + request->first) >= USLOSS_DISK_TRACK_SIZE && !isNextTrack) {
@@ -527,7 +527,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
             // error case for too many requests
             USLOSS_Console("Too many r/w requests for disk %d\n", unit);
             return -1;
-        } else if (i >= 1 && track < queue[i] && track > queue[i-1]) {
+        } else if (i >= 1 && track < queue[i].track && track > queue[i-1].track) {
             // case where 1) the track of this request is greater than the previous request's track and
             // the track of this request is less than or equal to the next request's track (or the max tracks)
             // insert in between these two. shift everything at i to the right
