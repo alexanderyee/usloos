@@ -558,7 +558,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
             break;
             //  5 3 9 0 7 2 1 6
             //  5 7 9 0 3
-        } else if (i >= 1 && queue[i] < queue[i-1]) {
+        } else if (i >= 1 && queue[i].track < queue[i-1].track) {
             insertFlag = 1;
         }
     }
