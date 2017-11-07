@@ -524,9 +524,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
         }
         i++;
     }
-    printf("pivot is %d\n", pivot);
     if (track < pivot && queue[0].semID != -1  && pivotIndex != 0 && track <= queue[0].track) {
-        printf("going to insert before the pibot lol\n");
         if (queue[MAXPROC - 1].semID != -1) {
             USLOSS_Console("Too many r/w requests for disk %d\n", unit);
             return -1;
@@ -539,13 +537,11 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
         // we know where our smallest is, this is the pivot.
         // we know to insert in the first half of the array if track > queue[0]track
         if (queue[0].semID == -1 || (track >= queue[0].track)) {
-            printf("insertflag on, insert in first half\n");
             insertFlag = 1;
         }
 
         for (i = (insertFlag ? 0 : pivotIndex); i < MAXPROC; i++) {
 			if (queue[i].semID == -1) {
-               printf("inserted %d at end\n", track);
                // case where we reach an empty slot. just insert.
                insertedNode = &queue[i];
                break;
@@ -559,7 +555,6 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
                    USLOSS_Console("Too many r/w requests for disk %d\n", unit);
                    return -1;
                }
-               printf("inserting track %d at index %d\n", track, i);
                for (j = MAXPROC - 1; j > i; j--) {
                    queue[j] = queue[j-1];
                }
@@ -584,8 +579,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
         for (i = 0; i < MAXPROC-1; i++) {
             if (queue[i].semID == -1)
                 break;
-            printf("%d ", queue[i].first);
-        }printf("\n");
+        }
     semvReal(unit ? disk1QueueSem : disk0QueueSem);
     return 0;
 }
