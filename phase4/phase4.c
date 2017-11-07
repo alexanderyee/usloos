@@ -533,7 +533,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
             queue[j] = queue[j-1];
         }
         insertedNode = &queue[i];
-        break;
+        
     }
     // we know where our smallest is, this is the pivot.
     // we know to insert in the first half of the array if track > queue[0]track
@@ -550,7 +550,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
            // error case for too many requests
            USLOSS_Console("Too many r/w requests for disk %d\n", unit);
            return -1;
-       } else if (i >= 1 && queue[i] >= track && queue[i-1] <= track) {
+       } else if (i >= 1 && queue[i].track >= track && queue[i-1].track <= track) {
            if (queue[MAXPROC - 1].semID != -1) {
                USLOSS_Console("Too many r/w requests for disk %d\n", unit);
                return -1;
