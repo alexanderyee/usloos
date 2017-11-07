@@ -443,11 +443,6 @@ int diskWriteReal(USLOSS_Sysargs * args)
         return -1;
     }
 
-    if(track < 0 || track >= numTracks){
-        USLOSS_Console("diskWriteReal() track is invalid\n");
-        USLOSS_Halt(1);
-        return -1;
-    }
     if (isDebug) {
         USLOSS_Console("diskWriteReal() called for unit %d, track %d, first %d, sectors %d, pid %d\n", unit, track, first, sectors, getpid());
     }
