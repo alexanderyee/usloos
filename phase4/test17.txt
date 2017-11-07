@@ -14,35 +14,37 @@ inserted 4 at end
 going to write to sector 9
 pivot is 4
 insertflag on, insert in first half
-inserting track 4 at index 1
-5 9 3 
+inserted 4 at end
+5 3 9 
 going to write to sector 0
 pivot is 4
 insertflag on, insert in first half
-inserting track 4 at index 2
-5 9 0 3 
+inserted 4 at end
+5 3 9 0 
 going to write to sector 7
 pivot is 4
 insertflag on, insert in first half
-inserting track 4 at index 3
-5 9 0 7 3 
+inserted 4 at end
+5 3 9 0 7 
 going to write to sector 2
 pivot is 4
 insertflag on, insert in first half
-inserting track 4 at index 4
-5 9 0 7 2 3 
+inserted 4 at end
+5 3 9 0 7 2 
 going to write to sector 1
 pivot is 4
 insertflag on, insert in first half
-inserting track 4 at index 5
-5 9 0 7 2 1 3 
+inserted 4 at end
+5 3 9 0 7 2 1 
 going to write to sector 6
 pivot is 4
 insertflag on, insert in first half
-inserting track 4 at index 6
-5 9 0 7 2 1 6 3 
+inserted 4 at end
+5 3 9 0 7 2 1 6 
 after writing to sector 5
 process 9 quit with status 2
+after writing to sector 3
+process 10 quit with status 3
 after writing to sector 9
 process 11 quit with status 4
 after writing to sector 0
@@ -55,7 +57,5 @@ after writing to sector 1
 process 15 quit with status 8
 after writing to sector 6
 process 16 quit with status 9
-after writing to sector 3
-process 10 quit with status 3
 start4(): done 33
 All processes completed.
