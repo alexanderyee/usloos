@@ -568,11 +568,6 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
        }
     }
 
-    for (i = 0; i < MAXPROC-1; i++) {
-        if (queue[i].semID == -1)
-            break;
-        printf("%d ", queue[i].track);
-    }printf("\n");
 
     insertedNode->semID = ProcTable[getpid() % MAXPROC].semID;
     insertedNode->dbuff = dbuff;
@@ -584,6 +579,12 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     if (isDebug) {
         printf("diskEnqueue(): calling semv by proc %d on unit %d queue\n", getpid(), unit);
     }
+
+        for (i = 0; i < MAXPROC-1; i++) {
+            if (queue[i].semID == -1)
+                break;
+            printf("%d ", queue[i].track);
+        }printf("\n");
     semvReal(unit ? disk1QueueSem : disk0QueueSem);
     return 0;
 }
