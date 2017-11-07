@@ -538,13 +538,13 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     } else {
         // we know where our smallest is, this is the pivot.
         // we know to insert in the first half of the array if track > queue[0]track
-        if (queue[0].semID == -1 || (track >= queue[0].track) {
+        if (queue[0].semID == -1 || (track >= queue[0].track)) {
             printf("insertflag on, insert in first half\n");
             insertFlag = 1;
         }
 
-        for (insertFlag ? 0 : pivotIndex; i < MAXPROC; i++) {
-           if (queue[i].semID == -1) {
+        for (i = (insertFlag ? 0 : pivotIndex); i < MAXPROC; i++) {
+			if (queue[i].semID == -1) {
                printf("inserted %d at end\n", track);
                // case where we reach an empty slot. just insert.
                insertedNode = &queue[i];
@@ -571,7 +571,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     for (i = 0; i < MAXPROC-1; i++) {
         if (queue[i].semID == -1)
             break;
-        printf("%d ", queue[i]);
+        printf("%d ", queue[i].track);
     }printf("\n");
 
     insertedNode->semID = ProcTable[getpid() % MAXPROC].semID;
