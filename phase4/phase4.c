@@ -533,36 +533,35 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
             queue[j] = queue[j-1];
         }
         insertedNode = &queue[i];
-        
-    }
-    // we know where our smallest is, this is the pivot.
-    // we know to insert in the first half of the array if track > queue[0]track
-    if (queue[0].semID == -1 || track >= queue[0].track) {
-        insertFlag = 1;
-    }
+    } else {
+        // we know where our smallest is, this is the pivot.
+        // we know to insert in the first half of the array if track > queue[0]track
+        if (queue[0].semID == -1 || track >= queue[0].track) {
+            insertFlag = 1;
+        }
 
-    for (insertFlag ? 0 : pivotIndex; i < MAXPROC; i++) {
-       if (queue[i].semID == -1) {
-           // case where we reach an empty slot. just insert.
-           insertedNode = &queue[i];
-           break;
-       } else if (i == MAXPROC - 1) {
-           // error case for too many requests
-           USLOSS_Console("Too many r/w requests for disk %d\n", unit);
-           return -1;
-       } else if (i >= 1 && queue[i].track >= track && queue[i-1].track <= track) {
-           if (queue[MAXPROC - 1].semID != -1) {
+        for (insertFlag ? 0 : pivotIndex; i < MAXPROC; i++) {
+           if (queue[i].semID == -1) {
+               // case where we reach an empty slot. just insert.
+               insertedNode = &queue[i];
+               break;
+           } else if (i == MAXPROC - 1) {
+               // error case for too many requests
                USLOSS_Console("Too many r/w requests for disk %d\n", unit);
                return -1;
+           } else if (i >= 1 && queue[i].track >= track && queue[i-1].track <= track) {
+               if (queue[MAXPROC - 1].semID != -1) {
+                   USLOSS_Console("Too many r/w requests for disk %d\n", unit);
+                   return -1;
+               }
+               for (j = MAXPROC - 1; j > i; j--) {
+                   queue[j] = queue[j-1];
+               }
+               insertedNode = &queue[i];
+               break;
            }
-           for (j = MAXPROC - 1; j > i; j--) {
-               queue[j] = queue[j-1];
-           }
-           insertedNode = &queue[i];
-           break;
        }
-   }
-
+    }
 
 
     insertedNode->semID = ProcTable[getpid() % MAXPROC].semID;
