@@ -2,7 +2,7 @@
 #include <usloss.h>
 //for null
 #include <stdlib.h>
-
+#include <phase2.h> /* for MAXLINE */
 
 #define CHECKMODE {    \
     if (USLOSS_PsrGet() & USLOSS_PSR_CURRENT_MODE) { \
