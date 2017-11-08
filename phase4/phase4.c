@@ -137,6 +137,7 @@ void start3(void)
         sempReal(running);
     }
 
+    /*
     for (i = 0; i < USLOSS_TERM_UNITS; i++) {
         sprintf(buf, "%d", i);
         sprintf(name, "Term Driver %d", i);
@@ -176,6 +177,7 @@ void start3(void)
             termPids[i][2] = pid;
         }
 
+
         // initialize the mboxes for this unit
         termMboxes[i][CHAR_IN] = MboxCreate(MAXSLOTS, 1);
         termMboxes[i][CHAR_OUT] = MboxCreate(0, 1);
@@ -185,6 +187,7 @@ void start3(void)
         // HOW MANY WRITTEN TERMINAL LINES TO BUFFER?
         sempReal(running);
     }
+    */
     // May be other stuff to do here before going on to terminal drivers
     if (isDebug) {
         USLOSS_Console("DiskDriver processes initialized.\n");
@@ -192,6 +195,7 @@ void start3(void)
     /*
      * Create terminal device drivers.
      */
+
 
 
     /*
@@ -219,12 +223,15 @@ void start3(void)
     zap(disk1PID); // disk 1
     join(&status);
 
+    /*
     // the terminals
     for (i = 0; i < USLOSS_TERM_UNITS; i++) {
         for (j = 0; j < 3; j++) {
             zap(termPids[i][j]);
         }
     }
+    */
+
 	semfreeReal(running);
 	semfreeReal(disk0Sem);
 	semfreeReal(disk1Sem);
