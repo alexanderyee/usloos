@@ -315,6 +315,7 @@ int termReadReal(USLOSS_Sysargs * sysArg){
 
 static int TermWriter(char *arg)
 {
+    char charRead;
     int unit = atoi(arg), result, status;
     // Let the parent know we are running and enable interrupts.
     semvReal(running);
