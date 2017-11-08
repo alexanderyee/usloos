@@ -265,7 +265,6 @@ static int TermDriver(char *arg)
 
         // check recv
         int recvStatus = USLOSS_TERM_STAT_RECV(status);
-        }
         if (recvStatus == USLOSS_DEV_BUSY) {
             if(isDebug){
                 USLOSS_Trace("We are now in TermDriver USLOSS_TERM_STAT_CHAR\n");
