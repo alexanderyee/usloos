@@ -254,7 +254,6 @@ static int TermDriver(char *arg)
         if (result != 0) {
             return 0;
         }
-        result = USLOSS_DeviceInput(USLOSS_TERM_DEV, unit, &status);
         if(isDebug){
             USLOSS_Trace("We are now out of TermDriver USLOSS_DeviceInput\n");
         }
@@ -265,7 +264,7 @@ static int TermDriver(char *arg)
 
         // check recv
         int recvStatus = USLOSS_TERM_STAT_RECV(status);
-        }
+
         if (recvStatus == USLOSS_DEV_BUSY) {
             if(isDebug){
                 USLOSS_Trace("We are now in TermDriver USLOSS_TERM_STAT_CHAR\n");
