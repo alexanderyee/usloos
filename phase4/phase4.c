@@ -249,11 +249,14 @@ static int TermDriver(char *arg)
     if(isDebug){
         USLOSS_Trace("We are now in TermDriver semvReal\n");
     }
+
     semvReal(running);
     if(isDebug){
         USLOSS_Trace("We are now out of TermDriver semvReal\n");
     }
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
+    USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_RECV_INT(ctrl));
+
     while (!isZapped()) {
         if (isDebug)
             USLOSS_Trace("TermDriver %d started\n", unit);
@@ -307,7 +310,7 @@ static int TermDriver(char *arg)
 
         // check xmit
         int xmitStatus = USLOSS_TERM_STAT_XMIT(status);
-		
+
 		 USLOSS_Trace("Status: %d, recvStatus: %d, xmitStatus: %d\n", status, recvStatus, xmitStatus);
 
 
