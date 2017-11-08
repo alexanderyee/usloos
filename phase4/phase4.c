@@ -41,6 +41,9 @@ void (*systemCallVec[MAXSYSCALLS])(USLOSS_Sysargs *);
 
 static int ClockDriver(char *);
 static int DiskDriver(char *);
+static int TermDriver(char *);
+static int TermWriter(char *);
+static int TermReader(char *);
 int sleepReal(USLOSS_Sysargs *);
 void check_kernel_mode(char *);
 int enqueue(procPtr);
@@ -261,6 +264,8 @@ static int TermDriver(char *arg)
             return -1;
         }
     }
+    quit(0);
+    return 0;
 }
 
 static int TermReader(char *arg)
@@ -284,6 +289,8 @@ static int TermReader(char *arg)
             currLineIndex = 0;
         }
     }
+    quit(0);
+    return 0;
 }
 
 /*
@@ -312,6 +319,9 @@ static int TermWriter(char *arg)
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
     while (!isZapped()) {
     }
+    quit(0);
+    return 0;
+
 }
 
  /*
