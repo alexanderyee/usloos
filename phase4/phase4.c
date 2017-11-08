@@ -137,6 +137,7 @@ void start3(void)
         sempReal(running);
     }
 
+    /*
     for (i = 0; i < USLOSS_TERM_UNITS; i++) {
         sprintf(buf, "%d", i);
         sprintf(name, "Term Driver %d", i);
@@ -176,6 +177,7 @@ void start3(void)
             termPids[i][2] = pid;
         }
 
+
         // initialize the mboxes for this unit
         termMboxes[i][CHAR_IN] = MboxCreate(MAXSLOTS, 1);
         termMboxes[i][CHAR_OUT] = MboxCreate(0, 1);
@@ -183,6 +185,7 @@ void start3(void)
         termMboxes[i][LINE_OUT] = MboxCreate(MAXSLOTS, MAXLINE+1);
         // HOW MANY WRITTEN TERMINAL LINES TO BUFFER?
         sempReal(running);
+        */
     }
     // May be other stuff to do here before going on to terminal drivers
     if (isDebug) {
@@ -191,6 +194,7 @@ void start3(void)
     /*
      * Create terminal device drivers.
      */
+
 
 
     /*
@@ -326,6 +330,8 @@ static int TermWriter(char *arg)
             MboxSend(termMboxes[unit][CHAR_OUT], &currLine[index], 1);
             index++;
         }
+
+        USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_RECV_INT(ctrl));
 
     }
     quit(0);
