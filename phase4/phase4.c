@@ -238,7 +238,16 @@ static int TermDriver(char *arg)
 {
     int unit = atoi(arg), result, status;
     // Let the parent know we are running and enable interrupts.
+    if(isDebug){
+        USLOSS_Console("We are now in TermDriver\n");
+    }
+    if(isDebug){
+        USLOSS_Console("We are now in TermDriver semvReal\n");
+    }
     semvReal(running);
+    if(isDebug){
+        USLOSS_Console("We are now out of TermDriver semvReal\n");
+    }
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
     while (!isZapped()) {
         if (isDebug)
@@ -247,17 +256,40 @@ static int TermDriver(char *arg)
         if (result != 0) {
             return 0;
         }
+        if(isDebug){
+            USLOSS_Console("We are now in TermDriver USLOSS_DeviceInput\n");
+        }
         result = USLOSS_DeviceInput(USLOSS_TERM_DEV, unit, &status);
+        if(isDebug){
+            USLOSS_Console("We are now out of TermDriver USLOSS_DeviceInput\n");
+        }
         if (result == USLOSS_DEV_INVALID) {
             USLOSS_Console("Invalid params for TermDriver's DeviceInput\n");
             return -1;
         }
+        if(isDebug){
+            USLOSS_Console("We are now in TermDriver USLOSS_TERM_STAT_RECV\n");
+        }
         int recvStatus = USLOSS_TERM_STAT_RECV(status);
+        if(isDebug){
+            USLOSS_Console("We are now out of TermDriver USLOSS_TERM_STAT_RECV\n");
+        }
         if (recvStatus == USLOSS_DEV_BUSY) {
+            if(isDebug){
+                USLOSS_Console("We are now in TermDriver USLOSS_TERM_STAT_CHAR\n");
+            }
             char charToRead = USLOSS_TERM_STAT_CHAR(status);
-
+            if(isDebug){
+                USLOSS_Console("We are out of TermDriver USLOSS_TERM_STAT_CHAR\n");
+            }
+            if(isDebug){
+                USLOSS_Console("We are now in TermDriver MboxCondSend\n");
+            }
             // got a char, send to the mbox.
             MboxCondSend(termMboxes[unit][CHAR_IN], &charToRead, 1);
+            if(isDebug){
+                USLOSS_Console("We are now out of TermDriver MboxCondSend\n");
+            }
             // TODO check return val of above.
 
         } else if (recvStatus == USLOSS_DEV_ERROR) {
