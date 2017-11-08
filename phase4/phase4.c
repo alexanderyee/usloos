@@ -178,9 +178,9 @@ void start3(void)
 
         // initialize the mboxes for this unit
         termMboxes[i][CHAR_IN] = MboxCreate(MAXSLOTS, 1);
-        termMboxes[i][CHAR_OUT] = MboxCreate(MAXSLOTS, 1);
+        termMboxes[i][CHAR_OUT] = MboxCreate(0, 1);
         termMboxes[i][LINE_IN] = MboxCreate(10, MAXLINE+1); // +1 for the '\0'
-        termMboxes[i][CHAR_OUT] = MboxCreate(MAXSLOTS, MAXLINE+1);
+        termMboxes[i][LINE_OUT] = MboxCreate(MAXSLOTS, MAXLINE+1);
         // HOW MANY WRITTEN TERMINAL LINES TO BUFFER?
         sempReal(running);
     }
@@ -302,6 +302,57 @@ static int TermDriver(char *arg)
     return 0;
 }
 
+static int TermWriter(char *arg)
+{
+    if(isDebug){
+        USLOSS_Console("We are now in TermWriter\n");
+    }
+
+    char charRead;
+    int unit = atoi(arg), result, status, ctrl = 0;
+    // Let the parent know we are running and enable interrupts.
+    semvReal(running);
+    USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
+
+    char currLine[MAXLINE + 1];
+
+    while (!isZapped()) {
+
+        MboxReceive(termMboxes[unit][LINE_OUT], &currLine, MAXLINE + 1);
+        USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_XMIT_INT(USLOSS_TERM_CTRL_RECV_INT(ctrl)));
+
+        int index = 0;
+        while(index != MAXLINE && currLine[index] != '\0'){
+            MboxSend(termMboxes[unit][CHAR_OUT], &currLine[index], 1);
+            index++;
+        }
+
+    }
+    quit(0);
+    return 0;
+
+}
+
+ /*
+  * TermWriteReal
+  */
+int termWriteReal(USLOSS_Sysargs * sysArg){
+    int pid = getpid();
+    char * buff = sysArg->arg1;
+    int bsize = (int) (long) sysArg->arg2;
+    int unit_id = (int) (long) sysArg->arg3;
+
+    //check bounds are correct
+    if(unit_id < 0 || unit_id > USLOSS_TERM_UNITS || bsize < 0 || bsize > MAXLINE + 1){
+        sysArg->arg4 = (void *) (long) -1;
+        return -1;
+    }
+
+    ProcTable[pid % MAXPROC].pid = pid;
+
+    return 0;
+}
+
 static int TermReader(char *arg)
 {
     if(isDebug){
@@ -380,44 +431,6 @@ int termReadReal(USLOSS_Sysargs * sysArg){
         USLOSS_Console("Our message is %s\n", sysArg->arg2);
     }
     sysArg->arg2 = (void *) (long) charsRead;
-
-    return 0;
-}
-
-static int TermWriter(char *arg)
-{
-    char charRead;
-    int unit = atoi(arg), result, status, ctrl = 0;
-    // Let the parent know we are running and enable interrupts.
-    semvReal(running);
-    USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
-    USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_XMIT_INT(USLOSS_TERM_CTRL_RECV_INT(ctrl)));
-
-    while (!isZapped()) {
-        MboxReceive(termMboxes[unit][CHAR_OUT], &charRead, 1);
-
-    }
-    quit(0);
-    return 0;
-
-}
-
- /*
-  * TermWriteReal
-  */
-int termWriteReal(USLOSS_Sysargs * sysArg){
-    int pid = getpid();
-    char * buff = sysArg->arg1;
-    int bsize = (int) (long) sysArg->arg2;
-    int unit_id = (int) (long) sysArg->arg3;
-
-    //check bounds are correct
-    if(unit_id < 0 || unit_id > USLOSS_TERM_UNITS || bsize < 0 || bsize > MAXLINE + 1){
-        sysArg->arg4 = (void *) (long) -1;
-        return -1;
-    }
-
-    ProcTable[pid % MAXPROC].pid = pid;
 
     return 0;
 }
