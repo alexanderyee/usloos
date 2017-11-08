@@ -316,7 +316,7 @@ static int TermDriver(char *arg)
             ctrl = USLOSS_TERM_CTRL_XMIT_CHAR(ctrl);
             ctrl = USLOSS_TERM_CTRL_RECV_INT(ctrl);
             ctrl = USLOSS_TERM_CTRL_XMIT_INT(ctrl);
-            ctrl = USLOSS_TERM_CTRL_XMIT_CHAR(ctrl, charToXmit);
+            ctrl = USLOSS_TERM_CTRL_CHAR(ctrl, charToXmit);
             result = USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, ctrl);
             if (result == USLOSS_DEV_OK) {
                 if ()
