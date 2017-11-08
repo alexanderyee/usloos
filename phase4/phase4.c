@@ -222,12 +222,15 @@ void start3(void)
     zap(disk1PID); // disk 1
     join(&status);
 
+    /*
     // the terminals
     for (i = 0; i < USLOSS_TERM_UNITS; i++) {
         for (j = 0; j < 3; j++) {
             zap(termPids[i][j]);
         }
     }
+    */
+    
 	semfreeReal(running);
 	semfreeReal(disk0Sem);
 	semfreeReal(disk1Sem);
