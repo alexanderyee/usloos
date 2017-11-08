@@ -263,7 +263,7 @@ static int TermDriver(char *arg)
         if(isDebug){
             USLOSS_Console("We are now out of TermDriver USLOSS_DeviceInput\n");
         }
-        if (result == USLOSS_DEV_INVALID) {
+        if (status == USLOSS_DEV_INVALID) {
             USLOSS_Console("Invalid params for TermDriver's DeviceInput\n");
             return -1;
         }
