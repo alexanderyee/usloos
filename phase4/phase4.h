@@ -63,5 +63,6 @@ typedef struct diskNode
 #define CHAR_OUT                1
 #define LINE_IN                 2
 #define LINE_OUT                3
+#define XMIT_RESULT             4
 
 #endif /* _PHASE4_H */

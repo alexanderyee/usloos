@@ -37,8 +37,8 @@ int        disk0Tracks = -1;
 int        disk1Tracks = -1;
 // Three processes per terminal: driver, reader, and writer respectively.
 int        termPids[USLOSS_TERM_UNITS][3];
-// one char-in, char-out, line-in, line-out mbox per unit, respectively.
-int        termMboxes[USLOSS_TERM_UNITS][4];
+// one char-in, char-out, line-in, line-out mbox, and xmit_result per unit, respectively.
+int        termMboxes[USLOSS_TERM_UNITS][5];
 void (*systemCallVec[MAXSYSCALLS])(USLOSS_Sysargs *);
 
 static int ClockDriver(char *);
@@ -181,6 +181,7 @@ void start3(void)
         termMboxes[i][CHAR_OUT] = MboxCreate(0, 1);
         termMboxes[i][LINE_IN] = MboxCreate(10, MAXLINE+1); // +1 for the '\0'
         termMboxes[i][LINE_OUT] = MboxCreate(MAXSLOTS, MAXLINE+1);
+        termMboxes[i][XMIT_RESULT] = MboxCreate(0, sizeof(int));
         // HOW MANY WRITTEN TERMINAL LINES TO BUFFER?
         sempReal(running);
     }
@@ -236,7 +237,7 @@ void start3(void)
 
 static int TermDriver(char *arg)
 {
-    int unit = atoi(arg), result, status;
+    int unit = atoi(arg), result, status, charsWritten = 0;
     // Let the parent know we are running and enable interrupts.
     if(isDebug){
         USLOSS_Console("We are now in TermDriver\n");
@@ -267,6 +268,8 @@ static int TermDriver(char *arg)
             USLOSS_Console("Invalid params for TermDriver's DeviceInput\n");
             return -1;
         }
+
+        // check recv
         if(isDebug){
             USLOSS_Console("We are now in TermDriver USLOSS_TERM_STAT_RECV\n");
         }
@@ -297,6 +300,25 @@ static int TermDriver(char *arg)
             USLOSS_Console("Receive status register for terminal %d returned error\n", unit);
             return -1;
         }
+
+        // check xmit
+        int xmitStatus = USLOSS_TERM_STAT_XMIT(status);
+        if (xmitStatus == USLOSS_DEV_READY) {
+            char charToXmit;
+
+            MboxReceive(termMboxes[unit][CHAR_OUT], &charToXmit, 1);
+            int ctrl;
+            // basically set everything on
+            ctrl = USLOSS_TERM_CTRL_XMIT_CHAR(ctrl);
+            ctrl = USLOSS_TERM_CTRL_RECV_INT(ctrl);
+            ctrl = USLOSS_TERM_CTRL_XMIT_INT(ctrl);
+            ctrl = USLOSS_TERM_CTRL_XMIT_CHAR(ctrl, charToXmit);
+            result = USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, ctrl);
+            if (result == USLOSS_DEV_OK) {
+                if ()
+                charsWritten++;
+            }
+        }
     }
     quit(0);
     return 0;
@@ -307,9 +329,9 @@ static int TermWriter(char *arg)
     if(isDebug){
         USLOSS_Console("We are now in TermWriter\n");
     }
-
+    const int ctrl = 0;
     char charRead;
-    int unit = atoi(arg), result, status, ctrl = 0;
+    int unit = atoi(arg), result, status;
     // Let the parent know we are running and enable interrupts.
     semvReal(running);
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
@@ -322,11 +344,23 @@ static int TermWriter(char *arg)
         USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_XMIT_INT(USLOSS_TERM_CTRL_RECV_INT(ctrl)));
 
         int index = 0;
-        while(index != MAXLINE && currLine[index] != '\0'){
+        while(index != MAXLINE && currLine[index] != '\0' && currLine[index] != '\n') {
             MboxSend(termMboxes[unit][CHAR_OUT], &currLine[index], 1);
             index++;
         }
+        // send another message (\n) to indicate the end of the msg, as well as a null
+        currLine[index-1] = '\n'; // recycle the memory <3
+        MboxSend(termMboxes[unit][CHAR_OUT], &currLine[index-1], 1);
+        currLine[index-1] = '\0'; // recycle the memory <3
+        MboxSend(termMboxes[unit][CHAR_OUT], &currLine[index-1], 1);
+        }
 
+
+        // recv a message for how many characters written and send it back
+        MboxReceive(termMboxes[unit][XMIT_RESULT], &result, sizeof(int));
+        MboxSend(termMboxes[unit][LINE_OUT], &result, sizeof(int));
+        // disable everything but recv interrupts
+        USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_RECV_INT(ctrl);
     }
     quit(0);
     return 0;
@@ -347,7 +381,7 @@ int termWriteReal(USLOSS_Sysargs * sysArg){
         sysArg->arg4 = (void *) (long) -1;
         return -1;
     }
-
+    // mbox send the line
     ProcTable[pid % MAXPROC].pid = pid;
 
     return 0;
