@@ -255,7 +255,7 @@ static int TermDriver(char *arg)
         USLOSS_Trace("We are now out of TermDriver semvReal\n");
     }
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
-    USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_RECV_INT(ctrl));
+    USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_RECV_INT(0));
 
     while (!isZapped()) {
         if (isDebug)
