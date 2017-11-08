@@ -19,7 +19,7 @@
 #include <string.h> /* needed for bzero() */
 
 
-int     isDebug = 1;
+int     isDebug = 0;
 int	 	running;
 procStruct ProcTable[MAXPROC];
 procPtr    sleepQueue[MAXPROC];
@@ -291,7 +291,7 @@ static int TermDriver(char *arg)
         // check xmit
         int xmitStatus = USLOSS_TERM_STAT_XMIT(status);
 
-		 USLOSS_Trace("Status: %d, recvStatus: %d, xmitStatus: %d\n", status, recvStatus, xmitStatus);
+		if (isDebug) USLOSS_Trace("Status: %d, recvStatus: %d, xmitStatus: %d\n", status, recvStatus, xmitStatus);
 
 
         if (xmitStatus == USLOSS_DEV_READY) {
