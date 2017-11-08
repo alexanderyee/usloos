@@ -364,7 +364,7 @@ static int TermWriter(char *arg)
         MboxReceive(termMboxes[unit][XMIT_RESULT], &result, sizeof(int));
         MboxSend(termMboxes[unit][LINE_OUT], &result, sizeof(int));
         // disable everything but recv interrupts
-        USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_RECV_INT(ctrl);
+        USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_RECV_INT(ctrl));
     }
     quit(0);
     return 0;
