@@ -228,11 +228,12 @@ void start3(void)
     }
     // the terminals
     for (i = 0; i < USLOSS_TERM_UNITS; i++) {
-        for (j = 0; j < 3; j++) {
-            zap(termPids[i][j]);
-        }
+
         for (j = 0; j < 5; j++) {
             MboxRelease(termMboxes[i][j]);
+        }
+        for (j = 0; j < 3; j++) {
+            zap(termPids[i][j]);
         }
     }
     dumpProcesses();
@@ -426,6 +427,7 @@ static int TermReader(char *arg)
             MboxCondSend(termMboxes[unit][LINE_IN], &currentLine, currLineIndex+1);
             if(isDebug){
                 USLOSS_Trace("We are now out of TermReader MboxCondSend\n");
+
             }
             // TODO check retval of above, discard line if it's full.
             bzero(currentLine, MAXLINE+1);
