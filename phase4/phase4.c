@@ -239,56 +239,56 @@ static int TermDriver(char *arg)
     int unit = atoi(arg), result, status;
     // Let the parent know we are running and enable interrupts.
     if(isDebug){
-        USLOSS_Console("We are now in TermDriver\n");
+        USLOSS_Trace("We are now in TermDriver\n");
     }
     if(isDebug){
-        USLOSS_Console("We are now in TermDriver semvReal\n");
+        USLOSS_Trace("We are now in TermDriver semvReal\n");
     }
     semvReal(running);
     if(isDebug){
-        USLOSS_Console("We are now out of TermDriver semvReal\n");
+        USLOSS_Trace("We are now out of TermDriver semvReal\n");
     }
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
     while (!isZapped()) {
         if (isDebug)
-            USLOSS_Console("TermDriver %d started\n", unit);
+            USLOSS_Trace("TermDriver %d started\n", unit);
         result = waitDevice(USLOSS_TERM_DEV, unit, &status);
         if (result != 0) {
             return 0;
         }
         if(isDebug){
-            USLOSS_Console("We are now in TermDriver USLOSS_DeviceInput\n");
+            USLOSS_Trace("We are now in TermDriver USLOSS_DeviceInput\n");
         }
         result = USLOSS_DeviceInput(USLOSS_TERM_DEV, unit, &status);
         if(isDebug){
-            USLOSS_Console("We are now out of TermDriver USLOSS_DeviceInput\n");
+            USLOSS_Trace("We are now out of TermDriver USLOSS_DeviceInput\n");
         }
         if (result == USLOSS_DEV_INVALID) {
             USLOSS_Console("Invalid params for TermDriver's DeviceInput\n");
             return -1;
         }
         if(isDebug){
-            USLOSS_Console("We are now in TermDriver USLOSS_TERM_STAT_RECV\n");
+            USLOSS_Trace("We are now in TermDriver USLOSS_TERM_STAT_RECV\n");
         }
         int recvStatus = USLOSS_TERM_STAT_RECV(status);
         if(isDebug){
-            USLOSS_Console("We are now out of TermDriver USLOSS_TERM_STAT_RECV\n");
+            USLOSS_Trace("We are now out of TermDriver USLOSS_TERM_STAT_RECV\n");
         }
         if (recvStatus == USLOSS_DEV_BUSY) {
             if(isDebug){
-                USLOSS_Console("We are now in TermDriver USLOSS_TERM_STAT_CHAR\n");
+                USLOSS_Trace("We are now in TermDriver USLOSS_TERM_STAT_CHAR\n");
             }
             char charToRead = USLOSS_TERM_STAT_CHAR(status);
             if(isDebug){
-                USLOSS_Console("We are out of TermDriver USLOSS_TERM_STAT_CHAR\n");
+                USLOSS_Trace("We are out of TermDriver USLOSS_TERM_STAT_CHAR\n");
             }
             if(isDebug){
-                USLOSS_Console("We are now in TermDriver MboxCondSend\n");
+                USLOSS_Trace("We are now in TermDriver MboxCondSend\n");
             }
             // got a char, send to the mbox.
             MboxCondSend(termMboxes[unit][CHAR_IN], &charToRead, 1);
             if(isDebug){
-                USLOSS_Console("We are now out of TermDriver MboxCondSend\n");
+                USLOSS_Trace("We are now out of TermDriver MboxCondSend\n");
             }
             // TODO check return val of above.
 
@@ -305,27 +305,27 @@ static int TermDriver(char *arg)
 static int TermReader(char *arg)
 {
     if(isDebug){
-        USLOSS_Console("We are now in TermReader\n");
+        USLOSS_Trace("We are now in TermReader\n");
     }
     int unit = atoi(arg), result, status, currLineIndex = 0;
     char charRead;
     char currentLine[MAXLINE+1];
     // Let the parent know we are running and enable interrupts.
     if(isDebug){
-        USLOSS_Console("We are now in TermReader semvReal\n");
+        USLOSS_Trace("We are now in TermReader semvReal\n");
     }
     semvReal(running);
     if(isDebug){
-        USLOSS_Console("We are now out of TermReader semvReal\n");
+        USLOSS_Trace("We are now out of TermReader semvReal\n");
     }
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
     while (!isZapped()) {
         if(isDebug){
-            USLOSS_Console("We are now in TermReader MboxReceive\n");
+            USLOSS_Trace("We are now in TermReader MboxReceive\n");
         }
         MboxReceive(termMboxes[unit][CHAR_IN], &charRead, 1);
         if(isDebug){
-            USLOSS_Console("We are now out of TermReader MboxReceive\n");
+            USLOSS_Trace("We are now out of TermReader MboxReceive\n");
         }
         currentLine[currLineIndex++] = charRead;
 
@@ -333,11 +333,11 @@ static int TermReader(char *arg)
             // finished line, stick in a null and send it out
             currentLine[currLineIndex] = '\0';
             if(isDebug){
-                USLOSS_Console("We are now in TermReader MboxCondSend\n");
+                USLOSS_Trace("We are now in TermReader MboxCondSend\n");
             }
             MboxCondSend(termMboxes[unit][LINE_IN], &currentLine, currLineIndex+1);
             if(isDebug){
-                USLOSS_Console("We are now out of TermReader MboxCondSend\n");
+                USLOSS_Trace("We are now out of TermReader MboxCondSend\n");
             }
             // TODO check retval of above, discard line if it's full.
             bzero(currentLine, MAXLINE+1);
