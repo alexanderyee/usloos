@@ -234,7 +234,7 @@ void start3(void)
             }
         }
     }
-
+    dumpProcesses();
 	semfreeReal(running);
 	semfreeReal(disk0Sem);
 	semfreeReal(disk1Sem);
