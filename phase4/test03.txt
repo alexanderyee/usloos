@@ -1,0 +1,3 @@
+start4(): started
+XXterm2(): started
+XXterm2(): reading a line from terminal 2

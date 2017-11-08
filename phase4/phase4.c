@@ -307,30 +307,37 @@ static int TermDriver(char *arg)
 
         // check xmit
         int xmitStatus = USLOSS_TERM_STAT_XMIT(status);
+		
+		 USLOSS_Trace("Status: %d, recvStatus: %d, xmitStatus: %d\n", status, recvStatus, xmitStatus);
+
+
         if (xmitStatus == USLOSS_DEV_READY) {
             char charToXmit;
 
-            MboxReceive(termMboxes[unit][CHAR_OUT], &charToXmit, 1);
-            int ctrl;
-            // basically set everything on
-            ctrl = USLOSS_TERM_CTRL_XMIT_CHAR(ctrl);
-            ctrl = USLOSS_TERM_CTRL_RECV_INT(ctrl);
-            ctrl = USLOSS_TERM_CTRL_XMIT_INT(ctrl);
-            ctrl = USLOSS_TERM_CTRL_CHAR(ctrl, charToXmit);
-            result = USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, ctrl);
-            if (result == USLOSS_DEV_OK) {
-                charsWritten++;
-                if (charToXmit == '\n') {
-                    //stahp here
-                    if (charsWritten == MAXLINE) {
-                        // mustve been a full line, no newline. just --
-                        charsWritten--;
-                    }
-                    MboxSend(termMboxes[unit][XMIT_RESULT], &charsWritten, sizeof(int));
-                    charsWritten = 0;
-                }
+            int condRecvStatus = MboxCondReceive(termMboxes[unit][CHAR_OUT], &charToXmit, 1);
+			if (condRecvStatus >= 0) {
+            	int ctrl;
+				if (isDebug) USLOSS_Trace("condRecvStatus for xmit: %d\n", condRecvStatus);
+            	// basically set everything on
+            	ctrl = USLOSS_TERM_CTRL_XMIT_CHAR(ctrl);
+            	ctrl = USLOSS_TERM_CTRL_RECV_INT(ctrl);
+            	ctrl = USLOSS_TERM_CTRL_XMIT_INT(ctrl);
+            	ctrl = USLOSS_TERM_CTRL_CHAR(ctrl, charToXmit);
+            	result = USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, ctrl);
+            	if (result == USLOSS_DEV_OK) {
+                	charsWritten++;
+                	if (charToXmit == '\n') {
+                    	//stahp here
+                    	if (charsWritten == MAXLINE) {
+                        	// mustve been a full line, no newline. just --
+                        	charsWritten--;
+                    	}
+                    	MboxSend(termMboxes[unit][XMIT_RESULT], &charsWritten, sizeof(int));
+                    	charsWritten = 0;
+                	}
 
-            }
+           	 	}
+			}
         }
     }
     quit(0);
