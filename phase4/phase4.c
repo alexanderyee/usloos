@@ -319,8 +319,17 @@ static int TermDriver(char *arg)
             ctrl = USLOSS_TERM_CTRL_CHAR(ctrl, charToXmit);
             result = USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, ctrl);
             if (result == USLOSS_DEV_OK) {
-                if ()
                 charsWritten++;
+                if (charToXmit == '\n') {
+                    //stahp here
+                    if (charsWritten == MAXLINE) {
+                        // mustve been a full line, no newline. just --
+                        charsWritten--;
+                    }
+                    MboxSend(termMboxes[unit][XMIT_RESULT], &charsWritten, sizeof(int));
+                    charsWritten = 0;
+                }
+
             }
         }
     }
@@ -355,14 +364,10 @@ static int TermWriter(char *arg)
         // send another message (\n) to indicate the end of the msg, as well as a null
         currLine[index-1] = '\n'; // recycle the memory <3
         MboxSend(termMboxes[unit][CHAR_OUT], &currLine[index-1], 1);
-        currLine[index-1] = '\0'; // recycle the memory <3
-        MboxSend(termMboxes[unit][CHAR_OUT], &currLine[index-1], 1);
-        }
+
+        // let termdriver send to termWriteReal the chars written.
 
 
-        // recv a message for how many characters written and send it back
-        MboxReceive(termMboxes[unit][XMIT_RESULT], &result, sizeof(int));
-        MboxSend(termMboxes[unit][LINE_OUT], &result, sizeof(int));
         // disable everything but recv interrupts
         USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_RECV_INT(ctrl));
     }
@@ -375,19 +380,18 @@ static int TermWriter(char *arg)
   * TermWriteReal
   */
 int termWriteReal(USLOSS_Sysargs * sysArg){
-    int pid = getpid();
+    int result;
+    if (ProcTable[getpid() & MAXPROC].pid == -1) {
+        // process hasn't been initialized yet, let's fix that
+        initProc(getpid());
+    }
     char * buff = sysArg->arg1;
     int bsize = (int) (long) sysArg->arg2;
     int unit_id = (int) (long) sysArg->arg3;
 
-    //check bounds are correct
-    if(unit_id < 0 || unit_id > USLOSS_TERM_UNITS || bsize < 0 || bsize > MAXLINE + 1){
-        sysArg->arg4 = (void *) (long) -1;
-        return -1;
-    }
     // mbox send the line
-    ProcTable[pid % MAXPROC].pid = pid;
-
+    MboxSend(termMboxes[unit_id][LINE_OUT], buff, bsize);
+    MboxReceive(termMboxes[unit_id][XMIT_RESULT], &result, sizeof(int));
     return 0;
 }
 
@@ -449,6 +453,10 @@ static int TermReader(char *arg)
 int termReadReal(USLOSS_Sysargs * sysArg){
     if(isDebug){
         USLOSS_Console("We are now in termReadReal\n");
+    }
+    if (ProcTable[getpid() & MAXPROC].pid == -1) {
+        // process hasn't been initialized yet, let's fix that
+        initProc(getpid());
     }
     int charsRead = 0;
     char * buff = sysArg->arg1;

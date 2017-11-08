@@ -114,7 +114,9 @@ int TermWrite(char *buff, int bsize, int unit_id, int *nwrite)
 	//check if parameters are invalid, if so return -1
 	if(buff == NULL || nwrite == NULL)
 		return -1;
-
+    if(unit_id < 0 || unit_id >= USLOSS_TERM_UNITS || bsize < 0 || bsize > MAXLINE){
+        return -1;
+    }
     CHECKMODE;
     sysArg.number = SYS_TERMWRITE;
     sysArg.arg1 = buff;
@@ -124,6 +126,5 @@ int TermWrite(char *buff, int bsize, int unit_id, int *nwrite)
     *nwrite = sysArg.arg2;
 	return (long) sysArg.arg4;
 
-	return 0;
 
 }
