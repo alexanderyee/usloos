@@ -59,4 +59,9 @@ typedef struct diskNode
 #define READ                    0
 #define WRITE                   1
 
+#define CHAR_IN                 0
+#define CHAR_OUT                1
+#define LINE_IN                 2
+#define LINE_OUT                3
+
 #endif /* _PHASE4_H */

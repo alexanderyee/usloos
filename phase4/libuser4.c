@@ -93,7 +93,9 @@ int TermRead(char *buff, int bsize, int unit_id, int *nread)
 	//check if parameters are invalid, if so return -1
 	if(buff == NULL || nread == NULL)
 		return -1;
-
+    if(unit_id < 0 || unit_id >= USLOSS_TERM_UNITS || bsize < 0 || bsize > MAXLINE){
+        return -1;
+    }
     CHECKMODE;
     sysArg.number = SYS_TERMREAD;
     sysArg.arg1 = buff;
@@ -101,8 +103,8 @@ int TermRead(char *buff, int bsize, int unit_id, int *nread)
 	sysArg.arg3 = (void *) (long) unit_id;
 	sysArg.arg4 = nread;
 	USLOSS_Syscall(&sysArg);
-    nread = sysArg.arg2;
-	return (long) sysArg.arg4;
+    *nread = (int) (long) sysArg.arg2;
+	return (long) *nread;
 }
 
 int TermWrite(char *buff, int bsize, int unit_id, int *nwrite)

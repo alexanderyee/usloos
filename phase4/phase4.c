@@ -33,7 +33,10 @@ int        currDisk0Track = -1;
 int        currDisk1Track = -1;
 int        disk0Tracks = -1;
 int        disk1Tracks = -1;
+// Three processes per terminal: driver, reader, and writer respectively.
 int        termPids[USLOSS_TERM_UNITS][3];
+// one char-in, char-out, line-in, line-out mbox per unit, respectively.
+int        termMboxes[USLOSS_TERM_UNITS][4];
 void (*systemCallVec[MAXSYSCALLS])(USLOSS_Sysargs *);
 
 static int ClockDriver(char *);
@@ -141,6 +144,7 @@ void start3(void)
         else {
             termPids[i][0] = pid;
         }
+        sempReal(running);
 
         // reader
         sprintf(name, "Term Reader %d", i);
@@ -153,6 +157,7 @@ void start3(void)
         else {
             termPids[i][1] = pid;
         }
+        sempReal(running);
 
         // writer
         sprintf(name, "Term Writer %d", i);
@@ -166,6 +171,12 @@ void start3(void)
             termPids[i][2] = pid;
         }
 
+        // initialize the mboxes for this unit
+        termMboxes[i][CHAR_IN] = MboxCreate(MAXSLOTS, 1);
+        termMboxes[i][CHAR_OUT] = MboxCreate(MAXSLOTS, 1);
+        termMboxes[i][LINE_IN] = MboxCreate(10, MAXLINE+1); // +1 for the '\0'
+        termMboxes[i][CHAR_OUT] = MboxCreate(MAXSLOTS, MAXLINE+1);
+        // HOW MANY WRITTEN TERMINAL LINES TO BUFFER?
         sempReal(running);
     }
     // May be other stuff to do here before going on to terminal drivers
@@ -220,26 +231,107 @@ void start3(void)
 
 static int TermDriver(char *arg)
 {
-
+    int unit = atoi(arg), result, status;
     // Let the parent know we are running and enable interrupts.
     semvReal(running);
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
+    while (!isZapped()) {
+        if (isDebug)
+            USLOSS_Console("TermDriver %d started\n", unit);
+        result = waitDevice(USLOSS_TERM_DEV, unit, &status);
+        if (result != 0) {
+            return 0;
+        }
+        result = USLOSS_DeviceInput(USLOSS_TERM_DEV, unit, &status);
+        if (result == USLOSS_DEV_INVALID) {
+            USLOSS_Console("Invalid params for TermDriver's DeviceInput\n");
+            return -1;
+        }
+        int recvStatus = USLOSS_TERM_STAT_RECV(status);
+        if (recvStatus == USLOSS_DEV_BUSY) {
+            char charToRead = USLOSS_TERM_STAT_CHAR(status);
+
+            // got a char, send to the mbox.
+            MboxCondSend(termMboxes[unit][CHAR_IN], &charToRead, 1);
+            // TODO check return val of above.
+
+        } else if (recvStatus == USLOSS_DEV_ERROR) {
+            // something went wrong?
+            USLOSS_Console("Receive status register for terminal %d returned error\n", unit);
+            return -1;
+        }
+    }
 }
 
 static int TermReader(char *arg)
 {
-
+    int unit = atoi(arg), result, status, currLineIndex = 0;
+    char charRead;
+    char currentLine[MAXLINE+1];
     // Let the parent know we are running and enable interrupts.
     semvReal(running);
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
+    while (!isZapped()) {
+        MboxReceive(termMboxes[unit][CHAR_IN], &charRead, 1);
+        currentLine[currLineIndex++] = charRead;
+
+        if (charRead == '\n' || currLineIndex == MAXLINE) {
+            // finished line, stick in a null and send it out
+            currentLine[currLineIndex] = '\0';
+            MboxCondSend(termMboxes[unit][LINE_IN], &currentLine, currLineIndex+1);
+            // TODO check retval of above, discard line if it's full.
+            bzero(currentLine, MAXLINE+1);
+            currLineIndex = 0;
+        }
+    }
+}
+
+/*
+ * TermReadReal
+ */
+int termReadReal(USLOSS_Sysargs * sysArg){
+    int charsRead = 0;
+    char * buff = sysArg->arg1;
+    int bsize = (int) (long) sysArg->arg2;
+    int unit_id = (int) (long) sysArg->arg3;
+    // TODO is it maxline or maxline+1? hmm...
+    MboxReceive(termMboxes[unit][LINE_IN], buff, MAXLINE+1);
+    while (buff[charsRead] != '\0') {
+        charsRead++;
+    }
+    sysArg->arg2 = (void *) (long) charsRead;
+
+    return 0;
 }
 
 static int TermWriter(char *arg)
 {
-
+    int unit = atoi(arg), result, status;
     // Let the parent know we are running and enable interrupts.
     semvReal(running);
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
+    while (!isZapped()) {
+    }
+}
+
+ /*
+  * TermWriteReal
+  */
+int termWriteReal(USLOSS_Sysargs * sysArg){
+    int pid = getpid();
+    char * buff = sysArg->arg1;
+    int bsize = (int) (long) sysArg->arg2;
+    int unit_id = (int) (long) sysArg->arg3;
+
+    //check bounds are correct
+    if(unit_id < 0 || unit_id > USLOSS_TERM_UNITS || bsize < 0 || bsize > MAXLINE + 1){
+        sysArg->arg4 = (void *) (long) -1;
+        return -1;
+    }
+
+    ProcTable[pid % MAXPROC].pid = pid;
+
+    return 0;
 }
 
 static int ClockDriver(char *arg)
@@ -718,43 +810,6 @@ int diskDequeue(int unit) {
     }
     semvReal(unit ? disk1QueueSem : disk0QueueSem);
     return resultSemID;
-}
-
-/*
- * TermReadReal
- */
-int termReadReal(USLOSS_Sysargs * sysArg){
-    char * buff = sysArg->arg1;
-    int bsize = (int) (long) sysArg->arg2;
-    int unit_id = (int) (long) sysArg->arg3;
-
-    //check bounds are correct
-    if(unit_id < 0 || unit_id > USLOSS_TERM_UNITS || bsize < 0 || bsize > MAXLINE){
-        sysArg->arg4 = (void *) (long) -1;
-        return -1;
-    }
-
-    return 0;
-}
-
- /*
-  * TermWriteReal
-  */
-int termWriteReal(USLOSS_Sysargs * sysArg){
-    int pid = getpid();
-    char * buff = sysArg->arg1;
-    int bsize = (int) (long) sysArg->arg2;
-    int unit_id = (int) (long) sysArg->arg3;
-
-    //check bounds are correct
-    if(unit_id < 0 || unit_id > USLOSS_TERM_UNITS || bsize < 0 || bsize > MAXLINE + 1){
-        sysArg->arg4 = (void *) (long) -1;
-        return -1;
-    }
-
-    ProcTable[pid % MAXPROC].pid = pid;
-
-    return 0;
 }
 
 /*
