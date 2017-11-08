@@ -254,7 +254,6 @@ static int TermDriver(char *arg)
         if (result != 0) {
             return 0;
         }
-        result = USLOSS_DeviceInput(USLOSS_TERM_DEV, unit, &status);
         if(isDebug){
             USLOSS_Trace("We are now out of TermDriver USLOSS_DeviceInput\n");
         }
