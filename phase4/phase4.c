@@ -19,7 +19,7 @@
 #include <string.h> /* needed for bzero() */
 
 
-int     isDebug = 1;
+int     isDebug = 0;
 int	 	running;
 procStruct ProcTable[MAXPROC];
 procPtr    sleepQueue[MAXPROC];
@@ -329,6 +329,7 @@ static int TermReader(char *arg)
             USLOSS_Console("We are now in TermReader MboxReceive\n");
         }
         MboxReceive(termMboxes[unit][CHAR_IN], &charRead, 1);
+        USLOSS_Console("Char read from Term%d: %c\n", unit, charRead);
         if(isDebug){
             USLOSS_Console("We are now out of TermReader MboxReceive\n");
         }
