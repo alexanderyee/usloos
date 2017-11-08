@@ -273,27 +273,27 @@ static int TermDriver(char *arg)
 static int TermReader(char *arg)
 {
     if(isDebug){
-        USLOSS_Console("We are now in TermReader");
+        USLOSS_Console("We are now in TermReader\n");
     }
     int unit = atoi(arg), result, status, currLineIndex = 0;
     char charRead;
     char currentLine[MAXLINE+1];
     // Let the parent know we are running and enable interrupts.
     if(isDebug){
-        USLOSS_Console("We are now in TermReader semvReal");
+        USLOSS_Console("We are now in TermReader semvReal\n");
     }
     semvReal(running);
     if(isDebug){
-        USLOSS_Console("We are now out of TermReader semvReal");
+        USLOSS_Console("We are now out of TermReader semvReal\n");
     }
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
     while (!isZapped()) {
         if(isDebug){
-            USLOSS_Console("We are now in TermReader MboxReceive");
+            USLOSS_Console("We are now in TermReader MboxReceive\n");
         }
         MboxReceive(termMboxes[unit][CHAR_IN], &charRead, 1);
         if(isDebug){
-            USLOSS_Console("We are now out of TermReader MboxReceive");
+            USLOSS_Console("We are now out of TermReader MboxReceive\n");
         }
         currentLine[currLineIndex++] = charRead;
 
@@ -301,11 +301,11 @@ static int TermReader(char *arg)
             // finished line, stick in a null and send it out
             currentLine[currLineIndex] = '\0';
             if(isDebug){
-                USLOSS_Console("We are now in TermReader MboxCondSend");
+                USLOSS_Console("We are now in TermReader MboxCondSend\n");
             }
             MboxCondSend(termMboxes[unit][LINE_IN], &currentLine, currLineIndex+1);
             if(isDebug){
-                USLOSS_Console("We are now out of TermReader MboxCondSend");
+                USLOSS_Console("We are now out of TermReader MboxCondSend\n");
             }
             // TODO check retval of above, discard line if it's full.
             bzero(currentLine, MAXLINE+1);
@@ -321,7 +321,7 @@ static int TermReader(char *arg)
  */
 int termReadReal(USLOSS_Sysargs * sysArg){
     if(isDebug){
-        USLOSS_Console("We are now in termReadReal");
+        USLOSS_Console("We are now in termReadReal\n");
     }
     int charsRead = 0;
     char * buff = sysArg->arg1;
@@ -329,17 +329,17 @@ int termReadReal(USLOSS_Sysargs * sysArg){
     int unit_id = (int) (long) sysArg->arg3;
     // TODO is it maxline or maxline+1? hmm...
     if(isDebug){
-        USLOSS_Console("We are now in termReadReal MboxReceive");
+        USLOSS_Console("We are now in termReadReal MboxReceive\n");
     }
     MboxReceive(termMboxes[unit_id][LINE_IN], buff, MAXLINE+1);
     if(isDebug){
-        USLOSS_Console("We are now out of termReadReal MboxReceive");
+        USLOSS_Console("We are now out of termReadReal MboxReceive\n");
     }
     while (buff[charsRead] != '\0') {
         charsRead++;
     }
     if(isDebug){
-        USLOSS_Console("Our message is %s", sysArg->arg2);
+        USLOSS_Console("Our message is %s\n", sysArg->arg2);
     }
     sysArg->arg2 = (void *) (long) charsRead;
 
