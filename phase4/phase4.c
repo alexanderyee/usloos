@@ -221,17 +221,16 @@ void start3(void)
     semvReal(disk1Sem);
     zap(disk1PID); // disk 1
     join(&status);
-
+    if (isDebug) {
+        USLOSS_Trace("Disks quit\n");
+    }
     // the terminals
     for (i = 0; i < USLOSS_TERM_UNITS; i++) {
         for (j = 0; j < 3; j++) {
             zap(termPids[i][j]);
-            if (j > 0) {
-                // send messages to reader and writer to unblock em.
-                MboxSend(termMboxes[i][CHAR_IN], 0, 0);
-                MboxSend(termMboxes[i][LINE_OUT], 0, 0);
-
-            }
+        }
+        for (j = 0; j < 5; j++) {
+            MboxRelease(termMboxes[i][j]);
         }
     }
     dumpProcesses();
@@ -271,20 +270,11 @@ static int TermDriver(char *arg)
         // check recv
         int recvStatus = USLOSS_TERM_STAT_RECV(status);
         if (recvStatus == USLOSS_DEV_BUSY) {
-            if(isDebug){
-                USLOSS_Trace("We are now in TermDriver USLOSS_TERM_STAT_CHAR\n");
-            }
             char charToRead = USLOSS_TERM_STAT_CHAR(status);
-            if(isDebug){
-                USLOSS_Trace("We are out of TermDriver USLOSS_TERM_STAT_CHAR\n");
-            }
-            if(isDebug){
-                USLOSS_Trace("We are now in TermDriver MboxCondSend\n");
-            }
             // got a char, send to the mbox.
             MboxCondSend(termMboxes[unit][CHAR_IN], &charToRead, 1);
             if(isDebug){
-                USLOSS_Trace("We are now out of TermDriver MboxCondSend\n");
+                USLOSS_Trace("TermDriver%d sent char %c to to char_in\n", unit, charToRead);
             }
             // TODO check return val of above.
 
