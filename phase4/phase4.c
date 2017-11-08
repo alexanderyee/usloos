@@ -16,6 +16,8 @@
 #include <providedPrototypes.h>
 #include <stdlib.h> /* needed for atoi() */
 #include <stdio.h> /* needed for sprintf() */
+#include <string.h> /* needed for bzero() */
+
 
 int     isDebug = 0;
 int	 	running;
@@ -151,7 +153,7 @@ void start3(void)
 
         // reader
         sprintf(name, "Term Reader %d", i);
-        pid = fork1(name, TermDriver, buf, USLOSS_MIN_STACK, 2);
+        pid = fork1(name, TermReader, buf, USLOSS_MIN_STACK, 2);
 
         if (pid < 0) {
             USLOSS_Console("start3(): Can't create term reader %d\n", i);
@@ -302,7 +304,7 @@ int termReadReal(USLOSS_Sysargs * sysArg){
     int bsize = (int) (long) sysArg->arg2;
     int unit_id = (int) (long) sysArg->arg3;
     // TODO is it maxline or maxline+1? hmm...
-    MboxReceive(termMboxes[unit][LINE_IN], buff, MAXLINE+1);
+    MboxReceive(termMboxes[unit_id][LINE_IN], buff, MAXLINE+1);
     while (buff[charsRead] != '\0') {
         charsRead++;
     }
