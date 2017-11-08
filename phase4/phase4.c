@@ -226,6 +226,12 @@ void start3(void)
     for (i = 0; i < USLOSS_TERM_UNITS; i++) {
         for (j = 0; j < 3; j++) {
             zap(termPids[i][j]);
+            if (j > 0) {
+                // send messages to reader and writer to unblock em.
+                MboxSend(termMboxes[i][CHAR_IN], 0, 0);
+                MboxSend(termMboxes[i][LINE_OUT], 0, 0);
+
+            }
         }
     }
 
