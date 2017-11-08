@@ -33,7 +33,7 @@ int        currDisk0Track = -1;
 int        currDisk1Track = -1;
 int        disk0Tracks = -1;
 int        disk1Tracks = -1;
-
+int        termPids[USLOSS_TERM_UNITS][3];
 void (*systemCallVec[MAXSYSCALLS])(USLOSS_Sysargs *);
 
 static int ClockDriver(char *);
@@ -57,7 +57,7 @@ void start3(void)
 {
     char	name[128];
     //char    termbuf[10];
-    int		i;
+    int		i, j;
     int		clockPID, disk0PID, disk1PID;
     int		pid;
     int		status;
@@ -113,7 +113,9 @@ void start3(void)
 
     for (i = 0; i < USLOSS_DISK_UNITS; i++) {
         sprintf(buf, "%d", i);
+        sprintf(name, "Disk %d", i);
         pid = fork1(name, DiskDriver, buf, USLOSS_MIN_STACK, 2);
+
         if (pid < 0) {
             USLOSS_Console("start3(): Can't create disk driver %d\n", i);
             USLOSS_Halt(1);
@@ -122,6 +124,46 @@ void start3(void)
             disk0PID = pid;
         } else {
             disk1PID = pid;
+        }
+
+        sempReal(running);
+    }
+
+    for (i = 0; i < USLOSS_TERM_UNITS; i++) {
+        sprintf(buf, "%d", i);
+        sprintf(name, "Term Driver %d", i);
+        pid = fork1(name, TermDriver, buf, USLOSS_MIN_STACK, 2);
+
+        if (pid < 0) {
+            USLOSS_Console("start3(): Can't create term driver %d\n", i);
+            USLOSS_Halt(1);
+        }
+        else {
+            termPids[i][0] = pid;
+        }
+
+        // reader
+        sprintf(name, "Term Reader %d", i);
+        pid = fork1(name, TermDriver, buf, USLOSS_MIN_STACK, 2);
+
+        if (pid < 0) {
+            USLOSS_Console("start3(): Can't create term reader %d\n", i);
+            USLOSS_Halt(1);
+        }
+        else {
+            termPids[i][1] = pid;
+        }
+
+        // writer
+        sprintf(name, "Term Writer %d", i);
+        pid = fork1(name, TermWriter, buf, USLOSS_MIN_STACK, 2);
+
+        if (pid < 0) {
+            USLOSS_Console("start3(): Can't create term writer %d\n", i);
+            USLOSS_Halt(1);
+        }
+        else {
+            termPids[i][2] = pid;
         }
 
         sempReal(running);
@@ -158,8 +200,14 @@ void start3(void)
 
     semvReal(disk1Sem);
     zap(disk1PID); // disk 1
-
     join(&status);
+
+    // the terminals
+    for (i = 0; i < USLOSS_TERM_UNITS; i++) {
+        for (j = 0; j < 3; j++) {
+            zap(termPids[i][j]);
+        }
+    }
 	semfreeReal(running);
 	semfreeReal(disk0Sem);
 	semfreeReal(disk1Sem);
@@ -168,6 +216,30 @@ void start3(void)
     // eventually, at the end:
     quit(0);
 
+}
+
+static int TermDriver(char *arg)
+{
+
+    // Let the parent know we are running and enable interrupts.
+    semvReal(running);
+    USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
+}
+
+static int TermReader(char *arg)
+{
+
+    // Let the parent know we are running and enable interrupts.
+    semvReal(running);
+    USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
+}
+
+static int TermWriter(char *arg)
+{
+
+    // Let the parent know we are running and enable interrupts.
+    semvReal(running);
+    USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
 }
 
 static int ClockDriver(char *arg)
@@ -251,6 +323,7 @@ static int DiskDriver(char *arg)
     int sem = unit ? disk1Sem : disk0Sem;
     // initialize the number of tracks the disk has
     USLOSS_DeviceRequest deviceRequest;
+
     deviceRequest.opr = USLOSS_DISK_TRACKS;
     if (unit) {
         deviceRequest.reg1 = &disk1Tracks;
@@ -260,6 +333,8 @@ static int DiskDriver(char *arg)
 	int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
     waitDevice(USLOSS_DISK_DEV, unit, &result);
     semvReal(running);
+    USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
+
     while(!isZapped()) {
 	    if (isDebug) {
 	        USLOSS_Console("Disk %d initialized with numTracks = %d. blocking on sem %d\n", unit, unit ? disk1Tracks : disk0Tracks, sem);
