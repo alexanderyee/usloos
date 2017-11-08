@@ -97,7 +97,7 @@ void start3(void)
     running = semcreateReal(0);
     clockPID = fork1("Clock driver", ClockDriver, NULL, USLOSS_MIN_STACK, 2);
     if (clockPID < 0) {
-	    USLOSS_Console("start3(): Can't create clock driver\n");
+	    USLOSS_TRACE("start3(): Can't create clock driver\n");
         USLOSS_Halt(1);
     }
     // initialize the process entry in our ProcTable
@@ -125,7 +125,7 @@ void start3(void)
         pid = fork1(name, DiskDriver, buf, USLOSS_MIN_STACK, 2);
 
         if (pid < 0) {
-            USLOSS_Console("start3(): Can't create disk driver %d\n", i);
+            USLOSS_TRACE("start3(): Can't create disk driver %d\n", i);
             USLOSS_Halt(1);
         }
         else if (i == 0) {
@@ -143,7 +143,7 @@ void start3(void)
         pid = fork1(name, TermDriver, buf, USLOSS_MIN_STACK, 2);
 
         if (pid < 0) {
-            USLOSS_Console("start3(): Can't create term driver %d\n", i);
+            USLOSS_TRACE("start3(): Can't create term driver %d\n", i);
             USLOSS_Halt(1);
         }
         else {
@@ -156,7 +156,7 @@ void start3(void)
         pid = fork1(name, TermReader, buf, USLOSS_MIN_STACK, 2);
 
         if (pid < 0) {
-            USLOSS_Console("start3(): Can't create term reader %d\n", i);
+            USLOSS_TRACE("start3(): Can't create term reader %d\n", i);
             USLOSS_Halt(1);
         }
         else {
@@ -169,7 +169,7 @@ void start3(void)
         pid = fork1(name, TermWriter, buf, USLOSS_MIN_STACK, 2);
 
         if (pid < 0) {
-            USLOSS_Console("start3(): Can't create term writer %d\n", i);
+            USLOSS_TRACE("start3(): Can't create term writer %d\n", i);
             USLOSS_Halt(1);
         }
         else {
@@ -189,7 +189,7 @@ void start3(void)
 
     // May be other stuff to do here before going on to terminal drivers
     if (isDebug) {
-        USLOSS_Console("DiskDriver processes initialized.\n");
+        USLOSS_TRACE("DiskDriver processes initialized.\n");
     }
     /*
      * Create terminal device drivers.
@@ -244,64 +244,64 @@ static int TermDriver(char *arg)
     int unit = atoi(arg), result, status, charsWritten = 0;
     // Let the parent know we are running and enable interrupts.
     if(isDebug){
-        USLOSS_Console("We are now in TermDriver\n");
+        USLOSS_TRACE("We are now in TermDriver\n");
     }
     if(isDebug){
-        USLOSS_Console("We are now in TermDriver semvReal\n");
+        USLOSS_TRACE("We are now in TermDriver semvReal\n");
     }
     semvReal(running);
     if(isDebug){
-        USLOSS_Console("We are now out of TermDriver semvReal\n");
+        USLOSS_TRACE("We are now out of TermDriver semvReal\n");
     }
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
     while (!isZapped()) {
         if (isDebug)
-            USLOSS_Console("TermDriver %d started\n", unit);
+            USLOSS_TRACE("TermDriver %d started\n", unit);
         result = waitDevice(USLOSS_TERM_DEV, unit, &status);
         if (result != 0) {
             return 0;
         }
         if(isDebug){
-            USLOSS_Console("We are now in TermDriver USLOSS_DeviceInput\n");
+            USLOSS_TRACE("We are now in TermDriver USLOSS_DeviceInput\n");
         }
         result = USLOSS_DeviceInput(USLOSS_TERM_DEV, unit, &status);
         if(isDebug){
-            USLOSS_Console("We are now out of TermDriver USLOSS_DeviceInput\n");
+            USLOSS_TRACE("We are now out of TermDriver USLOSS_DeviceInput\n");
         }
         if (status == USLOSS_DEV_INVALID) {
-            USLOSS_Console("Invalid params for TermDriver's DeviceInput\n");
+            USLOSS_TRACE("Invalid params for TermDriver's DeviceInput\n");
             return -1;
         }
 
         // check recv
         if(isDebug){
-            USLOSS_Console("We are now in TermDriver USLOSS_TERM_STAT_RECV\n");
+            USLOSS_TRACE("We are now in TermDriver USLOSS_TERM_STAT_RECV\n");
         }
         int recvStatus = USLOSS_TERM_STAT_RECV(status);
         if(isDebug){
-            USLOSS_Console("We are now out of TermDriver USLOSS_TERM_STAT_RECV\n");
+            USLOSS_TRACE("We are now out of TermDriver USLOSS_TERM_STAT_RECV\n");
         }
         if (recvStatus == USLOSS_DEV_BUSY) {
             if(isDebug){
-                USLOSS_Console("We are now in TermDriver USLOSS_TERM_STAT_CHAR\n");
+                USLOSS_TRACE("We are now in TermDriver USLOSS_TERM_STAT_CHAR\n");
             }
             char charToRead = USLOSS_TERM_STAT_CHAR(status);
             if(isDebug){
-                USLOSS_Console("We are out of TermDriver USLOSS_TERM_STAT_CHAR\n");
+                USLOSS_TRACE("We are out of TermDriver USLOSS_TERM_STAT_CHAR\n");
             }
             if(isDebug){
-                USLOSS_Console("We are now in TermDriver MboxCondSend\n");
+                USLOSS_TRACE("We are now in TermDriver MboxCondSend\n");
             }
             // got a char, send to the mbox.
             MboxCondSend(termMboxes[unit][CHAR_IN], &charToRead, 1);
             if(isDebug){
-                USLOSS_Console("We are now out of TermDriver MboxCondSend\n");
+                USLOSS_TRACE("We are now out of TermDriver MboxCondSend\n");
             }
             // TODO check return val of above.
 
         } else if (recvStatus == USLOSS_DEV_ERROR) {
             // something went wrong?
-            USLOSS_Console("Receive status register for terminal %d returned error\n", unit);
+            USLOSS_TRACE("Receive status register for terminal %d returned error\n", unit);
             return -1;
         }
 
@@ -340,7 +340,7 @@ static int TermDriver(char *arg)
 static int TermWriter(char *arg)
 {
     if(isDebug){
-        USLOSS_Console("We are now in TermWriter\n");
+        USLOSS_TRACE("We are now in TermWriter\n");
     }
     const int ctrl = 0;
     char charRead;
@@ -398,17 +398,17 @@ int termWriteReal(USLOSS_Sysargs * sysArg){
 static int TermReader(char *arg)
 {
     if(isDebug){
-        USLOSS_Console("We are now in TermReader\n");
+        USLOSS_TRACE("We are now in TermReader\n");
     }
     int unit = atoi(arg), result, status, ctrl = 0, currLineIndex = 0;
     char charRead;
     char currentLine[MAXLINE+1];
     // Let the parent know we are running and enable interrupts.
     if(isDebug){
-        USLOSS_Console("We are now in TermReader semvReal\n");
+        USLOSS_TRACE("We are now in TermReader semvReal\n");
     }
     if(isDebug){
-        USLOSS_Console("We are now out of TermReader semvReal\n");
+        USLOSS_TRACE("We are now out of TermReader semvReal\n");
     }
 
     semvReal(running);
@@ -419,12 +419,12 @@ static int TermReader(char *arg)
 
     while (!isZapped()) {
         if(isDebug){
-            USLOSS_Console("We are now in TermReader MboxReceive\n");
+            USLOSS_TRACE("We are now in TermReader MboxReceive\n");
         }
         MboxReceive(termMboxes[unit][CHAR_IN], &charRead, 1);
-        USLOSS_Console("Char read from Term%d: %c\n", unit, charRead);
+        USLOSS_TRACE("Char read from Term%d: %c\n", unit, charRead);
         if(isDebug){
-            USLOSS_Console("We are now out of TermReader MboxReceive\n");
+            USLOSS_TRACE("We are now out of TermReader MboxReceive\n");
         }
         currentLine[currLineIndex++] = charRead;
 
@@ -432,11 +432,11 @@ static int TermReader(char *arg)
             // finished line, stick in a null and send it out
             currentLine[currLineIndex] = '\0';
             if(isDebug){
-                USLOSS_Console("We are now in TermReader MboxCondSend\n");
+                USLOSS_TRACE("We are now in TermReader MboxCondSend\n");
             }
             MboxCondSend(termMboxes[unit][LINE_IN], &currentLine, currLineIndex+1);
             if(isDebug){
-                USLOSS_Console("We are now out of TermReader MboxCondSend\n");
+                USLOSS_TRACE("We are now out of TermReader MboxCondSend\n");
             }
             // TODO check retval of above, discard line if it's full.
             bzero(currentLine, MAXLINE+1);
@@ -452,7 +452,7 @@ static int TermReader(char *arg)
  */
 int termReadReal(USLOSS_Sysargs * sysArg){
     if(isDebug){
-        USLOSS_Console("We are now in termReadReal\n");
+        USLOSS_TRACE("We are now in termReadReal\n");
     }
     if (ProcTable[getpid() & MAXPROC].pid == -1) {
         // process hasn't been initialized yet, let's fix that
@@ -464,17 +464,17 @@ int termReadReal(USLOSS_Sysargs * sysArg){
     int unit_id = (int) (long) sysArg->arg3;
     // TODO is it maxline or maxline+1? hmm...
     if(isDebug){
-        USLOSS_Console("We are now in termReadReal MboxReceive\n");
+        USLOSS_TRACE("We are now in termReadReal MboxReceive\n");
     }
     MboxReceive(termMboxes[unit_id][LINE_IN], buff, MAXLINE+1);
     if(isDebug){
-        USLOSS_Console("We are now out of termReadReal MboxReceive\n");
+        USLOSS_TRACE("We are now out of termReadReal MboxReceive\n");
     }
     while (buff[charsRead] != '\0') {
         charsRead++;
     }
     if(isDebug){
-        USLOSS_Console("Our message is %s\n", sysArg->arg2);
+        USLOSS_TRACE("Our message is %s\n", sysArg->arg2);
     }
     sysArg->arg2 = (void *) (long) charsRead;
 
@@ -576,11 +576,11 @@ static int DiskDriver(char *arg)
 
     while(!isZapped()) {
 	    if (isDebug) {
-	        USLOSS_Console("Disk %d initialized with numTracks = %d. blocking on sem %d\n", unit, unit ? disk1Tracks : disk0Tracks, sem);
+	        USLOSS_TRACE("Disk %d initialized with numTracks = %d. blocking on sem %d\n", unit, unit ? disk1Tracks : disk0Tracks, sem);
    		}
         sempReal(sem);
         if (isDebug) {
-            USLOSS_Console("DiskDriver%d called\n", unit);
+            USLOSS_TRACE("DiskDriver%d called\n", unit);
         }
         diskNodePtr request = unit ? &disk1Queue[0] : &disk0Queue[0];
         if (isDebug)
@@ -599,11 +599,11 @@ static int DiskDriver(char *arg)
             deviceRequest.opr = USLOSS_DISK_SEEK;
             deviceRequest.reg1 = (void *) (long) request->track;
             if (isDebug)
-                USLOSS_Console("DiskDriver gonna seek to track %d, proc %d, unit %d\n", request->track, getpid(), unit);
+                USLOSS_TRACE("DiskDriver gonna seek to track %d, proc %d, unit %d\n", request->track, getpid(), unit);
             int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
             waitDevice(USLOSS_DISK_DEV, unit, &result);
             if (isDebug)
-                USLOSS_Console("DiskDriver seeked to track %d proc %d, unit %d\n", request->track, getpid(), unit);
+                USLOSS_TRACE("DiskDriver seeked to track %d proc %d, unit %d\n", request->track, getpid(), unit);
         }
 
         if (request->op == READ) {
@@ -625,7 +625,7 @@ static int DiskDriver(char *arg)
                     currDisk0Track = request->track + 1;
                 }
                 if (isDebug) {
-                    USLOSS_Console("DiskDriver(): gonna seek to next track %d cuz overlap\n", request->track + 1);
+                    USLOSS_TRACE("DiskDriver(): gonna seek to next track %d cuz overlap\n", request->track + 1);
                 }
                 int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequestSeek);
                 waitDevice(USLOSS_DISK_DEV, unit, &result);
@@ -634,13 +634,13 @@ static int DiskDriver(char *arg)
             deviceRequest.reg2 = request->dbuff + (i * USLOSS_DISK_SECTOR_SIZE);
 
             if (isDebug)
-                USLOSS_Console("DiskDriver bout to r/w from disk %d at track %d, sector %d into dbuff %ld\n", unit, request->track, (i + request->first) % USLOSS_DISK_TRACK_SIZE,  request->dbuff + (i * USLOSS_DISK_SECTOR_SIZE));
+                USLOSS_TRACE("DiskDriver bout to r/w from disk %d at track %d, sector %d into dbuff %ld\n", unit, request->track, (i + request->first) % USLOSS_DISK_TRACK_SIZE,  request->dbuff + (i * USLOSS_DISK_SECTOR_SIZE));
             int result = USLOSS_DeviceOutput(USLOSS_DISK_DEV, unit, &deviceRequest);
             waitDevice(USLOSS_DISK_DEV, unit, &result);
         }
         int reqSemID = diskDequeue(unit);
         if (isDebug) {
-            USLOSS_Console("DiskDriver(): fulfilled request for proc %d, unblocking it (semID = %d)\n", getpid(), reqSemID);
+            USLOSS_TRACE("DiskDriver(): fulfilled request for proc %d, unblocking it (semID = %d)\n", getpid(), reqSemID);
         }
         // request fulfilled, dequeue it and unblock that proc
         semvReal(reqSemID);
@@ -689,35 +689,35 @@ int diskReadReal(USLOSS_Sysargs * args)
     diskSizeRealActually(unit, &sectorSize, &numSectors, &numTracks);
     // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
   	if(first < 0 || first >= numSectors){
-		//USLOSS_Console("diskReadReal() first is invalid\n");
+		//USLOSS_TRACE("diskReadReal() first is invalid\n");
         //USLOSS_Halt(1);
         args->arg1 = (void *) (long) -1;
         return -1;
 	}
 
 	if(sectors < 0 || sectors >= numSectors){
-        //USLOSS_Console("diskReadReal() sectors is invalid\n");
+        //USLOSS_TRACE("diskReadReal() sectors is invalid\n");
         //USLOSS_Halt(1);
         args->arg1 = (void *) (long) -1;
         return -1;
     }
 
 	if(track < 0 || track >= numTracks){
-        //USLOSS_Console("diskReadReal() track is invalid\n");
+        //USLOSS_TRACE("diskReadReal() track is invalid\n");
         //USLOSS_Halt(1);
         args->arg1 = (void *) (long) -1;
         return -1;
     }
     if (isDebug) {
-        USLOSS_Console("diskReadReal() called for unit %d, track %d, first %d, sectors %d, pid %d\n", unit, track, first, sectors, getpid());
+        USLOSS_TRACE("diskReadReal() called for unit %d, track %d, first %d, sectors %d, pid %d\n", unit, track, first, sectors, getpid());
     }
 	diskEnqueue(dbuff, unit, track, first, sectors, READ);
     if (isDebug) {
-        USLOSS_Console("diskReadReal() waking up disk %d\n", unit);
+        USLOSS_TRACE("diskReadReal() waking up disk %d\n", unit);
     }
     semvReal(unit ? disk1Sem : disk0Sem);
     if (isDebug) {
-        USLOSS_Console("diskReadReal() blocking on private mbox, pid %d, semID %d", getpid(), ProcTable[getpid() % MAXPROC].semID);
+        USLOSS_TRACE("diskReadReal() blocking on private mbox, pid %d, semID %d", getpid(), ProcTable[getpid() % MAXPROC].semID);
     }
     sempReal(ProcTable[getpid() % MAXPROC].semID);
     args->arg1 = 0;
@@ -761,40 +761,40 @@ int diskWriteReal(USLOSS_Sysargs * args)
     diskSizeRealActually(unit, &sectorSize, &numSectors, &numTracks);
     // check if first and sectors are > 0 and < numsectors; track > 0 and < numTracks
 	if(first < 0 || first >= numSectors){
-        //USLOSS_Console("diskWriteReal() first is invalid\n");
+        //USLOSS_TRACE("diskWriteReal() first is invalid\n");
         //USLOSS_Halt(1);
         args->arg1 = (void *) (long) -1;
         return -1;
     }
 
     if(sectors < 0 || sectors >= numSectors){
-        //USLOSS_Console("diskWriteReal() sectors is invalid\n");
+        //USLOSS_TRACE("diskWriteReal() sectors is invalid\n");
         //USLOSS_Halt(1);
         args->arg1 = (void *) (long) -1;
         return -1;
     }
 
     if(track < 0 || track >= numTracks){
-        //USLOSS_Console("diskWriteReal() track is invalid\n");
+        //USLOSS_TRACE("diskWriteReal() track is invalid\n");
         //USLOSS_Halt(1);
         args->arg1 = (void *) (long) -1;
         return -1;
     }
 
     if (isDebug) {
-        USLOSS_Console("diskWriteReal() called for unit %d, track %d, first %d, sectors %d, pid %d\n", unit, track, first, sectors, getpid());
+        USLOSS_TRACE("diskWriteReal() called for unit %d, track %d, first %d, sectors %d, pid %d\n", unit, track, first, sectors, getpid());
     }
 	diskEnqueue(dbuff, unit, track, first, sectors, WRITE);
     if (isDebug) {
-        USLOSS_Console("diskWriteReal() waking up disk %d at sem %d\n", unit, (unit ? disk1Sem : disk0Sem));
+        USLOSS_TRACE("diskWriteReal() waking up disk %d at sem %d\n", unit, (unit ? disk1Sem : disk0Sem));
     }
     semvReal(unit ? disk1Sem : disk0Sem);
     if (isDebug) {
-        USLOSS_Console("diskWriteReal() blocking on private mbox, pid %d, semID %d\n", getpid(), ProcTable[getpid() % MAXPROC].semID);
+        USLOSS_TRACE("diskWriteReal() blocking on private mbox, pid %d, semID %d\n", getpid(), ProcTable[getpid() % MAXPROC].semID);
     }
     sempReal(ProcTable[getpid() % MAXPROC].semID);
     if (isDebug) {
-        USLOSS_Console("diskWriteReal() unblocked proc %d\n", getpid());
+        USLOSS_TRACE("diskWriteReal() unblocked proc %d\n", getpid());
     }
     args->arg1 = 0;
     return 0;
@@ -814,7 +814,7 @@ int diskSizeReal(USLOSS_Sysargs * sysArg)
     }
 	//check parameters are correct
 	if( (int) (long) sysArg->arg1 < 0 || (int) (long) sysArg->arg1 > 1){
-		USLOSS_Console("diskSizeReal() sysArg->arg1 is invalid\n");
+		USLOSS_TRACE("diskSizeReal() sysArg->arg1 is invalid\n");
        	USLOSS_Halt(1);
 		return -1;
 	}
@@ -838,11 +838,11 @@ int diskSizeRealActually(int unit, int * sectorSize, int * trackSize, int * disk
  */
 int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op) {
     if (isDebug) {
-        USLOSS_Console("diskEnqueue() called for unit %d, op %s, track %d. Proc %d blocking on semp.\n", unit, (op ? "WRITE" : "READ"), track, getpid());
+        USLOSS_TRACE("diskEnqueue() called for unit %d, op %s, track %d. Proc %d blocking on semp.\n", unit, (op ? "WRITE" : "READ"), track, getpid());
     }// block all access to queue
     sempReal(unit ? disk1QueueSem : disk0QueueSem);
     if (isDebug) {
-        USLOSS_Console("diskEnqueue() unblocked Proc %d.\n", getpid());
+        USLOSS_TRACE("diskEnqueue() unblocked Proc %d.\n", getpid());
     }
     diskNodePtr queue = unit ? disk1Queue : disk0Queue;
     diskNodePtr insertedNode;
@@ -859,7 +859,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     }
     if (track < pivot && queue[0].semID != -1  && pivotIndex != 0 && track <= queue[0].track) {
         if (queue[MAXPROC - 1].semID != -1) {
-            USLOSS_Console("Too many r/w requests for disk %d\n", unit);
+            USLOSS_TRACE("Too many r/w requests for disk %d\n", unit);
             return -1;
         }
         for (j = MAXPROC - 1; j > pivotIndex; j--) {
@@ -880,12 +880,12 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
                break;
            } else if (i == MAXPROC - 1) {
                // error case for too many requests
-               USLOSS_Console("Too many r/w requests for disk %d\n", unit);
+               USLOSS_TRACE("Too many r/w requests for disk %d\n", unit);
                return -1;
            } else if (i >= 1 && (queue[i].track > track || (i == pivotIndex && insertFlag))) {
 
 			 if (queue[MAXPROC - 1].semID != -1) {
-                   USLOSS_Console("Too many r/w requests for disk %d\n", unit);
+                   USLOSS_TRACE("Too many r/w requests for disk %d\n", unit);
                    return -1;
                }
                for (j = MAXPROC - 1; j > i; j--) {
@@ -922,16 +922,16 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
  */
 int diskDequeue(int unit) {
     if (isDebug) {
-        USLOSS_Console("diskDequeue() called for unit %d. Proc %d blocking on semp.", unit, getpid());
+        USLOSS_TRACE("diskDequeue() called for unit %d. Proc %d blocking on semp.", unit, getpid());
     }
     sempReal(unit ? disk1QueueSem : disk0QueueSem);
     if (isDebug) {
-        USLOSS_Console("diskDequeue() unit %d unblocked Proc %d\n", unit, getpid());
+        USLOSS_TRACE("diskDequeue() unit %d unblocked Proc %d\n", unit, getpid());
     }
     diskNodePtr queue = unit ? disk1Queue : disk0Queue;
     int resultSemID = -1;
     if (queue[0].semID == -1) {
-        USLOSS_Console("diskDequeue: Invalid dequeue\n");
+        USLOSS_TRACE("diskDequeue: Invalid dequeue\n");
         return -1;
     } else {
         resultSemID = queue[0].semID;
@@ -953,7 +953,7 @@ int diskDequeue(int unit) {
         }
     }
     if (isDebug) {
-        USLOSS_Console("diskDequeue() unit %d unblocking the queue\n", unit, getpid());
+        USLOSS_TRACE("diskDequeue() unit %d unblocking the queue\n", unit, getpid());
     }
     semvReal(unit ? disk1QueueSem : disk0QueueSem);
     return resultSemID;
@@ -969,7 +969,7 @@ int diskDequeue(int unit) {
 void check_kernel_mode(char * funcName)
 {
     if (!(USLOSS_PsrGet() & 1)) {
-        USLOSS_Console(
+        USLOSS_TRACE(
              "%s(): called while in user mode, by process %d. Halting...\n", funcName, getpid());
         USLOSS_Halt(1);
     }
@@ -985,7 +985,7 @@ int initProc(int pid)
     ProcTable[pid % MAXPROC].pid = pid;
     ProcTable[pid % MAXPROC].semID = semcreateReal(0);
     if (ProcTable[pid % MAXPROC].semID < 0) {
-        USLOSS_Console("initProc(): Failure creating private mailbox for process %d", pid);
+        USLOSS_TRACE("initProc(): Failure creating private mailbox for process %d", pid);
         return -1;
     }
     return 0;
@@ -999,7 +999,7 @@ int enqueue(procPtr p){
     while (i < MAXPROC && sleepQueue[i] != NULL) {
     	i++;
 		if (i == MAXPROC) {
-      		USLOSS_Console("insert(): no more roomsies ;_;\n");
+      		USLOSS_TRACE("insert(): no more roomsies ;_;\n");
      		return 1;
 		}
    }
@@ -1057,5 +1057,5 @@ void setUserMode()
     // set user mode by making sure last bit is 0
     newPSRValue = newPSRValue & 14;
     if (USLOSS_PsrSet(newPSRValue) == USLOSS_ERR_INVALID_PSR)
-        USLOSS_Console("ERROR: Invalid PSR value set! was: %u\n", newPSRValue);
+        USLOSS_TRACE("ERROR: Invalid PSR value set! was: %u\n", newPSRValue);
 } /* setUserMode */
