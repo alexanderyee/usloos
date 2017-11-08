@@ -138,6 +138,13 @@ void start3(void)
     }
 
     for (i = 0; i < USLOSS_TERM_UNITS; i++) {
+        // initialize the mboxes for this unit
+        termMboxes[i][CHAR_IN] = MboxCreate(MAXSLOTS, 1);
+        termMboxes[i][CHAR_OUT] = MboxCreate(0, 1);
+        termMboxes[i][LINE_IN] = MboxCreate(10, MAXLINE+1); // +1 for the '\0'
+        termMboxes[i][LINE_OUT] = MboxCreate(MAXSLOTS, MAXLINE+1);
+        termMboxes[i][XMIT_RESULT] = MboxCreate(0, sizeof(int));
+
         sprintf(buf, "%d", i);
         sprintf(name, "Term Driver %d", i);
         pid = fork1(name, TermDriver, buf, USLOSS_MIN_STACK, 2);
@@ -175,14 +182,6 @@ void start3(void)
         else {
             termPids[i][2] = pid;
         }
-
-
-        // initialize the mboxes for this unit
-        termMboxes[i][CHAR_IN] = MboxCreate(MAXSLOTS, 1);
-        termMboxes[i][CHAR_OUT] = MboxCreate(0, 1);
-        termMboxes[i][LINE_IN] = MboxCreate(10, MAXLINE+1); // +1 for the '\0'
-        termMboxes[i][LINE_OUT] = MboxCreate(MAXSLOTS, MAXLINE+1);
-        termMboxes[i][XMIT_RESULT] = MboxCreate(0, sizeof(int));
         // HOW MANY WRITTEN TERMINAL LINES TO BUFFER?
         sempReal(running);
     }
@@ -211,6 +210,9 @@ void start3(void)
     /*
      * Zap the device drivers
      */
+     if (isDebug) {
+         USLOSS_Trace("Start4 quit. now trying to zap everything else...\n");
+     }
     zap(clockPID);  // clock driver
 	join(&status);
 
