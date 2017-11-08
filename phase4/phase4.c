@@ -346,6 +346,8 @@ static int TermWriter(char *arg)
     while (!isZapped()) {
 
         MboxReceive(termMboxes[unit][LINE_OUT], &currLine, MAXLINE + 1);
+        if (isZapped())
+            break;
         USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_XMIT_INT(USLOSS_TERM_CTRL_RECV_INT(ctrl)));
         result = waitDevice(USLOSS_TERM_DEV, unit, &status);
 
@@ -407,6 +409,8 @@ static int TermReader(char *arg)
     while (!isZapped()) {
 
         MboxReceive(termMboxes[unit][CHAR_IN], &charRead, 1);
+        if (isZapped())
+            break;
         if(isDebug){
             USLOSS_Trace("We are now out of TermReader MboxReceive\n");
             USLOSS_Trace("Char read from Term%d: %c\n", unit, charRead);
