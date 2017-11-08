@@ -185,8 +185,8 @@ void start3(void)
         termMboxes[i][LINE_OUT] = MboxCreate(MAXSLOTS, MAXLINE+1);
         // HOW MANY WRITTEN TERMINAL LINES TO BUFFER?
         sempReal(running);
-        */
     }
+    */
     // May be other stuff to do here before going on to terminal drivers
     if (isDebug) {
         USLOSS_Console("DiskDriver processes initialized.\n");
