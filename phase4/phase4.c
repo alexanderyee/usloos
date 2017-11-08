@@ -19,7 +19,7 @@
 #include <string.h> /* needed for bzero() */
 
 
-int     isDebug = 0;
+int     isDebug = 1;
 int	 	running;
 procStruct ProcTable[MAXPROC];
 procPtr    sleepQueue[MAXPROC];
@@ -320,6 +320,8 @@ static int TermWriter(char *arg)
     semvReal(running);
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
     while (!isZapped()) {
+        MboxReceive(termMboxes[unit][CHAR_OUT], &charRead, 1);
+
     }
     quit(0);
     return 0;
