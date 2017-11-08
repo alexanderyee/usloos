@@ -19,7 +19,7 @@
 #include <string.h> /* needed for bzero() */
 
 
-int     isDebug = 0;
+int     isDebug = 1;
 int	 	running;
 procStruct ProcTable[MAXPROC];
 procPtr    sleepQueue[MAXPROC];
@@ -459,11 +459,11 @@ int termReadReal(USLOSS_Sysargs * sysArg){
     if(isDebug){
         USLOSS_Trace("We are now out of termReadReal MboxReceive\n");
     }
-    while (buff[charsRead] != '\0') {
+    while (charsRead < bsize && buff[charsRead] != '\0') {
         charsRead++;
     }
     if(isDebug){
-        USLOSS_Trace("Our message is %s\n", sysArg->arg2);
+        USLOSS_Trace("Our message is %s\n", sysArg->arg1);
     }
     sysArg->arg2 = (void *) (long) charsRead;
 
