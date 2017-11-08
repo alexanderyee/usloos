@@ -243,29 +243,16 @@ static int TermDriver(char *arg)
 {
     int unit = atoi(arg), result, status, charsWritten = 0;
     // Let the parent know we are running and enable interrupts.
-    if(isDebug){
-        USLOSS_Trace("We are now in TermDriver\n");
-    }
-    if(isDebug){
-        USLOSS_Trace("We are now in TermDriver semvReal\n");
-    }
 
     semvReal(running);
-    if(isDebug){
-        USLOSS_Trace("We are now out of TermDriver semvReal\n");
-    }
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
     USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_RECV_INT(0));
+    result = waitDevice(USLOSS_TERM_DEV, unit, &status);
 
     while (!isZapped()) {
-        if (isDebug)
-            USLOSS_Trace("TermDriver %d started\n", unit);
         result = waitDevice(USLOSS_TERM_DEV, unit, &status);
         if (result != 0) {
             return 0;
-        }
-        if(isDebug){
-            USLOSS_Trace("We are now in TermDriver USLOSS_DeviceInput\n");
         }
         result = USLOSS_DeviceInput(USLOSS_TERM_DEV, unit, &status);
         if(isDebug){
@@ -277,12 +264,7 @@ static int TermDriver(char *arg)
         }
 
         // check recv
-        if(isDebug){
-            USLOSS_Trace("We are now in TermDriver USLOSS_TERM_STAT_RECV\n");
-        }
         int recvStatus = USLOSS_TERM_STAT_RECV(status);
-        if(isDebug){
-            USLOSS_Trace("We are now out of TermDriver USLOSS_TERM_STAT_RECV\n");
         }
         if (recvStatus == USLOSS_DEV_BUSY) {
             if(isDebug){
@@ -327,6 +309,8 @@ static int TermDriver(char *arg)
             	ctrl = USLOSS_TERM_CTRL_XMIT_INT(ctrl);
             	ctrl = USLOSS_TERM_CTRL_CHAR(ctrl, charToXmit);
             	result = USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, ctrl);
+                result = waitDevice(USLOSS_TERM_DEV, unit, &status);
+
             	if (result == USLOSS_DEV_OK) {
                 	charsWritten++;
                 	if (charToXmit == '\n') {
@@ -365,6 +349,7 @@ static int TermWriter(char *arg)
 
         MboxReceive(termMboxes[unit][LINE_OUT], &currLine, MAXLINE + 1);
         USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_XMIT_INT(USLOSS_TERM_CTRL_RECV_INT(ctrl)));
+        result = waitDevice(USLOSS_TERM_DEV, unit, &status);
 
         int index = 0;
         while(index != MAXLINE && currLine[index] != '\0' && currLine[index] != '\n') {
@@ -380,6 +365,8 @@ static int TermWriter(char *arg)
 
         // disable everything but recv interrupts
         USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_RECV_INT(ctrl));
+        result = waitDevice(USLOSS_TERM_DEV, unit, &status);
+
     }
     quit(0);
     return 0;
@@ -407,34 +394,25 @@ int termWriteReal(USLOSS_Sysargs * sysArg){
 
 static int TermReader(char *arg)
 {
-    if(isDebug){
-        USLOSS_Trace("We are now in TermReader\n");
-    }
     int unit = atoi(arg), result, status, ctrl = 0, currLineIndex = 0;
     char charRead;
     char currentLine[MAXLINE+1];
     // Let the parent know we are running and enable interrupts.
-    if(isDebug){
-        USLOSS_Trace("We are now in TermReader semvReal\n");
-    }
-    if(isDebug){
-        USLOSS_Trace("We are now out of TermReader semvReal\n");
-    }
 
     semvReal(running);
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
     // just enable recv interrupts for this unit for now. TermWriter will
     // enable both.
     USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_RECV_INT(0));
+    result = waitDevice(USLOSS_TERM_DEV, unit, &status);
 
     while (!isZapped()) {
-        if(isDebug){
-            USLOSS_Trace("We are now in TermReader MboxReceive\n");
-        }
+
         MboxReceive(termMboxes[unit][CHAR_IN], &charRead, 1);
-        USLOSS_Trace("Char read from Term%d: %c\n", unit, charRead);
         if(isDebug){
             USLOSS_Trace("We are now out of TermReader MboxReceive\n");
+            USLOSS_Trace("Char read from Term%d: %c\n", unit, charRead);
+
         }
         currentLine[currLineIndex++] = charRead;
 
