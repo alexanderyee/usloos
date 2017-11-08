@@ -411,6 +411,7 @@ static int TermReader(char *arg)
             break;
         if(isDebug){
             USLOSS_Trace("We are now out of TermReader MboxReceive\n");
+            if (charToRead != NULL)
             USLOSS_Trace("Char read from Term%d: %c\n", unit, charRead);
 
         }
