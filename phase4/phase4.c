@@ -255,7 +255,7 @@ static int TermDriver(char *arg)
     semvReal(running);
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
     USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_RECV_INT(0));
-    result = waitDevice(USLOSS_TERM_DEV, unit, &status);
+
 
     while (!isZapped()) {
         result = waitDevice(USLOSS_TERM_DEV, unit, &status);
@@ -306,7 +306,7 @@ static int TermDriver(char *arg)
             	ctrl = USLOSS_TERM_CTRL_XMIT_INT(ctrl);
             	ctrl = USLOSS_TERM_CTRL_CHAR(ctrl, charToXmit);
             	result = USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, ctrl);
-                result = waitDevice(USLOSS_TERM_DEV, unit, &status);
+                //result = waitDevice(USLOSS_TERM_DEV, unit, &status);
 
             	if (result == USLOSS_DEV_OK) {
                 	charsWritten++;
@@ -344,12 +344,11 @@ static int TermWriter(char *arg)
 
     while (!isZapped()) {
 
-        MboxReceive(termMboxes[unit][LINE_OUT], &currLine, MAXLINE + 1);
+        result = MboxReceive(termMboxes[unit][LINE_OUT], &currLine, MAXLINE + 1);
         if (result < 0)
             break;
         USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_XMIT_INT(USLOSS_TERM_CTRL_RECV_INT(ctrl)));
-        result = waitDevice(USLOSS_TERM_DEV, unit, &status);
-
+        //result = waitDevice(USLOSS_TERM_DEV, unit, &status);
         int index = 0;
         while(index != MAXLINE && currLine[index] != '\0' && currLine[index] != '\n') {
             MboxSend(termMboxes[unit][CHAR_OUT], &currLine[index], 1);
@@ -364,7 +363,7 @@ static int TermWriter(char *arg)
 
         // disable everything but recv interrupts
         USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_RECV_INT(ctrl));
-        result = waitDevice(USLOSS_TERM_DEV, unit, &status);
+        //result = waitDevice(USLOSS_TERM_DEV, unit, &status);
 
     }
     quit(0);
@@ -402,8 +401,8 @@ static int TermReader(char *arg)
     USLOSS_PsrSet(USLOSS_PsrGet() | USLOSS_PSR_CURRENT_INT);
     // just enable recv interrupts for this unit for now. TermWriter will
     // enable both.
-    USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_RECV_INT(0));
-    result = waitDevice(USLOSS_TERM_DEV, unit, &status);
+    //USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_RECV_INT(0));
+    //result = waitDevice(USLOSS_TERM_DEV, unit, &status);
 
     while (!isZapped()) {
 
