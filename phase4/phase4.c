@@ -228,7 +228,7 @@ void start3(void)
     }
     // the terminals
     for (i = 0; i < USLOSS_TERM_UNITS; i++) {
-
+		 dumpProcesses();
         for (j = 0; j < 5; j++) {
             MboxRelease(termMboxes[i][j]);
         }
@@ -274,12 +274,14 @@ static int TermDriver(char *arg)
         if (recvStatus == USLOSS_DEV_BUSY) {
             char charToRead = USLOSS_TERM_STAT_CHAR(status);
             // got a char, send to the mbox.
-            MboxCondSend(termMboxes[unit][CHAR_IN], &charToRead, 1);
+            result = MboxCondSend(termMboxes[unit][CHAR_IN], &charToRead, 1);
             if(isDebug){
                 USLOSS_Trace("TermDriver%d sent char %c to to char_in\n", unit, charToRead);
             }
             // TODO check return val of above.
-
+			if (result == -2) {
+				break;
+			}
         } else if (recvStatus == USLOSS_DEV_ERROR) {
             // something went wrong?
             USLOSS_Trace("Receive status register for terminal %d returned error\n", unit);
@@ -297,16 +299,16 @@ static int TermDriver(char *arg)
 
             int condRecvStatus = MboxCondReceive(termMboxes[unit][CHAR_OUT], &charToXmit, 1);
 			if (condRecvStatus >= 0) {
-            	int ctrl;
+            	int ctrl = 0;
 				if (isDebug) USLOSS_Trace("condRecvStatus for xmit: %d\n", condRecvStatus);
             	// basically set everything on
-            	ctrl = USLOSS_TERM_CTRL_XMIT_CHAR(ctrl);
+            	ctrl = USLOSS_TERM_CTRL_CHAR(ctrl, charToXmit);
+				ctrl = USLOSS_TERM_CTRL_XMIT_CHAR(ctrl);
             	ctrl = USLOSS_TERM_CTRL_RECV_INT(ctrl);
             	ctrl = USLOSS_TERM_CTRL_XMIT_INT(ctrl);
-            	ctrl = USLOSS_TERM_CTRL_CHAR(ctrl, charToXmit);
-            	result = USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, ctrl);
+				result = USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, (void *) (long) ctrl);
                 //result = waitDevice(USLOSS_TERM_DEV, unit, &status);
-
+				//USLOSS_Console("wtf is the ctrl %d\n", ctrl);
             	if (result == USLOSS_DEV_OK) {
                 	charsWritten++;
                 	if (charToXmit == '\n') {
@@ -320,7 +322,9 @@ static int TermDriver(char *arg)
                 	}
 
            	 	}
-			}
+			} else if (result == -2) {
+                break;
+            }
         }
     }
     quit(0);
@@ -351,7 +355,7 @@ static int TermWriter(char *arg)
         int index = 0;
         while(index != MAXLINE && currLine[index] != '\0' && currLine[index] != '\n') {
             MboxSend(termMboxes[unit][CHAR_OUT], &currLine[index], 1);
-            index++;
+			index++;
         }
         // send another message (\n) to indicate the end of the msg, as well as a null
         currLine[index-1] = '\n'; // recycle the memory <3
