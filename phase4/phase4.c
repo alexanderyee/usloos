@@ -365,7 +365,9 @@ static int TermWriter(char *arg)
         //result = waitDevice(USLOSS_TERM_DEV, unit, &status);
 
     }
+    USLOSS_Console("hey\n");
     quit(0);
+    USLOSS_Console("bye\n");
     return 0;
 
 }

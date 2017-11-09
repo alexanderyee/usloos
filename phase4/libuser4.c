@@ -93,7 +93,7 @@ int TermRead(char *buff, int bsize, int unit_id, int *nread)
 	//check if parameters are invalid, if so return -1
 	if(buff == NULL || nread == NULL)
 		return -1;
-    if(unit_id < 0 || unit_id >= USLOSS_TERM_UNITS || bsize < 0 || bsize > MAXLINE){
+    if(unit_id < 0 || unit_id >= USLOSS_TERM_UNITS || bsize <= 0 || bsize > MAXLINE){
         return -1;
     }
     CHECKMODE;
