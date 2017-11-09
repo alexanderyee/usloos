@@ -19,7 +19,7 @@
 #include <string.h> /* needed for bzero() */
 
 
-int     isDebug = 1;
+int     isDebug = 0;
 int	 	running;
 procStruct ProcTable[MAXPROC];
 procPtr    sleepQueue[MAXPROC];
@@ -236,7 +236,6 @@ void start3(void)
             zap(termPids[i][j]);
         }
     }
-    dumpProcesses();
 	semfreeReal(running);
 	semfreeReal(disk0Sem);
 	semfreeReal(disk1Sem);
@@ -344,7 +343,7 @@ static int TermWriter(char *arg)
 
     while (!isZapped()) {
 
-        MboxReceive(termMboxes[unit][LINE_OUT], &currLine, MAXLINE + 1);
+        result = MboxReceive(termMboxes[unit][LINE_OUT], &currLine, MAXLINE + 1);
         if (result < 0)
             break;
         USLOSS_DeviceOutput(USLOSS_TERM_DEV, unit, USLOSS_TERM_CTRL_XMIT_INT(USLOSS_TERM_CTRL_RECV_INT(ctrl)));
