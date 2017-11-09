@@ -18,7 +18,7 @@
 #include <stdio.h> /* needed for sprintf() */
 #include <string.h> /* needed for bzero() */
 
-
+/*data structures + globals*/
 int     isDebug = 0;
 int	 	running;
 procStruct ProcTable[MAXPROC];
@@ -41,6 +41,7 @@ int        termPids[USLOSS_TERM_UNITS][3];
 int        termMboxes[USLOSS_TERM_UNITS][5];
 void (*systemCallVec[MAXSYSCALLS])(USLOSS_Sysargs *);
 
+//prototypes
 static int ClockDriver(char *);
 static int DiskDriver(char *);
 static int TermDriver(char *);
@@ -61,6 +62,7 @@ int diskSizeRealActually(int, int *, int *, int *);
 int termReadReal(USLOSS_Sysargs * );
 int termWriteReal(USLOSS_Sysargs * );
 
+/* start3: entry point for phase4 which spawns start4*/
 void start3(void)
 {
     char	name[128];
@@ -223,13 +225,8 @@ void start3(void)
     if (isDebug) {
         USLOSS_Trace("Disks quit\n");
     }
-    // the terminals
-    // for (i = 0; i < USLOSS_TERM_UNITS; i++) {
-    //     for (j = 0; j < 5; j++) {
-    //         MboxRelease(termMboxes[i][j]);
-    //         USLOSS_Console("released %d\n", j);
-    //     }
-    // }
+
+    //zap the terminal drivers
     for (i = 0; i < USLOSS_TERM_UNITS; i++) {
         if (isDebug)
             USLOSS_Console("Releasing unit %d LINE_IN mbox\n", i);
@@ -260,7 +257,7 @@ void start3(void)
     if (isDebug)
         USLOSS_Console("TermWriter processes quit.\n");
     /*
-     * Welp. Only workaround I've discovered is to just add more to the term files.
+     * Welp. Only workaround we've discovered is to just add more to the term files.
      * The term_.in files are running out too early to trigger an interrupt for
      * TermDriver's waitDevice.
      */
@@ -282,8 +279,7 @@ void start3(void)
         join(&status);
 
     }
-    if (isDebug)
-        USLOSS_Console("TermDriver processes quit PLZ GOD.\n");
+
 	semfreeReal(running);
 	semfreeReal(disk0Sem);
 	semfreeReal(disk1Sem);
@@ -294,6 +290,14 @@ void start3(void)
 
 }
 
+/* ------------------------------------------------------------------------
+   Name - TermDriver
+   Purpose - Keeps track to when to Read and Write; We used
+            sems to keep track of scheduling
+   Parameters - char * arg
+   Returns - an int. -1 if invalid. 0 if valid
+   Side Effects - none.
+   ----------------------------------------------------------------------- */
 static int TermDriver(char *arg)
 {
     int unit = atoi(arg), result, status, charsWritten = 0;
@@ -381,6 +385,14 @@ static int TermDriver(char *arg)
     return 0;
 }
 
+/* ------------------------------------------------------------------------
+   Name - TermWriter
+   Purpose - write back onto the terminal
+   Parameters - takes in an char * arg
+   Returns - an int. return 0 if successful. however, it should since
+            we parameter check prior. and we break.
+   Side Effects - none.
+   ----------------------------------------------------------------------- */
 static int TermWriter(char *arg)
 {
 
@@ -428,9 +440,13 @@ static int TermWriter(char *arg)
 
 }
 
- /*
-  * TermWriteReal
-  */
+/* ------------------------------------------------------------------------
+  Name - TermWriteReal
+  Purpose - write back to the terminal
+  Parameters - USLOSS_Sysargs * sysArg
+  Returns - an int
+  Side Effects - none.
+  ----------------------------------------------------------------------- */
 int termWriteReal(USLOSS_Sysargs * sysArg){
     int result;
     if (ProcTable[getpid() & MAXPROC].pid == -1) {
@@ -447,6 +463,13 @@ int termWriteReal(USLOSS_Sysargs * sysArg){
     return 0;
 }
 
+/* ------------------------------------------------------------------------
+  Name - TermReader
+  Purpose - read from the terminal
+  Parameters - char *arg
+  Returns - an int. also if invalid, there will be a nice printout :)
+  Side Effects - none.
+  ----------------------------------------------------------------------- */
 static int TermReader(char *arg)
 {
     int unit = atoi(arg), result, currLineIndex = 0;
@@ -487,9 +510,13 @@ static int TermReader(char *arg)
     return 0;
 }
 
-/*
- * TermReadReal
- */
+/* ------------------------------------------------------------------------
+   Name - diskReadReal
+   Purpose - checks if there is invalid parameters and will add read requests
+   Parameters - USLOSS_Sysargs * sysArg
+   Returns - an int
+   Side Effects - It will block until it finishes reading the data
+   ----------------------------------------------------------------------- */
 int termReadReal(USLOSS_Sysargs * sysArg){
 
     if (ProcTable[getpid() & MAXPROC].pid == -1) {
@@ -500,7 +527,6 @@ int termReadReal(USLOSS_Sysargs * sysArg){
     char * buff = sysArg->arg1;
     int bsize = (int) (long) sysArg->arg2;
     int unit_id = (int) (long) sysArg->arg3;
-    // TODO is it maxline or maxline+1? hmm...
 
     MboxReceive(termMboxes[unit_id][LINE_IN], buff, MAXLINE+1);
 
@@ -513,6 +539,13 @@ int termReadReal(USLOSS_Sysargs * sysArg){
     return 0;
 }
 
+/* ------------------------------------------------------------------------
+   Name - ClockDriver
+   Purpose - Keep track of time to wake up user call.
+   Parameters - char *arg
+   Returns - again... an int
+   Side Effects - none.
+   ----------------------------------------------------------------------- */
 static int ClockDriver(char *arg)
 {
     int result;
@@ -587,9 +620,14 @@ int sleepReal(USLOSS_Sysargs * args)
     return 0;
 }
 
-/*
- *
- */
+/* ------------------------------------------------------------------------
+   Name - DiskDriver
+   Purpose - handles calls to read and write to the disk. lots of the code checks
+            which disk it is on. which is why we used ternary
+   Parameters - char *arg
+   Returns - again... an int
+   Side Effects - none.
+   ----------------------------------------------------------------------- */
 static int DiskDriver(char *arg)
 {
     int unit = atoi(arg);
@@ -633,11 +671,14 @@ static int DiskDriver(char *arg)
             waitDevice(USLOSS_DISK_DEV, unit, &result);
         }
 
+        //check if it is a read or a write. put that as our opr
         if (request->op == READ) {
             deviceRequest.opr = USLOSS_DISK_READ;
         } else {
             deviceRequest.opr = USLOSS_DISK_WRITE;
         }
+
+        //circular scheduling
         for (i = 0; i < request->sectors; i++) {
 
             deviceRequest.reg1 = (void *) (long) ((i + request->first) % USLOSS_DISK_TRACK_SIZE);
@@ -802,9 +843,13 @@ int diskWriteReal(USLOSS_Sysargs * args)
 }
 
 
-/*
- *
- */
+/* ------------------------------------------------------------------------
+   Name - diskSizeReal
+   Purpose - gets info from the a specific disk
+   Parameters - USLOSS_Sysargs * sysArg
+   Returns - an int, return 0 if successful, -1 if invalid parms
+   Side Effects -none
+   ----------------------------------------------------------------------- */
 int diskSizeReal(USLOSS_Sysargs * sysArg)
 {
     if (ProcTable[getpid() & MAXPROC].pid == -1) {
@@ -822,7 +867,8 @@ int diskSizeReal(USLOSS_Sysargs * sysArg)
 }
 
 /*
- *
+ * helper method to set the sector size, track size, and disk size
+ * just returns 0 when done
  */
 int diskSizeRealActually(int unit, int * sectorSize, int * trackSize, int * diskSize)
 {
@@ -832,9 +878,14 @@ int diskSizeRealActually(int unit, int * sectorSize, int * trackSize, int * disk
     return 0;
 
 }
-/*
- *
- */
+
+/* ------------------------------------------------------------------------
+   Name - diskEnqueue
+   Purpose - enqueues disk request
+   Parameters - void *dbuff, int unit, int track, int first, int sectors, int op
+   Returns - an int, return 0 if successful, -1 if invalid parms
+   Side Effects -none
+   ----------------------------------------------------------------------- */
 int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op) {
     // block all access to queue
     sempReal(unit ? disk1QueueSem : disk0QueueSem);
@@ -891,7 +942,7 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
        }
     }
 
-
+    //sets value with respective info
     insertedNode->semID = ProcTable[getpid() % MAXPROC].semID;
     insertedNode->dbuff = dbuff;
     insertedNode->unit = unit;
@@ -908,9 +959,13 @@ int diskEnqueue(void *dbuff, int unit, int track, int first, int sectors, int op
     return 0;
 }
 
-/*
- *
- */
+/* ------------------------------------------------------------------------
+   Name - diskDequeue
+   Purpose - dequeues disk request
+   Parameters - int unit
+   Returns - an int, return 0 if successful, -1 if invalid
+   Side Effects -none
+   ----------------------------------------------------------------------- */
 int diskDequeue(int unit) {
 
     sempReal(unit ? disk1QueueSem : disk0QueueSem);
@@ -976,9 +1031,13 @@ int initProc(int pid)
     return 0;
 }
 
-/*
- *
- */
+/* ------------------------------------------------------------------------
+   Name - enqueue
+   Purpose - enqueue proc
+   Parameters - procPtr p
+   Returns - an int, return 0 if successful, 1 if invalid (full queue)
+   Side Effects -none
+   ----------------------------------------------------------------------- */
 int enqueue(procPtr p){
     int i = 0;
     while (i < MAXPROC && sleepQueue[i] != NULL) {
@@ -992,9 +1051,13 @@ int enqueue(procPtr p){
    return 0;
 }
 
-/*
- *
- */
+/* ------------------------------------------------------------------------
+   Name - pop
+   Purpose - pop proc
+   Parameters - nada
+   Returns - returns null if nothing, otherwise return the procPtr
+   Side Effects -none
+   ----------------------------------------------------------------------- */
 procPtr pop()
 {
     int i = 0;
@@ -1011,6 +1074,7 @@ procPtr pop()
 
 /*
  * pop at a certain index
+ * takes in a certain index
  */
 procPtr popAtIndex(int index)
 {
