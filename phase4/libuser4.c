@@ -70,10 +70,12 @@ int DiskWrite(void *dbuff, int unit, int track, int first,
 
 /*
  * Interface for diskSizeReal
+ * check invalid parms. -1 if invalid/null
  */
 int DiskSize(int unit, int *sector, int *track, int *disk)
 {
     USLOSS_Sysargs sysArg;
+    //check invalid parms. -1 if invalid/null
     if (sector == NULL || track == NULL || disk == NULL)
         return -1;
 	CHECKMODE;
@@ -86,6 +88,10 @@ int DiskSize(int unit, int *sector, int *track, int *disk)
     return 0;
 }
 
+/*
+ * Interface for termReadReal
+ * check invalid parms. -1 if invalid/null
+ */
 int TermRead(char *buff, int bsize, int unit_id, int *nread)
 {
     USLOSS_Sysargs sysArg;
@@ -107,6 +113,10 @@ int TermRead(char *buff, int bsize, int unit_id, int *nread)
 	return (long) *nread;
 }
 
+/*
+ * Interface for termWriteReal
+ * check invalid parms. -1 if invalid/null
+ */
 int TermWrite(char *buff, int bsize, int unit_id, int *nwrite)
 {
     USLOSS_Sysargs sysArg;
@@ -123,7 +133,7 @@ int TermWrite(char *buff, int bsize, int unit_id, int *nwrite)
     sysArg.arg2 = (void *) (long) bsize;
     sysArg.arg3 = (void *) (long) unit_id;
     USLOSS_Syscall(&sysArg);
-    *nwrite = sysArg.arg2;
+    *nwrite = (int) (long) sysArg.arg2;
 	return (long) sysArg.arg4;
 
 
