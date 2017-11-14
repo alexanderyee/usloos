@@ -138,10 +138,6 @@ void start3(void)
 
         sempReal(running);
     }
-    // May be other stuff to do here before going on to terminal drivers
-    if (isDebug) {
-        USLOSS_Trace("DiskDriver processes initialized.\n");
-    }
 
     /*
      * Create terminal device drivers.
@@ -209,9 +205,7 @@ void start3(void)
     /*
      * Zap the device drivers
      */
-     if (isDebug) {
-         USLOSS_Trace("Start4 quit. now trying to zap everything else...\n");
-     }
+
     zap(clockPID);  // clock driver
 	join(&status);
 
@@ -222,54 +216,31 @@ void start3(void)
     semvReal(disk1Sem);
     zap(disk1PID); // disk 1
     join(&status);
-    if (isDebug) {
-        USLOSS_Trace("Disks quit\n");
-    }
 
     //zap the terminal drivers
     for (i = 0; i < USLOSS_TERM_UNITS; i++) {
-        if (isDebug)
-            USLOSS_Console("Releasing unit %d LINE_IN mbox\n", i);
         MboxRelease(termMboxes[i][LINE_IN]);
-        if (isDebug)
-            USLOSS_Console("Releasing unit %d CHAR_IN mbox\n", i);
         MboxRelease(termMboxes[i][CHAR_IN]);
-        if (isDebug)
-            USLOSS_Console("Zapping unit %d READER \n", i);
 
         zap(termPids[i][1]);
         join(&status);
 
     }
-    if (isDebug)
-        USLOSS_Console("TermReader processes quit.\n");
 
     for (i = 0; i < USLOSS_TERM_UNITS; i++) {
-        if (isDebug)
-            USLOSS_Console("Releasing unit %d LINE_OUT mbox\n", i);
         MboxRelease(termMboxes[i][LINE_OUT]);
-        if (isDebug)
-            USLOSS_Console("Zapping unit %d WRITER \n", i);
         zap(termPids[i][2]);
         join(&status);
 
     }
-    if (isDebug)
-        USLOSS_Console("TermWriter processes quit.\n");
     /*
      * Welp. Only workaround we've discovered is to just add more to the term files.
      * The term_.in files are running out too early to trigger an interrupt for
      * TermDriver's waitDevice.
      */
     for (i = 0; i < USLOSS_TERM_UNITS; i++) {
-        if (isDebug)
-            USLOSS_Console("Releasing unit %d CHAR_OUT mbox\n", i);
         MboxRelease(termMboxes[i][CHAR_OUT]);
-        if (isDebug)
-            USLOSS_Console("Releasing unit %d XMIT_RESULT mbox\n", i);
         MboxRelease(termMboxes[i][XMIT_RESULT]);
-        if (isDebug)
-            USLOSS_Console("Zapping unit %d DRIVER \n", i);
         sprintf(buf, "term%d.in", i);
         FILE *file = fopen(buf, "a");
         fprintf(file, "q");
@@ -310,11 +281,7 @@ static int TermDriver(char *arg)
         USLOSS_Console("oopsie daisie TermDriver invalid psr\n");
     }
     while (!isZapped()) {
-        if (isDebug)
-            USLOSS_Console("TermDriver%d *BEFORE* waitDevice\n", unit);
         result = waitDevice(USLOSS_TERM_DEV, unit, &status);
-        if (isDebug)
-            USLOSS_Console("TermDriver%d *AFTER* waitDevice\n", unit);
         if (result != 0) {
             return 0;
         }
@@ -328,11 +295,8 @@ static int TermDriver(char *arg)
         if (recvStatus == USLOSS_DEV_BUSY) {
             char charToRead = USLOSS_TERM_STAT_CHAR(status);
             // got a char, send to the mbox.
-            if (isDebug)
-                USLOSS_Console("TermDriver%d *BEFORE* MboxCondSend\n", unit);
             result = MboxCondSend(termMboxes[unit][CHAR_IN], &charToRead, 1);
-            if (isDebug)
-                USLOSS_Console("TermDriver%d *AFTER* MboxCondSend\n", unit);
+
             // TODO check return val of above.
 			if (result == -2) {
 				break;
@@ -348,8 +312,6 @@ static int TermDriver(char *arg)
 
         if (xmitStatus == USLOSS_DEV_READY) {
             char charToXmit;
-            if (isDebug)
-                USLOSS_Console("TermDriver%d *BEFORE* MboxCondReceive(XMIT)\n", unit);
             int condRecvStatus = MboxCondReceive(termMboxes[unit][CHAR_OUT], &charToXmit, 1);
 			if (condRecvStatus >= 0) {
             	int ctrl = 0;
