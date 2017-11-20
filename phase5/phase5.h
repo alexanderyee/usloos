@@ -20,7 +20,6 @@
  * Maximum number of pagers.
  */
 #define MAXPAGERS 4
-
 /*
  * Paging statistics
  */
@@ -41,6 +40,8 @@ typedef struct VmStats {
 } VmStats;
 
 extern VmStats	vmStats;
+extern  int  start5(char *);
+
 //extern void PrintStats();
 
 #endif /* _PHASE5_H */

@@ -1,11 +1,11 @@
 /*
- * skeleton.c
- *
+ * phase5.c
+ * TODO CHANGE HDR COMMENT
  * This is a skeleton for phase5 of the programming assignment. It
  * doesn't do much -- it is just intended to get you started.
  */
 
-
+#include <usloss.h>
 #include <usyscall.h>
 #include <assert.h>
 #include <phase1.h>
@@ -42,7 +42,7 @@ static void vmDestroy(USLOSS_Sysargs *USLOSS_SysargsPtr);
  *
  * start4 --
  *
- * Initializes the VM system call handlers. 
+ * Initializes the VM system call handlers.
  *
  * Results:
  *      MMU return status
@@ -60,16 +60,16 @@ start4(char *arg)
     int status;
 
     /* to get user-process access to mailbox functions */
-    systemCallVec[SYS_MBOXCREATE]      = MboxCreate;
-    systemCallVec[SYS_MBOXRELEASE]     = MboxRelease;
-    systemCallVec[SYS_MBOXSEND]        = MboxSend;
-    systemCallVec[SYS_MBOXRECEIVE]     = MboxReceive;
-    systemCallVec[SYS_MBOXCONDSEND]    = MboxCondSend;
-    systemCallVec[SYS_MBOXCONDRECEIVE] = MboxCondReceive;
+    systemCallVec[SYS_MBOXCREATE]      = (void (*) (USLOSS_Sysargs *)) mbox_create;
+    systemCallVec[SYS_MBOXRELEASE]     = (void (*) (USLOSS_Sysargs *)) mbox_release;
+    systemCallVec[SYS_MBOXSEND]        = (void (*) (USLOSS_Sysargs *)) mbox_send;
+    systemCallVec[SYS_MBOXRECEIVE]     = (void (*) (USLOSS_Sysargs *)) mbox_receive;
+    systemCallVec[SYS_MBOXCONDSEND]    = (void (*) (USLOSS_Sysargs *)) mbox_condsend;
+    systemCallVec[SYS_MBOXCONDRECEIVE] = (void (*) (USLOSS_Sysargs *)) mbox_condreceive;
 
     /* user-process access to VM functions */
-    sys_vec[SYS_VMINIT]    = vmInit;
-    sys_vec[SYS_VMDESTROY] = vmDestroy; 
+    systemCallVec[SYS_VMINIT]    = vmInit;
+    systemCallVec[SYS_VMDESTROY] = vmDestroy;
     result = Spawn("Start5", start5, NULL, 8*USLOSS_MIN_STACK, 2, &pid);
     if (result != 0) {
         USLOSS_Console("start4(): Error spawning start5\n");
@@ -155,7 +155,7 @@ vmInitReal(int mappings, int pages, int frames, int pagers)
 
    CheckMode();
    status = USLOSS_MmuInit(mappings, pages, frames, USLOSS_MMU_MODE_TLB);
-   if (status != MMU_OK) {
+   if (status != USLOSS_MMU_OK) {
       USLOSS_Console("vmInitReal: couldn't initialize MMU, status %d\n", status);
       abort();
    }
@@ -165,7 +165,7 @@ vmInitReal(int mappings, int pages, int frames, int pagers)
     * Initialize page tables.
     */
 
-   /* 
+   /*
     * Create the fault mailbox.
     */
 
@@ -241,17 +241,21 @@ vmDestroyReal(void)
 {
 
    CheckMode();
-   USLOSS_MmuDone();
+   int result = USLOSS_MmuDone();
+   if (result != USLOSS_MMU_OK) {
+       USLOSS_Console("vmDestroyReal(): TODO %d\n", status);
+       abort();
+   }
    /*
     * Kill the pagers here.
     */
-   /* 
+   /*
     * Print vm statistics.
     */
    USLOSS_Console("vmStats:\n");
    USLOSS_Console("pages: %d\n", vmStats.pages);
    USLOSS_Console("frames: %d\n", vmStats.frames);
-   USLOSS_Console("blocks: %d\n", vmStats.blocks);
+   USLOSS_Console("blocks: %d\n", vmStats.diskBlocks);
    /* and so on... */
 
 } /* vmDestroyReal */
@@ -275,7 +279,7 @@ vmDestroyReal(void)
  */
 static void
 FaultHandler(int type /* MMU_INT */,
-             int arg  /* Offset within VM region */)
+             void *offset  /* Offset within VM region */)
 {
    int cause;
 
@@ -293,7 +297,7 @@ FaultHandler(int type /* MMU_INT */,
 /*
  *----------------------------------------------------------------------
  *
- * Pager 
+ * Pager
  *
  * Kernel process that handles page faults and does page replacement.
  *
@@ -318,3 +322,22 @@ Pager(char *buf)
     }
     return 0;
 } /* Pager */
+
+void mbox_create(USLOSS_Sysargs *args) {
+
+}
+void mbox_release(USLOSS_Sysargs *args) {
+
+}
+void mbox_send(USLOSS_Sysargs *args) {
+
+}
+void mbox_receive(USLOSS_Sysargs *args) {
+
+}
+void mbox_condsend(USLOSS_Sysargs *args) {
+
+}
+void mbox_condreceive(USLOSS_Sysargs *args) {
+
+}
