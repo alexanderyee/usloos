@@ -348,20 +348,170 @@ Pager(char *buf)
 } /* Pager */
 
 void mbox_create(USLOSS_Sysargs *args) {
+    //check if args are correct
+    int numSlot = args->arg1;
+    int slotSize = args->arg2;
 
+    if(numSlot < 0 || numSlot > MAXSLOTS){
+        args->arg4 = -1;
+        return;
+    }
+
+    if(slotSize < 0 || slotSize > MAX_MESSAGE){
+        args->arg4 = -1;
+        return;
+    }
+
+    args->arg1 = MboxCreate(numSlot, slotSize);
+    return;
 }
+
 void mbox_release(USLOSS_Sysargs *args) {
+    int mboxID = args->arg1;
 
+    //error case
+    if(mboxID < 0 || mboxID > MAXMBOX){
+        args->arg4 = -1;
+        return;
+    }
+
+    args->arg4 = MboxRelease(mboxID);
 }
+
 void mbox_send(USLOSS_Sysargs *args) {
+    int mboxID = args->arg1;
+    void *msgPtr = args->arg2;
+    int msgSize = args->arg3;
 
+    //error case
+    if(mboxID < 0 || mboxID > MAXMBOX){
+        args->arg4 = -1;
+        return;
+    }
+
+    if(msgPtr == NULL){
+        args->arg4 = -1;
+        return;
+    }
+
+    if(msgSize < 0 || msgSize > MAX_MESSAGE){
+        args->arg4 = -1;
+        return;
+    }
+
+    int result = MboxSend(mboxID, msgPtr, msgSize);
+
+    if(result == -1){
+        args->arg4 = -1;
+        return;
+    }
+
+    args->arg4 = 0;
 }
+
 void mbox_receive(USLOSS_Sysargs *args) {
+    int mboxID = args->arg1;
+    void *msgPtr = args->arg2;
+    int msgSize = args->arg3;
 
+    //error case
+    if(mboxID < 0 || mboxID > MAXMBOX){
+        args->arg4 = -1;
+        return;
+    }
+
+    if(msgPtr == NULL){
+        args->arg4 = -1;
+        return;
+    }
+
+    if(msgSize < 0 || msgSize > MAX_MESSAGE){
+        args->arg4 = -1;
+        return;
+    }
+
+    int result = MboxReceive(mboxID, msgPtr, msgSize);
+
+    if(result == -1){
+        args->arg4 = -1;
+        return;
+    }
+
+    args->arg4 = 0;
 }
+
 void mbox_condsend(USLOSS_Sysargs *args) {
+    int mboxID = args->arg1;
+    void *msgPtr = args->arg2;
+    int msgSize = args->arg3;
 
+    //error case
+    if(mboxID < 0 || mboxID > MAXMBOX){
+        args->arg4 = -1;
+        return;
+    }
+
+    if(msgPtr == NULL){
+        args->arg4 = -1;
+        return;
+    }
+
+    if(msgSize < 0 || msgSize > MAX_MESSAGE){
+        args->arg4 = -1;
+        return;
+    }
+
+    int result = MboxCondSend(mboxID, msgPtr, msgSize);
+
+    //case whnen mailbox is invalid, return -1
+    if(result == -1){
+        args->arg4 = -1;
+        return;
+    }
+
+    //case whnen mailbox is full, return 1
+    if(result == 1){
+        args->arg4 = 1;
+        return;
+    }
+
+    args->arg4 = 0;
 }
-void mbox_condreceive(USLOSS_Sysargs *args) {
 
+void mbox_condreceive(USLOSS_Sysargs *args) {
+    int mboxID = args->arg1;
+    void *msgPtr = args->arg2;
+    int msgSize = args->arg3;
+
+    //error case
+    if(mboxID < 0 || mboxID > MAXMBOX){
+        args->arg4 = -1;
+        return;
+    }
+
+    if(msgPtr == NULL){
+        args->arg4 = -1;
+        return;
+    }
+
+    if(msgSize < 0 || msgSize > MAX_MESSAGE){
+        args->arg4 = -1;
+        return;
+    }
+
+    int result = MboxCondReceive(mboxID, msgPtr, msgSize);
+
+    //case whnen mailbox is invalid, return -1
+    if(result == -1){
+        args->arg4 = -1;
+        return;
+    }
+
+    //case whnen mailbox is not available
+    if(result == 1){
+        args->arg4 = 1;
+        return;
+    }
+
+    args->arg4 = 0;
 }
