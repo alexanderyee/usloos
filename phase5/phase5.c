@@ -32,6 +32,7 @@ FaultMsg faults[MAXPROC]; /* Note that a process can have only
                            * and index them by pid. */
 VmStats  vmStats;
 
+int isDebug = 1;
 
 static void FaultHandler(int type, void * offset);
 
@@ -70,6 +71,7 @@ start4(char *arg)
     /* user-process access to VM functions */
     systemCallVec[SYS_VMINIT]    = vmInit;
     systemCallVec[SYS_VMDESTROY] = vmDestroy;
+    systemCallVec[MMU_Init] = mmuInit;
     result = Spawn("Start5", start5, NULL, 8*USLOSS_MIN_STACK, 2, &pid);
     if (result != 0) {
         USLOSS_Console("start4(): Error spawning start5\n");
@@ -88,12 +90,18 @@ start4(char *arg)
 /*
  *----------------------------------------------------------------------
  *
- * VmInit --
+ * VmInit -- interface method for vmInitReal
  *
- * Stub for the VmInit system call.
+ * Input
+ * arg1: number of mappings the MMU should hold
+ * arg2: number of virtual pages to use
+ * arg3: number of physical page frames to use
+ * arg4: number of pager daemons
  *
  * Results:
- *      None.
+ *      arg1: address of the first byte in the VM region
+ *      arg4: -1 if illegal values are given as input; -2 if the VM region has already been
+ *              initialized; 0 otherwise..
  *
  * Side effects:
  *      VM system is initialized.
@@ -101,9 +109,18 @@ start4(char *arg)
  *----------------------------------------------------------------------
  */
 static void
-vmInit(USLOSS_Sysargs *USLOSS_SysargsPtr)
+vmInit(USLOSS_Sysargs *args)
 {
     CheckMode();
+    int firstByteAddy;
+    if (args->arg1 == args->arg2) {
+        args->arg4 = (void *) (long) -1;
+        return;
+    }
+    int status = vmInitReal((int) (long) args->arg1, (int) (long) args->arg2,
+                    (int) (long) args->arg3, (int) (long) args->arg4, &firstByteAddy);
+    args->arg1 = (void *) (long) firstByteAddy;
+
 } /* vmInit */
 
 
@@ -138,9 +155,14 @@ vmDestroy(USLOSS_Sysargs *USLOSS_SysargsPtr)
  * Called by vmInit.
  * Initializes the VM system by configuring the MMU and setting
  * up the page tables.
+ * Initialize the VM region. installs a handler for the MMU_Init interrupt,
+ * creates the pager daemon(s), and calls MMU_Init to initialize the MMU.
+ * When the MMU is initialized the current tag is set to 0. Do not change it.
  *
  * Results:
- *      Address of the VM region.
+ *      Address of the VM region in firstByteAddy.
+        returns: 0 if ok
+                -2 if region already been init
  *
  * Side effects:
  *      The MMU is initialized.
@@ -148,7 +170,7 @@ vmDestroy(USLOSS_Sysargs *USLOSS_SysargsPtr)
  *----------------------------------------------------------------------
  */
 void *
-vmInitReal(int mappings, int pages, int frames, int pagers)
+vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
 {
    int status;
    int dummy;
@@ -281,6 +303,8 @@ static void
 FaultHandler(int type /* MMU_INT */,
              void *offset  /* Offset within VM region */)
 {
+    if (isDebug)
+        USLOSS_Console("FaultHandler() called");
    int cause;
 
    assert(type == USLOSS_MMU_INT);
