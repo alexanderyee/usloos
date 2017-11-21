@@ -349,8 +349,8 @@ Pager(char *buf)
 
 void mbox_create(USLOSS_Sysargs *args) {
     //check if args are correct
-    int numSlot = args->arg1;
-    int slotSize = args->arg2;
+    int numSlot = (int) (long) args->arg1;
+    int slotSize = (int) (long) args->arg2;
 
     if(numSlot < 0 || numSlot > MAXSLOTS){
         args->arg4 = -1;
@@ -367,7 +367,7 @@ void mbox_create(USLOSS_Sysargs *args) {
 }
 
 void mbox_release(USLOSS_Sysargs *args) {
-    int mboxID = args->arg1;
+    int mboxID = (int) (long) args->arg1;
 
     //error case
     if(mboxID < 0 || mboxID > MAXMBOX){
@@ -379,9 +379,9 @@ void mbox_release(USLOSS_Sysargs *args) {
 }
 
 void mbox_send(USLOSS_Sysargs *args) {
-    int mboxID = args->arg1;
-    void *msgPtr = args->arg2;
-    int msgSize = args->arg3;
+    int mboxID = (int) (long) args->arg1;
+    void *msgPtr = (void*) (long) args->arg2;
+    int msgSize = (int) (long) args->arg3;
 
     //error case
     if(mboxID < 0 || mboxID > MAXMBOX){
@@ -410,9 +410,9 @@ void mbox_send(USLOSS_Sysargs *args) {
 }
 
 void mbox_receive(USLOSS_Sysargs *args) {
-    int mboxID = args->arg1;
-    void *msgPtr = args->arg2;
-    int msgSize = args->arg3;
+    int mboxID = (int) (long) args->arg1;
+    void *msgPtr = (void*) (long) args->arg2;
+    int msgSize = (int) (long) args->arg3;
 
     //error case
     if(mboxID < 0 || mboxID > MAXMBOX){
@@ -441,9 +441,9 @@ void mbox_receive(USLOSS_Sysargs *args) {
 }
 
 void mbox_condsend(USLOSS_Sysargs *args) {
-    int mboxID = args->arg1;
-    void *msgPtr = args->arg2;
-    int msgSize = args->arg3;
+    int mboxID = (int) (long) args->arg1;
+    void *msgPtr = (void*) (long) args->arg2;
+    int msgSize = (int) (long) args->arg3;
 
     //error case
     if(mboxID < 0 || mboxID > MAXMBOX){
@@ -479,9 +479,9 @@ void mbox_condsend(USLOSS_Sysargs *args) {
 }
 
 void mbox_condreceive(USLOSS_Sysargs *args) {
-    int mboxID = args->arg1;
-    void *msgPtr = args->arg2;
-    int msgSize = args->arg3;
+    int mboxID = (int) (long) args->arg1;
+    void *msgPtr = (void*) (long) args->arg2;
+    int msgSize = (int) (long) args->arg3;
 
     //error case
     if(mboxID < 0 || mboxID > MAXMBOX){
