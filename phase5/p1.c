@@ -1,5 +1,6 @@
 
 #include "usloss.h"
+#include "usyscall.h"
 #include "phase5.h"
 #include "phase1.h"
 
@@ -22,6 +23,8 @@ p1_fork(int pid)
     if (vmInitFlag) {
         // for simple1.c and incremental impl. purposes
         processes[getpid() % MAXPROC].pid = getpid();
+		processes[getpid() % MAXPROC].pageTable = malloc(vmStats.pages * sizeof(struct PTE));
+		processes[getpid() % MAXPROC].pageTable[0].frame = 0;
     }
 } /* p1_fork */
 

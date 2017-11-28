@@ -2,7 +2,8 @@
  * vm.h
  */
 
-
+#ifndef _VM_H
+#define _VM_H
 /*
  * All processes use the same tag.
  */
@@ -48,3 +49,4 @@ typedef struct FaultMsg {
 } FaultMsg;
 
 #define CheckMode() assert(USLOSS_PsrGet() & USLOSS_PSR_CURRENT_MODE)
+#endif

@@ -24,7 +24,7 @@ extern void mbox_receive(USLOSS_Sysargs *args_ptr);
 extern void mbox_condsend(USLOSS_Sysargs *args_ptr);
 extern void mbox_condreceive(USLOSS_Sysargs *args_ptr);
 
-static Process processes[MAXPROC];
+Process processes[MAXPROC];
 
 FaultMsg faults[MAXPROC]; /* Note that a process can have only
                            * one fault at a time, so we can
@@ -36,7 +36,7 @@ int isDebug = 1;
 int vmInitFlag = 0;
 
 static void FaultHandler(int type, void * offset);
-
+void * vmInitReal(int, int, int, int, int *);
 static void vmInit(USLOSS_Sysargs *USLOSS_SysargsPtr);
 static void vmDestroy(USLOSS_Sysargs *USLOSS_SysargsPtr);
 /*
@@ -72,7 +72,6 @@ start4(char *arg)
     /* user-process access to VM functions */
     systemCallVec[SYS_VMINIT]    = vmInit;
     systemCallVec[SYS_VMDESTROY] = vmDestroy;
-    systemCallVec[MMU_Init] = mmuInit;
     result = Spawn("Start5", start5, NULL, 8*USLOSS_MIN_STACK, 2, &pid);
     if (result != 0) {
         USLOSS_Console("start4(): Error spawning start5\n");
@@ -174,7 +173,6 @@ void *
 vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
 {
    int status;
-   int dummy;
 
    CheckMode();
    status = USLOSS_MmuInit(mappings, pages, frames, USLOSS_MMU_MODE_TLB);
@@ -206,7 +204,7 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
     * Initialize other vmStats fields.
     */
 
-   return USLOSS_MmuRegion(&dummy);
+   return USLOSS_MmuRegion(firstByteAddy);
 } /* vmInitReal */
 
 
@@ -266,7 +264,7 @@ vmDestroyReal(void)
    CheckMode();
    int result = USLOSS_MmuDone();
    if (result != USLOSS_MMU_OK) {
-       USLOSS_Console("vmDestroyReal(): TODO %d\n", status);
+       USLOSS_Console("vmDestroyReal(): TODO %d\n", result);
        abort();
    }
    /*
