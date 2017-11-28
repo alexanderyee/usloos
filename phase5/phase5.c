@@ -33,6 +33,7 @@ FaultMsg faults[MAXPROC]; /* Note that a process can have only
 VmStats  vmStats;
 
 int isDebug = 1;
+int vmInitFlag = 0;
 
 static void FaultHandler(int type, void * offset);
 
@@ -120,7 +121,7 @@ vmInit(USLOSS_Sysargs *args)
     int status = vmInitReal((int) (long) args->arg1, (int) (long) args->arg2,
                     (int) (long) args->arg3, (int) (long) args->arg4, &firstByteAddy);
     args->arg1 = (void *) (long) firstByteAddy;
-
+    vmInitFlag = 1;
 } /* vmInit */
 
 

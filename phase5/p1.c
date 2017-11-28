@@ -1,13 +1,28 @@
 
 #include "usloss.h"
+#include "phase5.h"
+#include "phase1.h"
+
 #define DEBUG 0
 extern int debugflag;
 
+
+/*
+ * malloc the page table for the process. if VmInit hasn't been called, then
+ * don't do anything.
+ */
 void
 p1_fork(int pid)
 {
     if (DEBUG && debugflag)
         USLOSS_Console("p1_fork() called: pid = %d\n", pid);
+
+    // init proc in our proc table
+
+    if (vmInitFlag) {
+        // for simple1.c and incremental impl. purposes
+        processes[getpid() % MAXPROC].pid = getpid();
+    }
 } /* p1_fork */
 
 void
@@ -23,4 +38,3 @@ p1_quit(int pid)
     if (DEBUG && debugflag)
         USLOSS_Console("p1_quit() called: pid = %d\n", pid);
 } /* p1_quit */
-
