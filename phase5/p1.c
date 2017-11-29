@@ -33,6 +33,11 @@ p1_switch(int old, int new)
 {
     if (DEBUG && debugflag)
         USLOSS_Console("p1_switch() called: old = %d, new = %d\n", old, new);
+    int result = USLOSS_MmuMap(0, 0, 0, USLOSS_MMU_PROT_RW);
+    // for now, have this mapping. 
+    if (result && vmInitFlag) {
+        USLOSS_Console("p1_switch(): mapping error, status code: %d\n", result);
+    }
 } /* p1_switch */
 
 void
