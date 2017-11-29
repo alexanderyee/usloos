@@ -309,7 +309,7 @@ FaultHandler(int type /* MMU_INT */,
              void *offset  /* Offset within VM region */)
 {
     if (isDebug)
-        USLOSS_Console("FaultHandler() called"\n);
+        USLOSS_Console("FaultHandler() called\n");
     int cause, result;
 
     assert(type == USLOSS_MMU_INT);
