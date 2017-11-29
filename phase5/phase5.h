@@ -46,6 +46,12 @@ extern VmStats	vmStats;
 extern int  start5(char *);
 extern int vmInitFlag;
 extern Process processes[MAXPROC];
+extern int VmInit(int mappings, int pages, int frames, int pagers, void **region); 
+extern int VmDestroy(void);
+extern int  SemCreate(int init_value, int *);
+extern int  SemP(int semaphore);
+extern int  SemV(int semaphore);
+extern int  GetPID(int *pid);
 //extern void PrintStats();
 
 #endif /* _PHASE5_H */
