@@ -17,12 +17,12 @@
 #include <vm.h>
 #include <string.h>
 
-extern void mbox_create(USLOSS_Sysargs *args_ptr);
-extern void mbox_release(USLOSS_Sysargs *args_ptr);
-extern void mbox_send(USLOSS_Sysargs *args_ptr);
-extern void mbox_receive(USLOSS_Sysargs *args_ptr);
-extern void mbox_condsend(USLOSS_Sysargs *args_ptr);
-extern void mbox_condreceive(USLOSS_Sysargs *args_ptr);
+extern void mbox_create_real(USLOSS_Sysargs *args_ptr);
+extern void mbox_release_real(USLOSS_Sysargs *args_ptr);
+extern void mbox_send_real(USLOSS_Sysargs *args_ptr);
+extern void mbox_receive_real(USLOSS_Sysargs *args_ptr);
+extern void mbox_condsend_real(USLOSS_Sysargs *args_ptr);
+extern void mbox_condreceive_real(USLOSS_Sysargs *args_ptr);
 
 Process processes[MAXPROC];
 
@@ -62,12 +62,12 @@ start4(char *arg)
     int status;
 
     /* to get user-process access to mailbox functions */
-    systemCallVec[SYS_MBOXCREATE]      = (void (*) (USLOSS_Sysargs *)) mbox_create;
-    systemCallVec[SYS_MBOXRELEASE]     = (void (*) (USLOSS_Sysargs *)) mbox_release;
-    systemCallVec[SYS_MBOXSEND]        = (void (*) (USLOSS_Sysargs *)) mbox_send;
-    systemCallVec[SYS_MBOXRECEIVE]     = (void (*) (USLOSS_Sysargs *)) mbox_receive;
-    systemCallVec[SYS_MBOXCONDSEND]    = (void (*) (USLOSS_Sysargs *)) mbox_condsend;
-    systemCallVec[SYS_MBOXCONDRECEIVE] = (void (*) (USLOSS_Sysargs *)) mbox_condreceive;
+    systemCallVec[SYS_MBOXCREATE]      = (void (*) (USLOSS_Sysargs *)) mbox_create_real;
+    systemCallVec[SYS_MBOXRELEASE]     = (void (*) (USLOSS_Sysargs *)) mbox_release_real;
+    systemCallVec[SYS_MBOXSEND]        = (void (*) (USLOSS_Sysargs *)) mbox_send_real;
+    systemCallVec[SYS_MBOXRECEIVE]     = (void (*) (USLOSS_Sysargs *)) mbox_receive_real;
+    systemCallVec[SYS_MBOXCONDSEND]    = (void (*) (USLOSS_Sysargs *)) mbox_condsend_real;
+    systemCallVec[SYS_MBOXCONDRECEIVE] = (void (*) (USLOSS_Sysargs *)) mbox_condreceive_real;
 
     /* user-process access to VM functions */
     systemCallVec[SYS_VMINIT]    = vmInit;
@@ -346,7 +346,7 @@ Pager(char *buf)
     return 0;
 } /* Pager */
 
-void mbox_create(USLOSS_Sysargs *args) {
+void mbox_create_real(USLOSS_Sysargs *args) {
     //check if args are correct
     int numSlot = (int) (long) args->arg1;
     int slotSize = (int) (long) args->arg2;
@@ -365,7 +365,7 @@ void mbox_create(USLOSS_Sysargs *args) {
     return;
 }
 
-void mbox_release(USLOSS_Sysargs *args) {
+void mbox_release_real(USLOSS_Sysargs *args) {
     int mboxID = (int) (long) args->arg1;
 
     //error case
@@ -377,7 +377,7 @@ void mbox_release(USLOSS_Sysargs *args) {
     args->arg4 = (void *)(long) MboxRelease(mboxID);
 }
 
-void mbox_send(USLOSS_Sysargs *args) {
+void mbox_send_real(USLOSS_Sysargs *args) {
     int mboxID = (int) (long) args->arg1;
     void *msgPtr = (void*) (long) args->arg2;
     int msgSize = (int) (long) args->arg3;
@@ -408,7 +408,7 @@ void mbox_send(USLOSS_Sysargs *args) {
     args->arg4 = (void *)(long) 0;
 }
 
-void mbox_receive(USLOSS_Sysargs *args) {
+void mbox_receive_real(USLOSS_Sysargs *args) {
     int mboxID = (int) (long) args->arg1;
     void *msgPtr = (void*) (long) args->arg2;
     int msgSize = (int) (long) args->arg3;
@@ -439,7 +439,7 @@ void mbox_receive(USLOSS_Sysargs *args) {
     args->arg4 = (void *)(long) 0;
 }
 
-void mbox_condsend(USLOSS_Sysargs *args) {
+void mbox_condsend_real(USLOSS_Sysargs *args) {
     int mboxID = (int) (long) args->arg1;
     void *msgPtr = (void*) (long) args->arg2;
     int msgSize = (int) (long) args->arg3;
@@ -477,7 +477,7 @@ void mbox_condsend(USLOSS_Sysargs *args) {
     args->arg4 = (void *)(long) 0;
 }
 
-void mbox_condreceive(USLOSS_Sysargs *args) {
+void mbox_condreceive_real(USLOSS_Sysargs *args) {
     int mboxID = (int) (long) args->arg1;
     void *msgPtr = (void*) (long) args->arg2;
     int msgSize = (int) (long) args->arg3;
