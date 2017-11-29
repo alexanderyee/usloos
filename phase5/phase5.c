@@ -210,7 +210,7 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
     * Initialize other vmStats fields.
     */
     *firstByteAddy = USLOSS_MmuRegion(&numPages);
-   return;
+    return;
 } /* vmInitReal */
 
 
@@ -310,16 +310,26 @@ FaultHandler(int type /* MMU_INT */,
 {
     if (isDebug)
         USLOSS_Console("FaultHandler() called");
-   int cause;
+    int cause;
 
-   assert(type == USLOSS_MMU_INT);
-   cause = USLOSS_MmuGetCause();
-   assert(cause == USLOSS_MMU_FAULT);
-   vmStats.faults++;
-   /*
-    * Fill in faults[pid % MAXPROC], send it to the pagers, and wait for the
-    * reply.
-    */
+    assert(type == USLOSS_MMU_INT);
+    cause = USLOSS_MmuGetCause();
+    assert(cause == USLOSS_MMU_FAULT);
+    vmStats.faults++;
+    /*
+     * Fill in faults[pid % MAXPROC], send it to the pagers, and wait for the
+     * reply.
+     */
+    faults[getpid() % MAXPROC].pid = getpid();
+    faults[getpid() % MAXPROC].addr = offset;
+    faults[getpid() % MAXPROC].replyMbox = processes[getpid() % MAXPROC].mboxID;
+    // for now, just map 0 to 0
+    processes[getpid() % MAXPROC].pageTable[0].frame = 0;
+    processes[getpid() % MAXPROC].pageTable[0].state = INCORE;
+    processes[getpid() % MAXPROC].pageTable[0].diskBlock = -1;
+    result = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
+
+    //mbox_receive_real(mboxID, 0, 0);
 } /* FaultHandler */
 
 
