@@ -178,7 +178,7 @@ vmDestroy(USLOSS_Sysargs *USLOSS_SysargsPtr)
 void *
 vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
 {
-   int status;
+   int status, numPages;
 
    CheckMode();
    status = USLOSS_MmuInit(mappings, pages, frames, USLOSS_MMU_MODE_TLB);
@@ -209,8 +209,8 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
    /*
     * Initialize other vmStats fields.
     */
-
-   return USLOSS_MmuRegion(firstByteAddy);
+    firstByteAddy = USLOSS_MmuRegion(&numPages);
+   return;
 } /* vmInitReal */
 
 
