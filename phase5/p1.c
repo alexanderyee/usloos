@@ -37,6 +37,13 @@ p1_switch(int old, int new)
     if (vmInitFlag) {
         // unmap current proc stuff, map the new process
         int i, framePtr, protPtr, result;
+        //null checks
+        /*
+        if(processes[old % MAXPROC].pageTable == NULL){
+            USLOSS_Console("p1_switch(): null pageTable:\n");
+            return;
+        }
+        */
         PTE *currPT = processes[old % MAXPROC].pageTable;
         for (i = 0; i < vmStats.pages; i++) {
             if (USLOSS_MmuGetMap(TAG, i, &framePtr, &protPtr) != USLOSS_MMU_ERR_NOMAP) {
@@ -47,6 +54,11 @@ p1_switch(int old, int new)
             }
         }
         // map stuff of new proc
+        //null checks firrst
+        if(processes[new % MAXPROC].pageTable == NULL){
+            USLOSS_Console("p1_switch(): null pageTable:\n");
+            return;
+        }
         currPT = processes[new % MAXPROC].pageTable;
         for (i = 0; i < vmStats.pages; i++) {
             if (currPT[i].state == INCORE) {
