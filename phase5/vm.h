@@ -2,7 +2,8 @@
  * vm.h
  */
 
-
+#ifndef _VM_H
+#define _VM_H
 /*
  * All processes use the same tag.
  */
@@ -30,6 +31,7 @@ typedef struct PTE {
  * Per-process information.
  */
 typedef struct Process {
+    int  pid;
     int  numPages;   // Size of the page table.
     PTE  *pageTable; // The page table for the process.
     // Add more stuff here */
@@ -47,3 +49,4 @@ typedef struct FaultMsg {
 } FaultMsg;
 
 #define CheckMode() assert(USLOSS_PsrGet() & USLOSS_PSR_CURRENT_MODE)
+#endif

@@ -1,0 +1,39 @@
+memcpy causes the page fault when vmregion isn't mapped. pager kicks in:
+checks what interrupt says (what page was it?) Do I have an empty frame? Map it.
+child is blocked in the meantime by pager through the interrupt handler.
+ when things are mapped, pager wakes child, child will try memcpy again.
+
+p1_fork
+malloc the page table for the process
+need a way for p1.c to figure out if vminit was called (and thus virtual mem applies to that proc)
+-debug print stmt helps
+
+p1_quit
+unmaps the mappings
+make the spot on the disk available to use
+
+zero out the frame before you use it
+ask if its in mem
+ask if its on disk
+
+proc a gets frame 3
+say another process b comes along, all frames are taken.
+pick a frame, say frame 3, put it on disk (remember where you put it), zero it, give it to proc b
+later proc a tries to access that frame 3, looks in its page table (no frame is assigned)
+    -but it's on disk. find a frame (zero it too), get the data back by reading
+    from disk and put it into that frame. map it, and give that frame to proc a
+    -remember to change access bits by using mmusetaccess (ref/dirty)
+    -a frame is clean if it's been written and hasn't been changed
+        -we wanna pick these frames to kick out. (frames that match contents on disk).
+        use getaccess
+    -subtle difference between referenced and clean/dirty. these two things are
+    what to look for when deciding which page to kick out. it can still be clean
+    if it's been referenced but never written to (no changes needed on disk for a bunch of 0's)
+if there are no available pages, use clock algorithm to kick someone out and write the page to disk
+
+it'd be useful to have a debug print/dump of page tables and frame table
+
+loading a frame: pager has a mapping from its page 0 to the frame it's loading.
+                 from there, disk write
+
+tag == 0 (doesn't matter)
