@@ -27,7 +27,7 @@ p1_fork(int pid)
 		printf("2\n");
 		processes[getpid() % MAXPROC].pageTable = malloc(vmStats.pages * sizeof(struct PTE));
        	printf("3\n");
-		processes[getpid() % MAXPROC].mboxID = mbox_create_real(0);
+		processes[getpid() % MAXPROC].mboxID = MboxCreate(0, 0);
     	printf("4\n");
 	}
 } /* p1_fork */
