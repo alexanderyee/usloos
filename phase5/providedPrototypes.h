@@ -12,13 +12,13 @@ extern int  spawnReal(char *name, int (*func)(char *), char *arg,
                        int stack_size, int priority);
 extern int  waitReal(int *status);
 extern void terminateReal(int exit_code);
-extern int  semcreateReal(int init_value);
-extern int  sempReal(int semaphore);
-extern int  semvReal(int semaphore);
+extern int  SemCreate(int init_value);
+extern int  SemP(int semaphore);
+extern int  SemV(int semaphore);
 extern int  semfreeReal(int semaphore);
 extern int  gettimeofdayReal(int *time);
 extern int  cputimeReal(int *time);
-extern int  getPID_real(int *pid);
+extern int  GetPID(int *pid);
 
 extern int  diskSizeReal (int unit, int *sectorSize, int *trackSize,
                           int *diskSize);
