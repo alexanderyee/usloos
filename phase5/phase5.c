@@ -209,8 +209,8 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
    /*
     * Initialize other vmStats fields.
     */
-    firstByteAddy = USLOSS_MmuRegion(&numPages);
-   return;
+    *firstByteAddy = USLOSS_MmuRegion(&numPages);
+    return;
 } /* vmInitReal */
 
 
@@ -310,16 +310,18 @@ FaultHandler(int type /* MMU_INT */,
 {
     if (isDebug)
         USLOSS_Console("FaultHandler() called");
-   int cause;
+    int cause;
 
-   assert(type == USLOSS_MMU_INT);
-   cause = USLOSS_MmuGetCause();
-   assert(cause == USLOSS_MMU_FAULT);
-   vmStats.faults++;
-   /*
-    * Fill in faults[pid % MAXPROC], send it to the pagers, and wait for the
-    * reply.
-    */
+    assert(type == USLOSS_MMU_INT);
+    cause = USLOSS_MmuGetCause();
+    assert(cause == USLOSS_MMU_FAULT);
+    vmStats.faults++;
+    /*
+     * Fill in faults[pid % MAXPROC], send it to the pagers, and wait for the
+     * reply.
+     */
+    faults[getpid() % MAXPROC].pid = getpid();
+    faults[getpid() % MAXPROC].addr = offset;
 } /* FaultHandler */
 
 
