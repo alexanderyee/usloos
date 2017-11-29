@@ -119,6 +119,7 @@ vmInit(USLOSS_Sysargs *args)
     }
     else if (vmInitFlag) {
         args->arg4 = (void *) (long) -2;
+		return;
     }
     int status = vmInitReal((int) (long) args->arg1, (int) (long) args->arg2,
                     (int) (long) args->arg3, (int) (long) args->arg4, &firstByteAddy);
