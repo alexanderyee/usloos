@@ -113,7 +113,8 @@ vmInit(USLOSS_Sysargs *args)
 {
     CheckMode();
     int firstByteAddy;
-    if (args->arg1 == args->arg2) {
+    if (args->arg1 != args->arg2) {
+        USLOSS_Console("vmInit(): Number of mappings does not equal number of virtual pages!\n")
         args->arg4 = (void *) (long) -1;
         return;
     }
