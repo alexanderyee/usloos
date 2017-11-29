@@ -310,7 +310,7 @@ FaultHandler(int type /* MMU_INT */,
 {
     if (isDebug)
         USLOSS_Console("FaultHandler() called");
-    int cause;
+    int cause, result;
 
     assert(type == USLOSS_MMU_INT);
     cause = USLOSS_MmuGetCause();

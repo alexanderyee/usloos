@@ -14,17 +14,22 @@ extern int debugflag;
 void
 p1_fork(int pid)
 {
-    if (DEBUG && debugflag)
+	// change later lol
+    if (DEBUG)
         USLOSS_Console("p1_fork() called: pid = %d\n", pid);
 
     // init proc in our proc table
 
     if (vmInitFlag) {
         // for simple1.c and incremental impl. purposes
-        processes[getpid() % MAXPROC].pid = getpid();
+        printf("1\n");
+		processes[getpid() % MAXPROC].pid = getpid();
+		printf("2\n");
 		processes[getpid() % MAXPROC].pageTable = malloc(vmStats.pages * sizeof(struct PTE));
-        processes[getpid() % MAXPROC].mboxID = mbox_create_real(0);
-    }
+       	printf("3\n");
+		processes[getpid() % MAXPROC].mboxID = mbox_create_real(0);
+    	printf("4\n");
+	}
 } /* p1_fork */
 
 void
