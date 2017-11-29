@@ -309,25 +309,38 @@ FaultHandler(int type /* MMU_INT */,
              void *offset  /* Offset within VM region */)
 {
     if (isDebug)
-        USLOSS_Console("FaultHandler() called");
+        USLOSS_Console("FaultHandler() called"\n);
     int cause, result;
 
     assert(type == USLOSS_MMU_INT);
+    printf("1\n");
     cause = USLOSS_MmuGetCause();
+    printf("2\n");
     assert(cause == USLOSS_MMU_FAULT);
+    printf("3\n");
     vmStats.faults++;
+
     /*
      * Fill in faults[pid % MAXPROC], send it to the pagers, and wait for the
      * reply.
      */
+     printf("4\n");
     faults[getpid() % MAXPROC].pid = getpid();
+    printf("5\n");
     faults[getpid() % MAXPROC].addr = offset;
+    printf("6\n");
     faults[getpid() % MAXPROC].replyMbox = processes[getpid() % MAXPROC].mboxID;
+    printf("7\n");
+
     // for now, just map 0 to 0
     processes[getpid() % MAXPROC].pageTable[0].frame = 0;
+    printf("8\n");
     processes[getpid() % MAXPROC].pageTable[0].state = INCORE;
+    printf("9\n");
     processes[getpid() % MAXPROC].pageTable[0].diskBlock = -1;
+    printf("10\n");
     result = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
+    printf("11\n");
 
     //mbox_receive_real(mboxID, 0, 0);
 } /* FaultHandler */
