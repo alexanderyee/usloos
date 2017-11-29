@@ -48,5 +48,10 @@ typedef struct FaultMsg {
     // Add more stuff here.
 } FaultMsg;
 
+typedef struct Frame {
+    int fid;    // frame id
+    int status; // whether or not is in on disk or empty
+    int isRef;  
+} Frame;
 #define CheckMode() assert(USLOSS_PsrGet() & USLOSS_PSR_CURRENT_MODE)
 #endif

@@ -34,7 +34,7 @@ VmStats  vmStats;
 void *vmRegion;
 int isDebug = 1;
 int vmInitFlag = 0;
-
+Frame *frameTable;
 static void FaultHandler(int type, void * offset);
 void * vmInitReal(int, int, int, int, int *);
 static void vmInit(USLOSS_Sysargs *USLOSS_SysargsPtr);
@@ -187,7 +187,7 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
       abort();
    }
    USLOSS_IntVec[USLOSS_MMU_INT] = FaultHandler;
-
+   frameTable = malloc(frames * sizeof(Frame));
    /*
     * Initialize page tables.
     */

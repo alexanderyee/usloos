@@ -33,10 +33,23 @@ p1_switch(int old, int new)
 {
     if (DEBUG && debugflag)
         USLOSS_Console("p1_switch() called: old = %d, new = %d\n", old, new);
-    int result = USLOSS_MmuMap(0, 0, 0, USLOSS_MMU_PROT_RW);
-    // for now, have this mapping. 
-    if (result && vmInitFlag) {
-        USLOSS_Console("p1_switch(): mapping error, status code: %d\n", result);
+    if (vmInitFlag) {
+        // unmap current proc stuff, map the new process
+        PTE *currPT = processes[getpid() % MAXPROC].pageTable;
+        int i, framePtr, protPtr, result;
+        for (i = 0; i < vmStats.pages; i++) {
+            if (USLOSS_MmuGetMap(TAG, i, &framePtr, &protPtr) != USLOSS_MMU_ERR_NOMAP) {
+                result = USLOSS_MmuUnmap(TAG, i);
+                if (result) {
+                    USLOSS_Console("p1_switch(): unmapping error, status code: %d\n", result);
+                }
+            }
+        }
+        result = USLOSS_MmuMap(0, 0, 0, USLOSS_MMU_PROT_RW);
+        // for now, have this mapping.
+        if (result) {
+            USLOSS_Console("p1_switch(): mapping error, status code: %d\n", result);
+        }
     }
 } /* p1_switch */
 
