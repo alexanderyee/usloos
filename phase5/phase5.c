@@ -209,7 +209,7 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
    /*
     * Initialize other vmStats fields.
     */
-    firstByteAddy = USLOSS_MmuRegion(&numPages);
+    *firstByteAddy = USLOSS_MmuRegion(&numPages);
    return;
 } /* vmInitReal */
 
