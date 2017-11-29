@@ -1,0 +1,12 @@
+start5(): Running:    simple1
+start5(): Pagers:     1
+          Mappings:   1
+          Pages:      1
+          Frames:     1
+          Children:   1
+          Iterations: 1
+          Priority:   5
+start5(): after call to VmInit, status = -1
+
+simple1: testcases/simple1.c:102: start5: Assertion `status == 0' failed.
+testphase5.ksh: line 27: 11463: Abort(coredump)
