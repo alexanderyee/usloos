@@ -4,9 +4,8 @@
 #include "phase5.h"
 #include "phase1.h"
 
-#define DEBUG 0
+#define DEBUG 1
 extern int debugflag;
-
 
 /*
  * malloc the page table for the process. if VmInit hasn't been called, then
@@ -31,7 +30,8 @@ p1_fork(int pid)
 void
 p1_switch(int old, int new)
 {
-    if (DEBUG && debugflag)
+	// change later lol
+    if (DEBUG)
         USLOSS_Console("p1_switch() called: old = %d, new = %d\n", old, new);
     if (vmInitFlag) {
         // unmap current proc stuff, map the new process
