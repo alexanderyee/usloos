@@ -125,7 +125,7 @@ vmInit(USLOSS_Sysargs *args)
     }
 	else if (args->arg4 >= MAXPAGERS) {
         USLOSS_Console("vmInit(): Too many pagers!\n");
-        args->arg4 = (void *) (long) -1; 
+        args->arg4 = (void *) (long) -1;
         return;
     }
     else if (vmInitFlag) {
@@ -162,7 +162,7 @@ static void
 vmDestroy(USLOSS_Sysargs *USLOSS_SysargsPtr)
 {
     CheckMode();
-	vmDestroyReal();	
+	vmDestroyReal();
 } /* vmDestroy */
 
 
@@ -214,19 +214,25 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
     */
 	status = SemCreate(0, &runningSem);
 	for (i = 0; i < pagers; i++) {
+        char arg[1], procName[6];
+        sprintf(arg, "%d", i);
+        sprintf(procName, "Pager%d", i);
 		// TODO how much stack space is required for pager??
-		status = fork1("Pager", Pager, NULL, 2 * USLOSS_MIN_STACK, PAGER_PRIORITY);
+		status = fork1(procName, Pager, arg, 2 * USLOSS_MIN_STACK, PAGER_PRIORITY);
 		status = SemP(runningSem);
     }
 	/*
     * Zero out, then initialize, the vmStats structure
     */
-   memset((char *) &vmStats, 0, sizeof(VmStats));
-   vmStats.pages = pages;
-   vmStats.frames = frames;
-   /*
-    * Initialize other vmStats fields.
-    */
+    int sectorSize, numSectors, numTracks;
+    status = DiskSize(1, &sectorSize, &numSectors, &numTracks)
+    memset((char *) &vmStats, 0, sizeof(VmStats));
+    vmStats.pages = pages;
+    vmStats.frames = frames;
+    vmStats.diskBlocks = (int) ((sectorSize * numSectors * numTracks) / USLOSS_MmuPageSize());
+    vmStats.freeFrames = frames;
+    vmStats.freeDiskBlocks = vmStats.diskBlocks;
+
     *firstByteAddy = USLOSS_MmuRegion(&numPages);
     return;
 } /* vmInitReal */
@@ -310,17 +316,14 @@ vmDestroyReal(void)
 	for (i = 0; i < numPagers; i++) {
 		//mbox send to pagers to unblock them
         status = MboxSend(faultMboxID, dummyMsg, sizeof(int));
-		
-	} 		
+
+	}
     /*
      * Print vm statistics.
      */
-    USLOSS_Console("vmStats:\n");
-    USLOSS_Console("pages: %d\n", vmStats.pages);
-    USLOSS_Console("frames: %d\n", vmStats.frames);
-    USLOSS_Console("blocks: %d\n", vmStats.diskBlocks);
+    PrintStats();
     /* and so on... */
-
+    vmInitFlag = 0;
 } /* vmDestroyReal */
 
 /*
@@ -349,34 +352,27 @@ FaultHandler(int type /* MMU_INT */,
     int cause, result;
 
     assert(type == USLOSS_MMU_INT);
-    printf("1\n");
     cause = USLOSS_MmuGetCause();
-    printf("2\n");
     assert(cause == USLOSS_MMU_FAULT);
-    printf("3\n");
     vmStats.faults++;
 	vmStats.new++;
     /*
      * Fill in faults[pid % MAXPROC], send it to the pagers, and wait for the
      * reply.
      */
-    printf("4\n");
     faults[getpid() % MAXPROC].pid = getpid();
-    printf("5\n");
     faults[getpid() % MAXPROC].addr = offset;
-    printf("6\n");
-    faults[getpid() % MAXPROC].replyMbox = processes[getpid() % MAXPROC].mboxID;
-    printf("7%d\n", getpid());
+    result = MboxCreate(1, sizeof(int));
+    faults[getpid() % MAXPROC].replyMbox = result;
 
+    int pidMsg = getpid();
+    MboxSend(faultMboxID, (void *) &pidMsg, sizeof(int));
+    MboxReceive(result, (void *) &pidMsg, sizeof(int));
     // for now, just map 0 to 0
-    processes[getpid() % MAXPROC].pageTable[0].frame = 0;
-    printf("8\n");
+    processes[getpid() % MAXPROC].pageTable[].frame = pidMsg;
     processes[getpid() % MAXPROC].pageTable[0].state = INCORE;
-    printf("9\n");
     processes[getpid() % MAXPROC].pageTable[0].diskBlock = -1;
-    printf("10\n");
     result = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
-    printf("11\n");
 
     //mbox_receive_real(mboxID, 0, 0);
 } /* FaultHandler */
@@ -400,28 +396,37 @@ static int
 Pager(char *buf)
 {
 	int result;
-	void *dummyMsgPtr = malloc(sizeof(int));
+	void *msgPtr = malloc(sizeof(int));
 	SemV(runningSem);
     while(1) {
 		/* Wait for fault to occur (receive from mailbox) */
-		MboxReceive(faultMboxID, dummyMsgPtr, sizeof(int));
+		MboxReceive(faultMboxID, msgPtr, sizeof(int));
 		if (isDebug) {
 			USLOSS_Console("Pager%s received from faultMbox\n", buf);
 		}
 		// check to quit
-		if (*((int *) dummyMsgPtr) == -1) {
+		if (*((int *) msgPtr) == -1) {
 			if (isDebug) {
             	USLOSS_Console("Pager%s quitting...\n", buf);
         	}
 			break;
-		}	 
+		}
+        int faultedPid = (int) (long) msgPtr;
+        PTE *currentPT = processes[faultedPid % MAXPROC].pageTable;
         /* Look for free frame */
+        int i;
+        for (i = 0; i < vmStats.frames; i++) {
+            if (frameTable[i].status == EMPTY) {
+                currentPT[faults[faultedPid % MAXPROC]]
+                break;
+            }
+        }
         /* If there isn't one then use clock algorithm to
          * replace a page (perhaps write to disk) */
         /* Load page into frame from disk, if necessary */
         /* Unblock waiting (faulting) process */
     }
-	free(dummyMsgPtr);
+	free(msgPtr);
     return 0;
 } /* Pager */
 

@@ -68,6 +68,7 @@ p1_switch(int old, int new)
                 }
             }
         }
+        vmStats.switches++;
     }
 } /* p1_switch */
 

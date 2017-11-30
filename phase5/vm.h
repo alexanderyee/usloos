@@ -16,6 +16,16 @@
 #define INCORE 501
 /* You'll probably want more states */
 
+/*
+ * Different states for a frame.
+ */
+#define EMPTY 69
+#define IN_MEM 70
+#define ON_DISK 71
+#define CLEAN 72
+#define DIRTY 73
+#define REFD 74
+#define UNREFD 75
 
 /*
  * Page table entry.
