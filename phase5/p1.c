@@ -56,7 +56,6 @@ p1_switch(int old, int new)
         // map stuff of new proc
         //null checks firrst
         if(processes[new % MAXPROC].pageTable == NULL){
-            USLOSS_Console("p1_switch(): null pageTable:\n");
             return;
         }
         currPT = processes[new % MAXPROC].pageTable;
