@@ -32,9 +32,14 @@ FaultMsg faults[MAXPROC]; /* Note that a process can have only
                            * and index them by pid. */
 VmStats  vmStats;
 void *vmRegion;
-int isDebug = 1;
+int isDebug = 0;
 int vmInitFlag = 0;
+int *pagerPids;
+int numPagers = 0;
+int faultMboxID;
+int runningSem;
 Frame *frameTable;
+
 static void FaultHandler(int type, void * offset);
 void * vmInitReal(int, int, int, int, int *);
 static void vmInit(USLOSS_Sysargs *USLOSS_SysargsPtr);
@@ -118,15 +123,22 @@ vmInit(USLOSS_Sysargs *args)
         args->arg4 = (void *) (long) -1;
         return;
     }
+	else if (args->arg4 >= MAXPAGERS) {
+        USLOSS_Console("vmInit(): Too many pagers!\n");
+        args->arg4 = (void *) (long) -1; 
+        return;
+    }
     else if (vmInitFlag) {
         args->arg4 = (void *) (long) -2;
 		return;
     }
-    int status = vmInitReal((int) (long) args->arg1, (int) (long) args->arg2,
+	else {
+    	int status = vmInitReal((int) (long) args->arg1, (int) (long) args->arg2,
                     (int) (long) args->arg3, (int) (long) args->arg4, &firstByteAddy);
-    args->arg1 = (void *) (long) firstByteAddy;
-    args->arg4 = (void *) (long) 0;
-    vmInitFlag = 1;
+    	args->arg1 = (void *) (long) firstByteAddy;
+    	args->arg4 = (void *) (long) 0;
+    	vmInitFlag = 1;
+	}
 } /* vmInit */
 
 
@@ -149,7 +161,8 @@ vmInit(USLOSS_Sysargs *args)
 static void
 vmDestroy(USLOSS_Sysargs *USLOSS_SysargsPtr)
 {
-   CheckMode();
+    CheckMode();
+	vmDestroyReal();	
 } /* vmDestroy */
 
 
@@ -178,7 +191,7 @@ vmDestroy(USLOSS_Sysargs *USLOSS_SysargsPtr)
 void *
 vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
 {
-   int status, numPages;
+   int status, numPages, i;
 
    CheckMode();
    status = USLOSS_MmuInit(mappings, pages, frames, USLOSS_MMU_MODE_TLB);
@@ -191,16 +204,21 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
    /*
     * Initialize page tables.
     */
-
+	// this is done in p1_fork
    /*
     * Create the fault mailbox.
     */
-
+	faultMboxID = MboxCreate(0, sizeof(int));
    /*
     * Fork the pagers.
     */
-
-   /*
+	status = SemCreate(0, &runningSem);
+	for (i = 0; i < pagers; i++) {
+		// TODO how much stack space is required for pager??
+		status = fork1("Pager", Pager, NULL, 2 * USLOSS_MIN_STACK, PAGER_PRIORITY);
+		status = SemP(runningSem);
+    }
+	/*
     * Zero out, then initialize, the vmStats structure
     */
    memset((char *) &vmStats, 0, sizeof(VmStats));
@@ -267,26 +285,44 @@ void
 vmDestroyReal(void)
 {
 
-   CheckMode();
-   int result = USLOSS_MmuDone();
-   if (result != USLOSS_MMU_OK) {
-       USLOSS_Console("vmDestroyReal(): TODO %d\n", result);
-       abort();
-   }
-   /*
-    * Kill the pagers here.
-    */
-   /*
-    * Print vm statistics.
-    */
-   USLOSS_Console("vmStats:\n");
-   USLOSS_Console("pages: %d\n", vmStats.pages);
-   USLOSS_Console("frames: %d\n", vmStats.frames);
-   USLOSS_Console("blocks: %d\n", vmStats.diskBlocks);
-   /* and so on... */
+    CheckMode();
+    int i, status;
+	int result = USLOSS_MmuDone();
+    if (result != USLOSS_MMU_OK) {
+        USLOSS_Console("vmDestroyReal(): TODO %d\n", result);
+        abort();
+    }
+	free(frameTable);
+    // find all procs that use the vmRegion, free their page tables
+	for (i = 0; i < MAXPROC; i++) {
+		PTE *currentPT = processes[i].pageTable;
+		if (currentPT != NULL) {
+			free(currentPT);
+		}
+	}
+
+	/*
+     * Kill the pagers here.
+     */
+	int quitMsg = -1;
+    void *dummyMsg = (void *) &quitMsg;
+
+	for (i = 0; i < numPagers; i++) {
+		//mbox send to pagers to unblock them
+        status = MboxSend(faultMboxID, dummyMsg, sizeof(int));
+		
+	} 		
+    /*
+     * Print vm statistics.
+     */
+    USLOSS_Console("vmStats:\n");
+    USLOSS_Console("pages: %d\n", vmStats.pages);
+    USLOSS_Console("frames: %d\n", vmStats.frames);
+    USLOSS_Console("blocks: %d\n", vmStats.diskBlocks);
+    /* and so on... */
 
 } /* vmDestroyReal */
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -319,18 +355,18 @@ FaultHandler(int type /* MMU_INT */,
     assert(cause == USLOSS_MMU_FAULT);
     printf("3\n");
     vmStats.faults++;
-
+	vmStats.new++;
     /*
      * Fill in faults[pid % MAXPROC], send it to the pagers, and wait for the
      * reply.
      */
-     printf("4\n");
+    printf("4\n");
     faults[getpid() % MAXPROC].pid = getpid();
     printf("5\n");
     faults[getpid() % MAXPROC].addr = offset;
     printf("6\n");
     faults[getpid() % MAXPROC].replyMbox = processes[getpid() % MAXPROC].mboxID;
-    printf("7\n");
+    printf("7%d\n", getpid());
 
     // for now, just map 0 to 0
     processes[getpid() % MAXPROC].pageTable[0].frame = 0;
@@ -344,7 +380,6 @@ FaultHandler(int type /* MMU_INT */,
 
     //mbox_receive_real(mboxID, 0, 0);
 } /* FaultHandler */
-
 
 /*
  *----------------------------------------------------------------------
@@ -364,14 +399,29 @@ FaultHandler(int type /* MMU_INT */,
 static int
 Pager(char *buf)
 {
+	int result;
+	void *dummyMsgPtr = malloc(sizeof(int));
+	SemV(runningSem);
     while(1) {
-        /* Wait for fault to occur (receive from mailbox) */
+		/* Wait for fault to occur (receive from mailbox) */
+		MboxReceive(faultMboxID, dummyMsgPtr, sizeof(int));
+		if (isDebug) {
+			USLOSS_Console("Pager%s received from faultMbox\n", buf);
+		}
+		// check to quit
+		if (*((int *) dummyMsgPtr) == -1) {
+			if (isDebug) {
+            	USLOSS_Console("Pager%s quitting...\n", buf);
+        	}
+			break;
+		}	 
         /* Look for free frame */
         /* If there isn't one then use clock algorithm to
          * replace a page (perhaps write to disk) */
         /* Load page into frame from disk, if necessary */
         /* Unblock waiting (faulting) process */
     }
+	free(dummyMsgPtr);
     return 0;
 } /* Pager */
 

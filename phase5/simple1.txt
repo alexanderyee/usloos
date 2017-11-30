@@ -6,7 +6,32 @@ start5(): Pagers:     1
           Children:   1
           Iterations: 1
           Priority:   5
-start5(): after call to VmInit, status = -1
+start5(): after call to VmInit, status = 0
 
-simple1: testcases/simple1.c:102: start5: Assertion `status == 0' failed.
-testphase5.ksh: line 27: 11463: Abort(coredump)
+
+Child(10): starting
+Child(10): str = This is the first page
+Child(10): strlen(str) = 22
+1
+2
+3
+4
+5
+6
+710
+8
+9
+10
+11
+Child(10): after memcpy
+Child(10): strcmp first attempt worked!
+Child(10): strcmp second attempt worked!
+Child(10): checking various vmStats
+Child(10): terminating
+
+start5(): done
+vmStats:
+pages: 1
+frames: 1
+blocks: 0
+All processes completed.

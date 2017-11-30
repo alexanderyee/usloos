@@ -37,3 +37,8 @@ loading a frame: pager has a mapping from its page 0 to the frame it's loading.
                  from there, disk write
 
 tag == 0 (doesn't matter)
+
+
+notes on killing pagers for syncing purposes.
+pagers run at higher priority than user level process that calls vmdestroy.
+instead of zapping, just send a message that tells it to quit basically

@@ -4,7 +4,7 @@
 #include "phase5.h"
 #include "phase1.h"
 
-#define DEBUG 1
+#define DEBUG 0
 extern int debugflag;
 
 /*
@@ -14,7 +14,7 @@ extern int debugflag;
 void
 p1_fork(int pid)
 {
-	// change later lol
+	// change later to include debugflag lol
     if (DEBUG)
         USLOSS_Console("p1_fork() called: pid = %d\n", pid);
 
@@ -22,9 +22,9 @@ p1_fork(int pid)
 
     if (vmInitFlag) {
         // for simple1.c and incremental impl. purposes
-		processes[getpid() % MAXPROC].pid = getpid();
-		processes[getpid() % MAXPROC].pageTable = malloc(vmStats.pages * sizeof(struct PTE));
-		processes[getpid() % MAXPROC].mboxID = MboxCreate(0, 0);
+		processes[pid % MAXPROC].pid = pid;
+		processes[pid % MAXPROC].pageTable = malloc(vmStats.pages * sizeof(struct PTE));
+		processes[pid % MAXPROC].mboxID = MboxCreate(0, 0);
 	}
 } /* p1_fork */
 
@@ -44,11 +44,11 @@ p1_switch(int old, int new)
             return;
         }
         */
-        PTE *currPT = processes[old % MAXPROC].pageTable;
+        PTE *currPT = processes[old % MAXPROC].pageTable; // might not need this
         for (i = 0; i < vmStats.pages; i++) {
             if (USLOSS_MmuGetMap(TAG, i, &framePtr, &protPtr) != USLOSS_MMU_ERR_NOMAP) {
                 result = USLOSS_MmuUnmap(TAG, i);
-                if (result) {
+                if (result && DEBUG) {
                     USLOSS_Console("p1_switch(): unmapping error, status code: %d\n", result);
                 }
             }
