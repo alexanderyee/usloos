@@ -369,11 +369,13 @@ FaultHandler(int type /* MMU_INT */,
     MboxSend(faultMboxID, (void *) &pidMsg, sizeof(int));
     MboxReceive(result, (void *) &pidMsg, sizeof(int));
     // for now, just map 0 to 0
-    processes[getpid() % MAXPROC].pageTable[].frame = pidMsg;
+    processes[getpid() % MAXPROC].pageTable[(int) (offset / USLOSS_MmuPageSize())].frame = pidMsg;
     processes[getpid() % MAXPROC].pageTable[0].state = INCORE;
     processes[getpid() % MAXPROC].pageTable[0].diskBlock = -1;
     result = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
-
+    if (isDebug) {
+        USLOSS_Console("Mapping %d to frame\n", (int) (offset / USLOSS_MmuPageSize());
+    }
     //mbox_receive_real(mboxID, 0, 0);
 } /* FaultHandler */
 
@@ -417,7 +419,10 @@ Pager(char *buf)
         int i;
         for (i = 0; i < vmStats.frames; i++) {
             if (frameTable[i].status == EMPTY) {
-                currentPT[faults[faultedPid % MAXPROC]]
+                //currentPT[faults[faultedPid % MAXPROC]].frame = i;
+                // set the frame, state and map later, for now just unblock
+                MboxSend(currentPT[faults[faultedPid % MAXPROC]].replyMbox,
+                        &i, sizeof(int));
                 break;
             }
         }
