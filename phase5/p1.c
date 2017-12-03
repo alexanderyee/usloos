@@ -25,6 +25,13 @@ p1_fork(int pid)
 		processes[pid % MAXPROC].pid = pid;
 		processes[pid % MAXPROC].pageTable = malloc(vmStats.pages * sizeof(struct PTE));
 		processes[pid % MAXPROC].mboxID = MboxCreate(0, 0);
+        int i;
+        for (i = 0; i < vmStats.pages; i++) {
+            processes[pid % MAXPROC].pageTable[i].state = EMPTY;
+            processes[pid % MAXPROC].pageTable[i].frame = -1;
+            processes[pid % MAXPROC].pageTable[i].diskBlock =  -1;
+
+        }
 	}
 } /* p1_fork */
 

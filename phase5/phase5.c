@@ -201,6 +201,10 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
    }
    USLOSS_IntVec[USLOSS_MMU_INT] = FaultHandler;
    frameTable = malloc(frames * sizeof(Frame));
+   for (i = 0; i < frames; i++) {
+       frameTable[i].status = EMPTY;
+
+   }
    /*
     * Initialize page tables.
     */

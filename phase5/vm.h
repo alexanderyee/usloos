@@ -45,6 +45,7 @@ typedef struct Process {
     int  numPages;   // Size of the page table.
     PTE  *pageTable; // The page table for the process.
     int  mboxID;     // private mbox id
+    int  lastRef;    // the PTE that was last referenced
     // Add more stuff here */
 } Process;
 
@@ -60,9 +61,7 @@ typedef struct FaultMsg {
 } FaultMsg;
 
 typedef struct Frame {
-    int fid;    // frame id
     int status; // whether or not is in on disk or empty
-    int isRef;
 } Frame;
 #define CheckMode() assert(USLOSS_PsrGet() & USLOSS_PSR_CURRENT_MODE)
 #endif
