@@ -372,13 +372,13 @@ FaultHandler(int type /* MMU_INT */,
     int pidMsg = getpid();
     MboxSend(faultMboxID, (void *) &pidMsg, sizeof(int));
     MboxReceive(result, (void *) &pidMsg, sizeof(int));
-    // for now, just map 0 to 0
-    processes[getpid() % MAXPROC].pageTable[(int) (offset / USLOSS_MmuPageSize())].frame = pidMsg;
-    processes[getpid() % MAXPROC].pageTable[0].state = INCORE;
-    processes[getpid() % MAXPROC].pageTable[0].diskBlock = -1;
-    result = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
+    int pageToMap = (int) (offset / USLOSS_MmuPageSize());
+    processes[getpid() % MAXPROC].pageTable[pageToMap].frame = pidMsg;
+    processes[getpid() % MAXPROC].pageTable[pageToMap].state = INCORE;
+    processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
+    result = USLOSS_MmuMap(TAG, pageToMap, pidMsg, USLOSS_MMU_PROT_RW);
     if (isDebug) {
-        USLOSS_Console("Mapping %d to frame\n", (int) (offset / USLOSS_MmuPageSize());
+        USLOSS_Console("Mapping %d to frame %d\n", pageToMap, pidMsg);
     }
     //mbox_receive_real(mboxID, 0, 0);
 } /* FaultHandler */
@@ -427,7 +427,7 @@ Pager(char *buf)
                 // set the frame, state and map later, for now just unblock
                 MboxSend(currentPT[faults[faultedPid % MAXPROC]].replyMbox,
                         &i, sizeof(int));
-                break;
+                return;
             }
         }
         /* If there isn't one then use clock algorithm to
