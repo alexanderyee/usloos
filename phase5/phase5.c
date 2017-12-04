@@ -463,6 +463,7 @@ Pager(char *buf)
                 void *region = USLOSS_MmuRegion(&result);
                 memset(region, 0, USLOSS_MmuPageSize());
                 USLOSS_MmuUnmap(TAG, 0);
+                frameTable[i].status = IN_MEM;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
                 mappedFlag = 1;
@@ -487,6 +488,7 @@ Pager(char *buf)
                 void *region = USLOSS_MmuRegion(&result);
                 memset(region, 0, USLOSS_MmuPageSize());
                 USLOSS_MmuUnmap(TAG, 0);
+                frameTable[frameIndex].status = IN_MEM;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
                 mappedFlag = 1;
@@ -518,6 +520,7 @@ Pager(char *buf)
                 currentBlock += SECTORS_PER_PAGE;
                 memset(region, 0, USLOSS_MmuPageSize());
                 USLOSS_MmuUnmap(TAG, 0);
+                frameTable[frameIndex].status = IN_MEM;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
                 mappedFlag = 1;

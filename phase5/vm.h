@@ -22,10 +22,6 @@
 #define EMPTY 69
 #define IN_MEM 70
 #define ON_DISK 71
-#define CLEAN 72
-#define DIRTY 73
-#define REFD 74
-#define UNREFD 75
 
 /*
  * Page table entry.
