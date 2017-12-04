@@ -410,7 +410,8 @@ FaultHandler(int type /* MMU_INT */,
     frameTable[pidMsg].pid = getpid();
     frameTable[pidMsg].page = pageToMap;
     if (USLOSS_MmuGetMap(TAG, pageToMap, &framePtr, &protPtr) != USLOSS_MMU_ERR_NOMAP) {
-        result = USLOSS_MmuUnmap(TAG, i);
+        result = USLOSS_MmuUnmap(TAG, pageToMap);
+    }
 
     result = USLOSS_MmuMap(TAG, pageToMap, pidMsg, USLOSS_MMU_PROT_RW);
     if (isDebug) {
