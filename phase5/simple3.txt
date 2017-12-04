@@ -1,8 +1,8 @@
-start5(): Running:    simple2
+start5(): Running:    simple3
 start5(): Pagers:     1
-          Mappings:   1
-          Pages:      1
-          Frames:     1
+          Mappings:   3
+          Pages:      3
+          Frames:     3
           Children:   1
           Iterations: 1
           Priority:   5
@@ -10,19 +10,18 @@ start5(): after call to VmInit, status = 0
 
 
 Child(11): starting
-Child(11): vmRegion is filled with 0's
 Child(11): terminating
 
-start5 done
+start5(): done
 VmStats
-pages:          1
-frames:         1
+pages:          3
+frames:         3
 diskBlocks:     64
-freeFrames:     1
+freeFrames:     3
 freeDiskBlocks: 64
-switches:       9
-faults:         1
-new:            1
+switches:       13
+faults:         3
+new:            3
 pageIns:        0
 pageOuts:       0
 replaced:       0

@@ -44,6 +44,10 @@ pagers run at higher priority than user level process that calls vmdestroy.
 instead of zapping, just send a message that tells it to quit basically
 
 0. disk stuff
+currentBlock is used
+everytime disk is written to, currentBlock += SECTORS_PER_PAGE
+track = curblock / numSectors
+sector = curblock % numSectors
 1. simple page replacement
 2. more complex page replacement
 3. mutex on frame stuff

@@ -33,7 +33,7 @@ FaultMsg faults[MAXPROC]; /* Note that a process can have only
                            * and index them by pid. */
 VmStats  vmStats;
 void *vmRegion;
-int isDebug = 0;
+int isDebug = 1;
 int vmInitFlag = 0;
 int *pagerPids;
 int numPagers = 0;
@@ -42,7 +42,10 @@ int runningSem;
 Frame *frameTable;
 
 // disk variables
-int currentTrack = 0;
+int currentBlock = 0;
+int TRACKS;
+int SECTORS;
+int SECTORS_PER_PAGE;
 static void FaultHandler(int type, void * offset);
 static int Pager(char *buf);
 void * vmInitReal(int, int, int, int, int *);
@@ -232,7 +235,7 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
 		status = fork1(procName, Pager, arg, 2 * USLOSS_MIN_STACK, PAGER_PRIORITY);
 		pagerPids[i] = status;
 		if (isDebug) {
-			USLOSS_Console("Forked pager %d, pid = %d", i, status);
+			USLOSS_Console("Forked pager %d, pid = %d\n", i, status);
 		}
 		status = MboxReceive(runningSem, &dummyMsg, sizeof(int));
     }
@@ -246,7 +249,8 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
         USLOSS_Console("\tSector size: %d\n", sectorSize);
         USLOSS_Console("\t# of sectors per track: %d\n", numSectors);
         USLOSS_Console("\t# of tracks: %d\n", numTracks);
-
+		USLOSS_Console("\tPage Size: %d\n", USLOSS_MmuPageSize());
+        
     }
     memset((char *) &vmStats, 0, sizeof(VmStats));
     vmStats.pages = pages;
@@ -427,7 +431,7 @@ Pager(char *buf)
 	void *msgPtr = malloc(sizeof(int));
 	MboxSend(runningSem, msgPtr, sizeof(int));
     while(1) {
-        mappedFlag = 0
+        mappedFlag = 0;
 		/* Wait for fault to occur (receive from mailbox) */
 		MboxReceive(faultMboxID, msgPtr, sizeof(int));
 		if (isDebug) {

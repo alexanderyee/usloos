@@ -1,0 +1,63 @@
+start5(): Running:    simple4
+start5(): Pagers:     1
+          Mappings:   7
+          Pages:      7
+          Frames:     6
+          Children:   1
+          Iterations: 10
+          Priority:   5
+Forked pager 0, pid = 10Disk info:
+	Sector size: 512
+	# of sectors per track: 16
+	# of tracks: 32
+start5(): after call to VmInit, status = 0
+
+
+Child(11): starting
+
+Child(11): iteration 0
+before.faults = 0
+Child(11): reading one location from each of 7 pages
+FaultHandler() called
+Pager0 received from faultMbox
+Mapping 0 to frame 0
+Child(11): page 0, value 0
+FaultHandler() called
+Pager0 received from faultMbox
+Mapping 1 to frame 0
+Child(11): page 1, value 0
+FaultHandler() called
+Pager0 received from faultMbox
+Mapping 2 to frame 0
+Child(11): page 2, value 0
+FaultHandler() called
+Pager0 received from faultMbox
+Mapping 3 to frame 0
+Child(11): page 3, value 0
+FaultHandler() called
+Pager0 received from faultMbox
+Mapping 4 to frame 0
+Child(11): page 4, value 0
+FaultHandler() called
+Pager0 received from faultMbox
+Mapping 5 to frame 0
+Child(11): page 5, value 0
+FaultHandler() called
+Pager0 received from faultMbox
+Mapping 6 to frame 0
+Child(11): page 6, value 0
+Child(11): vmStats.faults = 7
+
+Child(11): iteration 1
+before.faults = 7
+Child(11): reading one location from each of 7 pages
+Child(11): page 0, value 0
+Child(11): page 1, value 0
+Child(11): page 2, value 0
+Child(11): page 3, value 0
+Child(11): page 4, value 0
+Child(11): page 5, value 0
+Child(11): page 6, value 0
+Child(11): vmStats.faults = 7
+simple4: testcases/simple4.c:71: Child: Assertion `vmStats.faults - before.faults == 7' failed.
+testphase5.ksh: line 27: 20209: Abort(coredump)
