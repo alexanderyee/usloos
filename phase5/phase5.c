@@ -438,6 +438,10 @@ Pager(char *buf)
             if (frameTable[i].status == EMPTY) {
                 //currentPT[faults[faultedPid % MAXPROC]].frame = i;
                 // set the frame, state and map later, for now just unblock
+                USLOSS_MmuMap(TAG, 0, i, USLOSS_MMU_PROT_RW);
+                void *region = USLOSS_MmuRegion(&result);
+                memset(region, 0, USLOSS_MmuPageSize());
+                USLOSS_MmuUnmap(TAG, 0);
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
 				break; //might need to change to a diff return val?
