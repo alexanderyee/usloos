@@ -62,6 +62,8 @@ typedef struct FaultMsg {
 
 typedef struct Frame {
     int status; // whether or not is in on disk or empty
+    int pid;
+    int page;
 } Frame;
 #define CheckMode() assert(USLOSS_PsrGet() & USLOSS_PSR_CURRENT_MODE)
 #endif

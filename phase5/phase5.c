@@ -211,7 +211,8 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
    vmInitFlag = 1;
 	for (i = 0; i < frames; i++) {
        frameTable[i].status = EMPTY;
-
+       frameTable[i].pid = -1;
+       frameTable[i].page = -1;
    }
    /*
     * Initialize page tables.
@@ -250,8 +251,11 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
         USLOSS_Console("\t# of sectors per track: %d\n", numSectors);
         USLOSS_Console("\t# of tracks: %d\n", numTracks);
 		USLOSS_Console("\tPage Size: %d\n", USLOSS_MmuPageSize());
-        
+
     }
+    TRACKS = numTracks;
+    SECTORS = numSectors;
+    SECTORS_PER_PAGE = (int) USLOSS_MmuPageSize() / sectorSize;
     memset((char *) &vmStats, 0, sizeof(VmStats));
     vmStats.pages = pages;
     vmStats.frames = frames;
@@ -402,6 +406,8 @@ FaultHandler(int type /* MMU_INT */,
     processes[getpid() % MAXPROC].pageTable[pageToMap].frame = pidMsg;
     processes[getpid() % MAXPROC].pageTable[pageToMap].state = INCORE;
     processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
+    frameTable[pidMsg].pid = getpid();
+    frameTable[pidMsg].page = pageToMap;
     result = USLOSS_MmuMap(TAG, pageToMap, pidMsg, USLOSS_MMU_PROT_RW);
     if (isDebug) {
         USLOSS_Console("Mapping %d to frame %d\n", pageToMap, pidMsg);
@@ -498,7 +504,17 @@ Pager(char *buf)
                 // write to disk. have to coordinate with diskDriver
 
                 USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                char buf[USLOSS_MmuPageSize()];
                 void *region = USLOSS_MmuRegion(&result);
+                memcpy(buf, region, USLOSS_MmuPageSize());
+                diskWriteReal(1, (int) (currentBlock / SECTORS),
+                        currentBlock % SECTORS, SECTORS_PER_PAGE, buf);
+                // the next line is kinda disgusting, but it's setting the disk
+                // block of the page that is being saved to disk to currentBlock
+                processes[frameTable[frameIndex].pid % MAXPROC]
+                    .pageTable[frameTable[frameIndex].page]
+                    .diskBlock = currentBlock;
+                currentBlock += SECTORS_PER_PAGE;
                 memset(region, 0, USLOSS_MmuPageSize());
                 USLOSS_MmuUnmap(TAG, 0);
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
