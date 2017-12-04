@@ -555,6 +555,7 @@ Pager(char *buf)
 
     		    break;
             }
+            USLOSS_MmuSetAccess(frameIndex, access & USLOSS_MMU_DIRTY);
         }
 
         if (mappedFlag)
@@ -567,7 +568,7 @@ Pager(char *buf)
         for (i = 0; i < vmStats.frames; i++) {
             int frameIndex = (i + lastReferenced) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
-            if (access == 1) {
+            if (access == 0) {
                 // don't have to write to disk
                 USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
                 void *region = USLOSS_MmuRegion(&result);
@@ -590,41 +591,32 @@ Pager(char *buf)
         if (isDebug) {
             USLOSS_Console("Checking for referenced and dirty frames...\n");
         }
+        // case where all referenced and dirty. just use frame 0
 
-        for (i = 0; i < vmStats.frames; i++) {
-            int frameIndex = (i + lastReferenced) % vmStats.frames;
-            result = USLOSS_MmuGetAccess(frameIndex, &access);
-            if (access == 3) {
-                // write to disk. have to coordinate with diskDriver
 
-                USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
-                char buf[USLOSS_MmuPageSize()];
-                void *region = USLOSS_MmuRegion(&result);
-                memcpy(buf, region, USLOSS_MmuPageSize());
-                diskWriteReal(1, (int) (currentBlock / SECTORS),
-                        currentBlock % SECTORS, SECTORS_PER_PAGE, buf);
-                // the next line is kinda disgusting, but it's setting the disk
-                // block of the page that is being saved to disk to currentBlock
-                processes[frameTable[frameIndex].pid % MAXPROC]
-                    .pageTable[frameTable[frameIndex].page]
-                    .diskBlock = currentBlock;
-                currentBlock += SECTORS_PER_PAGE;
-                memset(region, 0, USLOSS_MmuPageSize());
-                USLOSS_MmuUnmap(TAG, 0);
-                USLOSS_MmuSetAccess(frameIndex, 0);
-                frameTable[frameIndex].status = IN_MEM;
-                MboxSend(faults[faultedPid % MAXPROC].replyMbox,
-                        &frameIndex, sizeof(int));
-                mappedFlag = 1;
-                processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
+        USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
+        char buf[USLOSS_MmuPageSize()];
+        void *region = USLOSS_MmuRegion(&result);
+        memcpy(buf, region, USLOSS_MmuPageSize());
+        diskWriteReal(1, (int) (currentBlock / SECTORS),
+                currentBlock % SECTORS, SECTORS_PER_PAGE, buf);
+        // the next line is kinda disgusting, but it's setting the disk
+        // block of the page that is being saved to disk to currentBlock
+        processes[frameTable[0].pid % MAXPROC]
+            .pageTable[frameTable[0].page]
+            .diskBlock = currentBlock;
+        currentBlock += SECTORS_PER_PAGE;
+        memset(region, 0, USLOSS_MmuPageSize());
+        USLOSS_MmuUnmap(TAG, 0);
+        USLOSS_MmuSetAccess(0, 0);
+        frameTable[0].status = IN_MEM;
+        int dummy0Msg = 0;
+        MboxSend(faults[faultedPid % MAXPROC].replyMbox,
+                &dummy0Msg, sizeof(int));
+        mappedFlag = 1;
+        processes[faultedPid % MAXPROC].lastRef = 1;
 
-    		    break;
-            }
-        }
 
-        if (isDebug) {
-            USLOSS_Console("we fuked boi\n");
-        }
         /* Load page into frame from disk, if necessary */
         /* Unblock waiting (faulting) process */
     }
