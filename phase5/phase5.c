@@ -416,7 +416,7 @@ FaultHandler(int type /* MMU_INT */,
             processes[getpid() % MAXPROC].pageTable[frameTable[pidMsg].page].frame = -1;
             processes[getpid() % MAXPROC].pageTable[frameTable[pidMsg].page].state = ON_DISK;
 
-            result = USLOSS_MmuUnmap(TAG, pageToMap);
+            result = USLOSS_MmuUnmap(TAG, frameTable[pidMsg].page);
         }
     }
     frameTable[pidMsg].page = pageToMap;
