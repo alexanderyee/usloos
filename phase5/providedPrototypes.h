@@ -12,7 +12,6 @@ extern int  spawnReal(char *name, int (*func)(char *), char *arg,
                        int stack_size, int priority);
 extern int  waitReal(int *status);
 extern void terminateReal(int exit_code);
-extern int  SemCreate(int init_value);
 extern int  SemP(int semaphore);
 extern int  SemV(int semaphore);
 extern int  semfreeReal(int semaphore);

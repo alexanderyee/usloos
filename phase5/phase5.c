@@ -1,4 +1,4 @@
-Mbox_Send/*
+/*
  * phase5.c
  * TODO CHANGE HDR COMMENT
  * This is a skeleton for phase5 of the programming assignment. It
