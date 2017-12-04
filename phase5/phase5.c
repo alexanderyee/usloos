@@ -429,7 +429,7 @@ Pager(char *buf)
                 // set the frame, state and map later, for now just unblock
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
-                return;
+                return 0; //might need to change to a diff return val?
             }
         }
         /* If there isn't one then use clock algorithm to
