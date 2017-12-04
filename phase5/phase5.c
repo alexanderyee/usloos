@@ -41,6 +41,7 @@ int runningSem;
 Frame *frameTable;
 
 static void FaultHandler(int type, void * offset);
+static int Pager(char *buf)
 void * vmInitReal(int, int, int, int, int *);
 static void vmInit(USLOSS_Sysargs *USLOSS_SysargsPtr);
 static void vmDestroy(USLOSS_Sysargs *USLOSS_SysargsPtr);
@@ -229,7 +230,7 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
     * Zero out, then initialize, the vmStats structure
     */
     int sectorSize, numSectors, numTracks;
-    status = DiskSize(1, &sectorSize, &numSectors, &numTracks)
+    status = DiskSize(1, &sectorSize, &numSectors, &numTracks);
     memset((char *) &vmStats, 0, sizeof(VmStats));
     vmStats.pages = pages;
     vmStats.frames = frames;
@@ -372,7 +373,7 @@ FaultHandler(int type /* MMU_INT */,
     int pidMsg = getpid();
     MboxSend(faultMboxID, (void *) &pidMsg, sizeof(int));
     MboxReceive(result, (void *) &pidMsg, sizeof(int));
-    int pageToMap = (int) (offset / USLOSS_MmuPageSize());
+    int pageToMap = (int) (long) (offset / USLOSS_MmuPageSize());
     processes[getpid() % MAXPROC].pageTable[pageToMap].frame = pidMsg;
     processes[getpid() % MAXPROC].pageTable[pageToMap].state = INCORE;
     processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
@@ -425,7 +426,7 @@ Pager(char *buf)
             if (frameTable[i].status == EMPTY) {
                 //currentPT[faults[faultedPid % MAXPROC]].frame = i;
                 // set the frame, state and map later, for now just unblock
-                MboxSend(currentPT[faults[faultedPid % MAXPROC]].replyMbox,
+                MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
                 return;
             }
