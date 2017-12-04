@@ -408,11 +408,12 @@ FaultHandler(int type /* MMU_INT */,
     processes[getpid() % MAXPROC].pageTable[pageToMap].state = INCORE;
     processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
     frameTable[pidMsg].pid = getpid();
-    frameTable[pidMsg].page = pageToMap;
-    if (USLOSS_MmuGetMap(TAG, pageToMap, &framePtr, &protPtr) != USLOSS_MMU_ERR_NOMAP) {
-        result = USLOSS_MmuUnmap(TAG, pageToMap);
+    if (frameTable[pidMsg].page != -1) {
+        if (USLOSS_MmuGetMap(TAG, pageToMap, &framePtr, &protPtr) != USLOSS_MMU_ERR_NOMAP) {
+            result = USLOSS_MmuUnmap(TAG, pageToMap);
+        }
     }
-
+    frameTable[pidMsg].page = pageToMap;
     result = USLOSS_MmuMap(TAG, pageToMap, pidMsg, USLOSS_MMU_PROT_RW);
     if (isDebug) {
         USLOSS_Console("Mapping %d to frame %d\n", pageToMap, pidMsg);
