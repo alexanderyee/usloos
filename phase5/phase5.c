@@ -230,7 +230,7 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
     * Zero out, then initialize, the vmStats structure
     */
     int sectorSize, numSectors, numTracks;
-    status = DiskSize(1, &sectorSize, &numSectors, &numTracks);
+    status = diskSizeReal(1, &sectorSize, &numSectors, &numTracks);
     memset((char *) &vmStats, 0, sizeof(VmStats));
     vmStats.pages = pages;
     vmStats.frames = frames;
