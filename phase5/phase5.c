@@ -406,13 +406,16 @@ FaultHandler(int type /* MMU_INT */,
     int pageToMap = (int) ((long) offset / USLOSS_MmuPageSize()), framePtr, protPtr;
     processes[getpid() % MAXPROC].pageTable[pageToMap].frame = pidMsg;
     processes[getpid() % MAXPROC].pageTable[pageToMap].state = INCORE;
-    processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
+    //processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
     frameTable[pidMsg].pid = getpid();
     if (frameTable[pidMsg].page != -1) {
         if (USLOSS_MmuGetMap(TAG, frameTable[pidMsg].page, &framePtr, &protPtr) != USLOSS_MMU_ERR_NOMAP) {
             if (isDebug) {
                 USLOSS_Console("Unmapping page %d to frame %d and now mapping page %d to that frame\n", frameTable[pidMsg].page, pidMsg, pageToMap);
             }
+            processes[getpid() % MAXPROC].pageTable[pageToMap].frame = -1;
+            processes[getpid() % MAXPROC].pageTable[pageToMap].state = ON_DISK;
+
             result = USLOSS_MmuUnmap(TAG, pageToMap);
         }
     }

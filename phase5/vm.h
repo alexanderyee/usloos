@@ -14,6 +14,7 @@
  */
 #define UNUSED 500
 #define INCORE 501
+#define ON_DISK 502
 /* You'll probably want more states */
 
 /*
