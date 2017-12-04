@@ -63,7 +63,8 @@ p1_switch(int old, int new)
         // map stuff of new proc
         //null checks firrst
         if(processes[new % MAXPROC].pageTable == NULL){
-            return;
+    		vmStats.switches++;
+	        return;
         }
         currPT = processes[new % MAXPROC].pageTable;
         for (i = 0; i < vmStats.pages; i++) {

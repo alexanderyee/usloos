@@ -1,4 +1,4 @@
-start5(): Running:    simple1
+start5(): Running:    simple2
 start5(): Pagers:     1
           Mappings:   1
           Pages:      1
@@ -10,6 +10,4 @@ start5(): after call to VmInit, status = 0
 
 
 Child(11): starting
-Child(11): str = This is the first page
-Child(11): strlen(str) = 22
-testphase5.ksh: line 27: 17128: Memory fault(coredump)
+testphase5.ksh: line 27: 16730: Memory fault(coredump)
