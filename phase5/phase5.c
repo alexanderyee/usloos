@@ -126,7 +126,7 @@ vmInit(USLOSS_Sysargs *args)
         args->arg4 = (void *) (long) -1;
         return;
     }
-	else if (args->arg4 >= MAXPAGERS) {
+	else if (((int) (long) args->arg4) >= MAXPAGERS) {
         USLOSS_Console("vmInit(): Too many pagers!\n");
         args->arg4 = (void *) (long) -1;
         return;
@@ -136,8 +136,8 @@ vmInit(USLOSS_Sysargs *args)
 		return;
     }
 	else {
-    	int status = vmInitReal((int) (long) args->arg1, (int) (long) args->arg2,
-                    (int) (long) args->arg3, (int) (long) args->arg4, &firstByteAddy);
+    	int status = (int) (long) (vmInitReal((int) (long) args->arg1, (int) (long) args->arg2,
+                    (int) (long) args->arg3, (int) (long) args->arg4, &firstByteAddy));
     	args->arg1 = (void *) (long) firstByteAddy;
     	args->arg4 = (void *) (long) 0;
     	vmInitFlag = 1;
