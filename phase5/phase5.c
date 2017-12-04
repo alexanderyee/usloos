@@ -508,6 +508,8 @@ Pager(char *buf)
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
                 mappedFlag = 1;
+                processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
+
 				break;
             }
         }
@@ -544,6 +546,8 @@ Pager(char *buf)
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
                 mappedFlag = 1;
+                processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
+
     		    break;
             }
         }
@@ -570,6 +574,8 @@ Pager(char *buf)
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
                 mappedFlag = 1;
+                processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
+
 				break;
             }
         }
@@ -606,6 +612,8 @@ Pager(char *buf)
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
                 mappedFlag = 1;
+                processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
+
     		    break;
             }
         }
