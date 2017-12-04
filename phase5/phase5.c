@@ -302,7 +302,9 @@ PrintStats(void)
 void
 vmDestroyReal(void)
 {
-
+    if (isDebug) {
+        USLOSS_Console("vmDestroyReal() called\n");
+    }
     CheckMode();
     int i, status;
 	int result = USLOSS_MmuDone();
@@ -325,6 +327,8 @@ vmDestroyReal(void)
 	int quitMsg = -1;
 
 	for (i = 0; i < numPagers; i++) {
+        if (isDebug)
+            USLOSS_Console("Quitting pager %d\n", i);
 		//mbox send to pagers to unblock them
         status = MboxSend(faultMboxID, &quitMsg, sizeof(int));
 
