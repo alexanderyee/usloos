@@ -391,7 +391,6 @@ FaultHandler(int type /* MMU_INT */,
     vmStats.faults++;
     if (isDebug)
         printf("vmStats.fault increased %d\n", vmStats.faults);
-	vmStats.new++;
     /*
      * Fill in faults[pid % MAXPROC], send it to the pagers, and wait for the
      * reply.
@@ -481,6 +480,8 @@ Pager(char *buf)
                         &i, sizeof(int));
                 processes[faultedPid % MAXPROC].lastRef = (i + 1) % vmStats.frames;
                 mappedFlag = 1;
+                vmStats.new++;
+
 				break;
             }
         }
