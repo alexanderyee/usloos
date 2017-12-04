@@ -463,6 +463,7 @@ Pager(char *buf)
                 void *region = USLOSS_MmuRegion(&result);
                 memset(region, 0, USLOSS_MmuPageSize());
                 USLOSS_MmuUnmap(TAG, 0);
+                USLOSS_MmuSetAccess(i, 0);
                 frameTable[i].status = IN_MEM;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
@@ -491,6 +492,7 @@ Pager(char *buf)
                 void *region = USLOSS_MmuRegion(&result);
                 memset(region, 0, USLOSS_MmuPageSize());
                 USLOSS_MmuUnmap(TAG, 0);
+                USLOSS_MmuSetAccess(frameIndex, 0);
                 frameTable[frameIndex].status = IN_MEM;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
@@ -526,6 +528,7 @@ Pager(char *buf)
                 currentBlock += SECTORS_PER_PAGE;
                 memset(region, 0, USLOSS_MmuPageSize());
                 USLOSS_MmuUnmap(TAG, 0);
+                USLOSS_MmuSetAccess(frameIndex, 0);
                 frameTable[frameIndex].status = IN_MEM;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
@@ -544,12 +547,14 @@ Pager(char *buf)
         for (i = 0; i < vmStats.frames; i++) {
             int frameIndex = (i + lastReferenced) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
+            USLOSS_Console("Frame %d has access = %d\n", frameIndex, access);
             if (access == 1) {
                 // don't have to write to disk
                 USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
                 void *region = USLOSS_MmuRegion(&result);
                 memset(region, 0, USLOSS_MmuPageSize());
                 USLOSS_MmuUnmap(TAG, 0);
+                USLOSS_MmuSetAccess(frameIndex, 0);
                 frameTable[frameIndex].status = IN_MEM;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
@@ -582,6 +587,7 @@ Pager(char *buf)
                 currentBlock += SECTORS_PER_PAGE;
                 memset(region, 0, USLOSS_MmuPageSize());
                 USLOSS_MmuUnmap(TAG, 0);
+                USLOSS_MmuSetAccess(frameIndex, 0);
                 frameTable[frameIndex].status = IN_MEM;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
