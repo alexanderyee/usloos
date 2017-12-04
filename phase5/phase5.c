@@ -805,7 +805,7 @@ void leDumperinoPageTable(){
     int i;
     USLOSS_Console("leDumperinoPageTable\n");
     for(i = 0; i < vmStats.pages; i++){
-        USLOSS_Console("status      %d\n", processes[getpid() % MAXPROC].pageTable[i].status);
+        USLOSS_Console("state      %d\n", processes[getpid() % MAXPROC].pageTable[i].state);
         USLOSS_Console("frame       %d\n", processes[getpid() % MAXPROC].pageTable[i].frame);
         USLOSS_Console("diskBlock   %d\n", processes[getpid() % MAXPROC].pageTable[i].diskBlock);
     }
