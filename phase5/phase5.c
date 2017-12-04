@@ -389,7 +389,8 @@ FaultHandler(int type /* MMU_INT */,
     cause = USLOSS_MmuGetCause();
     assert(cause == USLOSS_MMU_FAULT);
     vmStats.faults++;
-    printf("vmStats.fault increased %d\n", vmStats.faults);
+    if (isDebug)
+        printf("vmStats.fault increased %d\n", vmStats.faults);
 	vmStats.new++;
     /*
      * Fill in faults[pid % MAXPROC], send it to the pagers, and wait for the
@@ -562,7 +563,6 @@ Pager(char *buf)
         for (i = 0; i < vmStats.frames; i++) {
             int frameIndex = (i + lastReferenced) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
-            USLOSS_Console("Frame %d has access = %d\n", frameIndex, access);
             if (access == 1) {
                 // don't have to write to disk
                 USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
