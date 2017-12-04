@@ -409,7 +409,10 @@ FaultHandler(int type /* MMU_INT */,
     processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
     frameTable[pidMsg].pid = getpid();
     if (frameTable[pidMsg].page != -1) {
-        if (USLOSS_MmuGetMap(TAG, pageToMap, &framePtr, &protPtr) != USLOSS_MMU_ERR_NOMAP) {
+        if (USLOSS_MmuGetMap(TAG, frameTable[pidMsg].page, &framePtr, &protPtr) != USLOSS_MMU_ERR_NOMAP) {
+            if (isDebug) {
+                USLOSS_Console("Unmapping page %d to frame %d and now mapping page %d to that frame\n", frameTable[pidMsg].page, pidMsg, pageToMap);
+            }
             result = USLOSS_MmuUnmap(TAG, pageToMap);
         }
     }
