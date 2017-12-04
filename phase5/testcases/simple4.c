@@ -3,7 +3,7 @@
  *
  * One process reads every byte of every page, where frames = pages-1. If the
  * clock algorithm starts with frame 0, this will cause a page fault on every
- * access. 
+ * access.
  */
 #include <usloss.h>
 #include <usyscall.h>
@@ -68,6 +68,7 @@ Child(char *arg)
 
         Tconsole("Child(%d): vmStats.faults = %d\n", pid, vmStats.faults);
         // The number of faults should equal the number of pages
+        printf("what is the value of vmStats.faults - before.faults = %d\n", vmStats.faults - before.faults);
         assert(vmStats.faults - before.faults == PAGES);
     }
 
