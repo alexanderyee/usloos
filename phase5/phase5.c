@@ -529,7 +529,10 @@ Pager(char *buf)
         for (i = 0; i < vmStats.frames; i++) {
             int frameIndex = (i + lastReferenced) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
-            if (access == 2) {
+            if (isDebug) {
+                USLOSS_Console("Frame %d has access %d\n", frameIndex, access);
+            }
+			if (access == 2) {
                 // write to disk. have to coordinate with diskDriver
 
                 USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
