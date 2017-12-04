@@ -40,7 +40,7 @@ int numPagers = 0;
 int faultMboxID;
 int runningSem;
 Frame *frameTable;
-
+int frameSem;
 // disk variables
 int currentBlock = 0;
 int TRACKS;
@@ -208,6 +208,7 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
    }
    USLOSS_IntVec[USLOSS_MMU_INT] = FaultHandler;
    frameTable = malloc(frames * sizeof(Frame));
+   frameSem = MboxCreate(1, sizeof(int));
    vmInitFlag = 1;
 	for (i = 0; i < frames; i++) {
        frameTable[i].status = EMPTY;
@@ -416,6 +417,7 @@ FaultHandler(int type /* MMU_INT */,
         USLOSS_Console("Mapping %d to frame %d\n", pageToMap, pidMsg);
     }
     //processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
+    MboxSend(frameSem, &pidMsg, sizeof(int));
     frameTable[pidMsg].pid = getpid();
     if (frameTable[pidMsg].page != -1) {
         if (USLOSS_MmuGetMap(TAG, frameTable[pidMsg].page, &framePtr, &protPtr) != USLOSS_MMU_ERR_NOMAP) {
@@ -430,7 +432,7 @@ FaultHandler(int type /* MMU_INT */,
     }
     frameTable[pidMsg].page = pageToMap;
     result = USLOSS_MmuMap(TAG, pageToMap, pidMsg, USLOSS_MMU_PROT_RW);
-
+    MboxReceive(frameSem, &pidMsg, sizeof(int));
     //mbox_receive_real(mboxID, 0, 0);
 } /* FaultHandler */
 
@@ -452,7 +454,7 @@ FaultHandler(int type /* MMU_INT */,
 static int
 Pager(char *buf)
 {
-	int result, mappedFlag;
+	int result, mappedFlag, dummyMsg;
 	void *msgPtr = malloc(sizeof(int));
 	MboxSend(runningSem, msgPtr, sizeof(int));
     while(1) {
@@ -474,10 +476,13 @@ Pager(char *buf)
 
         /* Look for free frame */
         int i;
+        MboxSend(frameSem, &dummyMsg, sizeof(int));
         for (i = 0; i < vmStats.frames; i++) {
             if (frameTable[i].status == EMPTY) {
                 //currentPT[faults[faultedPid % MAXPROC]].frame = i;
                 // set the frame, state and map later, for now just unblock
+
+
 
                 USLOSS_MmuMap(TAG, 0, i, USLOSS_MMU_PROT_RW);
                 void *region = USLOSS_MmuRegion(&result);
@@ -498,6 +503,7 @@ Pager(char *buf)
                 USLOSS_MmuUnmap(TAG, 0);
                 USLOSS_MmuSetAccess(i, 0);
                 frameTable[i].status = IN_MEM;
+                MboxReceive(frameSem, &dummyMsg, sizeof(int));
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
                 processes[faultedPid % MAXPROC].lastRef = (i + 1) % vmStats.frames;
@@ -540,6 +546,8 @@ Pager(char *buf)
                 USLOSS_MmuUnmap(TAG, 0);
                 USLOSS_MmuSetAccess(frameIndex, 0);
                 frameTable[frameIndex].status = IN_MEM;
+
+                MboxReceive(frameSem, &dummyMsg, sizeof(int));
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
                 mappedFlag = 1;
@@ -596,6 +604,7 @@ Pager(char *buf)
                 USLOSS_MmuUnmap(TAG, 0);
                 USLOSS_MmuSetAccess(frameIndex, 0);
                 frameTable[frameIndex].status = IN_MEM;
+                MboxReceive(frameSem, &dummyMsg, sizeof(int));
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
                 mappedFlag = 1;
@@ -636,6 +645,7 @@ Pager(char *buf)
                 USLOSS_MmuUnmap(TAG, 0);
                 USLOSS_MmuSetAccess(frameIndex, 0);
                 frameTable[frameIndex].status = IN_MEM;
+                MboxReceive(frameSem, &dummyMsg, sizeof(int));
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
                 mappedFlag = 1;
@@ -675,7 +685,7 @@ Pager(char *buf)
             int blockToRead = currentPT[faults[faultedPid % MAXPROC].page].diskBlock;
             diskReadReal(1, (int) (blockToRead / SECTORS),
                     blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
-            
+
             USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
             region = USLOSS_MmuRegion(&result);
             memcpy(region, buf, USLOSS_MmuPageSize());
@@ -686,6 +696,7 @@ Pager(char *buf)
         USLOSS_MmuUnmap(TAG, 0);
         USLOSS_MmuSetAccess(0, 0);
         frameTable[0].status = IN_MEM;
+        MboxReceive(frameSem, &dummyMsg, sizeof(int));
         int dummy0Msg = 0;
         MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                 &dummy0Msg, sizeof(int));
