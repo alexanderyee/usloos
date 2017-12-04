@@ -136,11 +136,14 @@ vmInit(USLOSS_Sysargs *args)
 		return;
     }
 	else {
+        USLOSS_Console("fug\n");
     	int status = (int) (long) (vmInitReal((int) (long) args->arg1, (int) (long) args->arg2,
                     (int) (long) args->arg3, (int) (long) args->arg4, &firstByteAddy));
+        USLOSS_Console("fug2\n");
     	args->arg1 = (void *) (long) firstByteAddy;
     	args->arg4 = (void *) (long) 0;
     	vmInitFlag = 1;
+        USLOSS_Console("fug3\n");
 	}
 } /* vmInit */
 
@@ -196,18 +199,25 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
 {
    int status, numPages, i;
 
+   USLOSS_Console("1o1 1\n");
    CheckMode();
+   USLOSS_Console("1o1 2\n");
    status = USLOSS_MmuInit(mappings, pages, frames, USLOSS_MMU_MODE_TLB);
+   USLOSS_Console("1o1 3\n");
    if (status != USLOSS_MMU_OK) {
       USLOSS_Console("vmInitReal: couldn't initialize MMU, status %d\n", status);
       abort();
    }
+   USLOSS_Console("1o1 4\n");
    USLOSS_IntVec[USLOSS_MMU_INT] = FaultHandler;
+   USLOSS_Console("1o1 5\n");
    frameTable = malloc(frames * sizeof(Frame));
+   USLOSS_Console("1o1 6\n");
    for (i = 0; i < frames; i++) {
        frameTable[i].status = EMPTY;
 
    }
+   USLOSS_Console("1o1 7\n");
    /*
     * Initialize page tables.
     */
@@ -215,33 +225,45 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
    /*
     * Create the fault mailbox.
     */
+    USLOSS_Console("1o1 8\n");
 	status = Mbox_Create(0, sizeof(int), &faultMboxID);
+    USLOSS_Console("1o1 9\n");
    /*
     * Fork the pagers.
     */
 	USLOSS_Console("meh\n");
 	status = SemCreate(0, &runningSem);
+    USLOSS_Console("1o1 10\n");
 	for (i = 0; i < pagers; i++) {
         char arg[1], procName[6];
         sprintf(arg, "%d", i);
         sprintf(procName, "Pager%d", i);
 		// TODO how much stack space is required for pager??
 		status = fork1(procName, Pager, arg, 2 * USLOSS_MIN_STACK, PAGER_PRIORITY);
+        USLOSS_Console("1o1 in da for l00p\n");
 		status = SemP(runningSem);
+        USLOSS_Console("1o1 still there loo1\n");
     }
+    USLOSS_Console("1o1 11\n");
 	/*
     * Zero out, then initialize, the vmStats structure
     */
     int sectorSize, numSectors, numTracks;
+    USLOSS_Console("1o1 12\n");
     status = diskSizeReal(1, &sectorSize, &numSectors, &numTracks);
+    USLOSS_Console("1o1 13\n");
     memset((char *) &vmStats, 0, sizeof(VmStats));
     vmStats.pages = pages;
     vmStats.frames = frames;
+    USLOSS_Console("1o1 1oh hshitz\n");
     vmStats.diskBlocks = (int) ((sectorSize * numSectors * numTracks) / USLOSS_MmuPageSize());
+    USLOSS_Console("1o1 1oh hshitsz\n");
     vmStats.freeFrames = frames;
     vmStats.freeDiskBlocks = vmStats.diskBlocks;
 
+    USLOSS_Console("1o1 14\n");
     *firstByteAddy = (int) (long) USLOSS_MmuRegion(&numPages);
+    USLOSS_Console("1o1 15\n");
     return;
 } /* vmInitReal */
 
