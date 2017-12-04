@@ -679,7 +679,7 @@ Pager(char *buf)
             vmStats.pageIns++;
         } else {
             memset(region, 0, USLOSS_MmuPageSize());
-        ]
+        }
         USLOSS_MmuUnmap(TAG, 0);
         USLOSS_MmuSetAccess(0, 0);
         frameTable[0].status = IN_MEM;
