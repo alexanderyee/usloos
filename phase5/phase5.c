@@ -563,6 +563,9 @@ Pager(char *buf)
             }
         }
 
+        if (mappedFlag)
+           continue;
+           
         if (isDebug) {
             USLOSS_Console("Checking for referenced and dirty frames...\n");
         }
