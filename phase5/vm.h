@@ -32,8 +32,6 @@ typedef struct PTE {
     int  diskBlock;  // Disk block that stores the page (if any). -1 if none.
     // Add more stuff here
 } PTE;
-for vmStats.pages
- processes[getpid() %].pageTable[i].*
 /*
  * Per-process information.
  */

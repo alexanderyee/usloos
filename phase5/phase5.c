@@ -471,7 +471,7 @@ Pager(char *buf)
 		}
         int faultedPid = *((int *) msgPtr);
         PTE *currentPT = processes[faultedPid % MAXPROC].pageTable;
-        
+
         /* Look for free frame */
         int i;
         for (i = 0; i < vmStats.frames; i++) {
