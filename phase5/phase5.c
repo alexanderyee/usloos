@@ -413,8 +413,8 @@ FaultHandler(int type /* MMU_INT */,
             if (isDebug) {
                 USLOSS_Console("Unmapping page %d to frame %d and now mapping page %d to that frame\n", frameTable[pidMsg].page, pidMsg, pageToMap);
             }
-            processes[getpid() % MAXPROC].pageTable[pageToMap].frame = -1;
-            processes[getpid() % MAXPROC].pageTable[pageToMap].state = ON_DISK;
+            processes[getpid() % MAXPROC].pageTable[frameTable[pidMsg].page].frame = -1;
+            processes[getpid() % MAXPROC].pageTable[frameTable[pidMsg].page].state = ON_DISK;
 
             result = USLOSS_MmuUnmap(TAG, pageToMap);
         }
