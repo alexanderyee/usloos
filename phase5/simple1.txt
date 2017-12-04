@@ -6,32 +6,17 @@ start5(): Pagers:     1
           Children:   1
           Iterations: 1
           Priority:   5
-start5(): after call to VmInit, status = 0
-
-
-Child(10): starting
-Child(10): str = This is the first page
-Child(10): strlen(str) = 22
-1
-2
-3
-4
-5
-6
-710
-8
-9
-10
-11
-Child(10): after memcpy
-Child(10): strcmp first attempt worked!
-Child(10): strcmp second attempt worked!
-Child(10): checking various vmStats
-Child(10): terminating
-
-start5(): done
-vmStats:
-pages: 1
-frames: 1
-blocks: 0
-All processes completed.
+fug
+1o1 1
+1o1 2
+1o1 3
+1o1 4
+1o1 5
+1o1 6
+1o1 7
+1o1 8
+1o1 9
+meh
+1o1 10
+1o1 in da for l00p
+Trying to invoke syscall from kernel

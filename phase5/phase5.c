@@ -226,14 +226,15 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
     * Create the fault mailbox.
     */
     USLOSS_Console("1o1 8\n");
-	status = Mbox_Create(0, sizeof(int), &faultMboxID);
+	faultMboxID = MboxCreate(0, sizeof(int));
     USLOSS_Console("1o1 9\n");
    /*
     * Fork the pagers.
     */
 	USLOSS_Console("meh\n");
-	status = SemCreate(0, &runningSem);
+	runningSem = MboxCreate(0, sizeof(int));
     USLOSS_Console("1o1 10\n");
+	int dummyMsg;
 	for (i = 0; i < pagers; i++) {
         char arg[1], procName[6];
         sprintf(arg, "%d", i);
@@ -241,7 +242,8 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
 		// TODO how much stack space is required for pager??
 		status = fork1(procName, Pager, arg, 2 * USLOSS_MIN_STACK, PAGER_PRIORITY);
         USLOSS_Console("1o1 in da for l00p\n");
-		status = SemP(runningSem);
+		CheckMode();
+		status = MboxReceive(runningSem, &dummyMsg, sizeof(int));
         USLOSS_Console("1o1 still there loo1\n");
     }
     USLOSS_Console("1o1 11\n");
@@ -249,7 +251,7 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
     * Zero out, then initialize, the vmStats structure
     */
     int sectorSize, numSectors, numTracks;
-    USLOSS_Console("1o1 12\n");
+USLOSS_Console("1o1 12\n");
     status = diskSizeReal(1, &sectorSize, &numSectors, &numTracks);
     USLOSS_Console("1o1 13\n");
     memset((char *) &vmStats, 0, sizeof(VmStats));
@@ -345,7 +347,7 @@ vmDestroyReal(void)
 
 	for (i = 0; i < numPagers; i++) {
 		//mbox send to pagers to unblock them
-        status = Mbox_Send(faultMboxID, dummyMsg, sizeof(int));
+        status = MboxSend(faultMboxID, dummyMsg, sizeof(int));
 
 	}
     /*
@@ -392,13 +394,12 @@ FaultHandler(int type /* MMU_INT */,
      */
     faults[getpid() % MAXPROC].pid = getpid();
     faults[getpid() % MAXPROC].addr = offset;
-    int tempMbox;
-    result = Mbox_Create(1, sizeof(int), &tempMbox);
+    int tempMbox = MboxCreate(1, sizeof(int));
     faults[getpid() % MAXPROC].replyMbox = tempMbox;
 
     int pidMsg = getpid();
-    Mbox_Send(faultMboxID, (void *) &pidMsg, sizeof(int));
-    Mbox_Receive(result, (void *) &pidMsg, sizeof(int));
+    MboxSend(faultMboxID, (void *) &pidMsg, sizeof(int));
+    MboxReceive(result, (void *) &pidMsg, sizeof(int));
     int pageToMap = (int) ((long) offset / USLOSS_MmuPageSize());
     processes[getpid() % MAXPROC].pageTable[pageToMap].frame = pidMsg;
     processes[getpid() % MAXPROC].pageTable[pageToMap].state = INCORE;
@@ -430,10 +431,10 @@ Pager(char *buf)
 {
 	int result;
 	void *msgPtr = malloc(sizeof(int));
-	SemV(runningSem);
+	MboxSend(runningSem, msgPtr, sizeof(int));
     while(1) {
 		/* Wait for fault to occur (receive from mailbox) */
-		Mbox_Receive(faultMboxID, msgPtr, sizeof(int));
+		MboxReceive(faultMboxID, &msgPtr, sizeof(int));
 		if (isDebug) {
 			USLOSS_Console("Pager%s received from faultMbox\n", buf);
 		}
@@ -452,7 +453,7 @@ Pager(char *buf)
             if (frameTable[i].status == EMPTY) {
                 //currentPT[faults[faultedPid % MAXPROC]].frame = i;
                 // set the frame, state and map later, for now just unblock
-                Mbox_Send(faults[faultedPid % MAXPROC].replyMbox,
+                MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
                 return 0; //might need to change to a diff return val?
             }
@@ -518,7 +519,7 @@ void mbox_send_real(USLOSS_Sysargs *args) {
         return;
     }
 
-    int result = Mbox_Send(mboxID, msgPtr, msgSize);
+    int result = MboxSend(mboxID, msgPtr, msgSize);
 
     if(result == -1){
         args->arg4 = (void *)(long) -1;
@@ -549,7 +550,7 @@ void mbox_receive_real(USLOSS_Sysargs *args) {
         return;
     }
 
-    int result = Mbox_Receive(mboxID, msgPtr, msgSize);
+    int result = MboxReceive(mboxID, msgPtr, msgSize);
 
     if(result == -1){
         args->arg4 = (void *)(long) -1;
