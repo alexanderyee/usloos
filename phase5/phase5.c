@@ -33,7 +33,7 @@ FaultMsg faults[MAXPROC]; /* Note that a process can have only
                            * and index them by pid. */
 VmStats  vmStats;
 void *vmRegion;
-int isDebug = 0;
+int isDebug = 1;
 int vmInitFlag = 0;
 int *pagerPids;
 int numPagers = 0;
@@ -323,11 +323,10 @@ vmDestroyReal(void)
      * Kill the pagers here.
      */
 	int quitMsg = -1;
-    void *dummyMsg = (void *) &quitMsg;
 
 	for (i = 0; i < numPagers; i++) {
 		//mbox send to pagers to unblock them
-        status = MboxSend(faultMboxID, dummyMsg, sizeof(int));
+        status = MboxSend(faultMboxID, &quitMsg, sizeof(int));
 
 	}
     /*
@@ -376,10 +375,12 @@ FaultHandler(int type /* MMU_INT */,
     faults[getpid() % MAXPROC].addr = offset;
     int tempMbox = MboxCreate(1, sizeof(int));
     faults[getpid() % MAXPROC].replyMbox = tempMbox;
-
     int pidMsg = getpid();
-    MboxSend(faultMboxID, (void *) &pidMsg, sizeof(int));
-    MboxReceive(result, (void *) &pidMsg, sizeof(int));
+    USLOSS_Console("sending msg from FHandler, pid: %d\n", pidMsg);
+
+    MboxSend(faultMboxID, &pidMsg, sizeof(int));
+    MboxReceive(tempMbox, (void *) &pidMsg, sizeof(int));
+	USLOSS_Console("hi waddup FH herre receiving\n");
     int pageToMap = (int) ((long) offset / USLOSS_MmuPageSize());
     processes[getpid() % MAXPROC].pageTable[pageToMap].frame = pidMsg;
     processes[getpid() % MAXPROC].pageTable[pageToMap].state = INCORE;
@@ -388,6 +389,7 @@ FaultHandler(int type /* MMU_INT */,
     if (isDebug) {
         USLOSS_Console("Mapping %d to frame %d\n", pageToMap, pidMsg);
     }
+	dumpProcesses();
     //mbox_receive_real(mboxID, 0, 0);
 } /* FaultHandler */
 
@@ -414,7 +416,7 @@ Pager(char *buf)
 	MboxSend(runningSem, msgPtr, sizeof(int));
     while(1) {
 		/* Wait for fault to occur (receive from mailbox) */
-		MboxReceive(faultMboxID, &msgPtr, sizeof(int));
+		MboxReceive(faultMboxID, msgPtr, sizeof(int));
 		if (isDebug) {
 			USLOSS_Console("Pager%s received from faultMbox\n", buf);
 		}
@@ -426,7 +428,7 @@ Pager(char *buf)
         	}
 			break;
 		}
-        int faultedPid = (int) (long) msgPtr;
+        int faultedPid = *((int *) msgPtr);
         printf("2\n");
         PTE *currentPT = processes[faultedPid % MAXPROC].pageTable;
         printf("3\n");
@@ -434,12 +436,12 @@ Pager(char *buf)
         int i;
         for (i = 0; i < vmStats.frames; i++) {
             if (frameTable[i].status == EMPTY) {
-                printf("4\n");
+                printf("4 faultedPid %d\n", faultedPid);
                 //currentPT[faults[faultedPid % MAXPROC]].frame = i;
                 // set the frame, state and map later, for now just unblock
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
-                return 0; //might need to change to a diff return val?
+				break; //might need to change to a diff return val?
             }
         }
         printf("5\n");
