@@ -418,6 +418,9 @@ FaultHandler(int type /* MMU_INT */,
 
             result = USLOSS_MmuUnmap(TAG, frameTable[pidMsg].page);
         }
+    } else {
+        vmStats.new++;
+
     }
     frameTable[pidMsg].page = pageToMap;
     result = USLOSS_MmuMap(TAG, pageToMap, pidMsg, USLOSS_MMU_PROT_RW);
@@ -480,7 +483,6 @@ Pager(char *buf)
                         &i, sizeof(int));
                 processes[faultedPid % MAXPROC].lastRef = (i + 1) % vmStats.frames;
                 mappedFlag = 1;
-                vmStats.new++;
 
 				break;
             }
