@@ -219,6 +219,7 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
    /*
     * Fork the pagers.
     */
+	USLOSS_Console("meh\n");
 	status = SemCreate(0, &runningSem);
 	for (i = 0; i < pagers; i++) {
         char arg[1], procName[6];
