@@ -675,6 +675,9 @@ Pager(char *buf)
             int blockToRead = currentPT[faults[faultedPid % MAXPROC].page].diskBlock;
             diskReadReal(1, (int) (blockToRead / SECTORS),
                     blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
+            
+            USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
+            region = USLOSS_MmuRegion(&result);
             memcpy(region, buf, USLOSS_MmuPageSize());
             vmStats.pageIns++;
         } else {
