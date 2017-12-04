@@ -610,6 +610,8 @@ Pager(char *buf)
             .pageTable[frameTable[0].page]
             .diskBlock = currentBlock;
         currentBlock += SECTORS_PER_PAGE;
+        USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
+        region = USLOSS_MmuRegion(&result);
         memset(region, 0, USLOSS_MmuPageSize());
         USLOSS_MmuUnmap(TAG, 0);
         USLOSS_MmuSetAccess(0, 0);
