@@ -404,6 +404,10 @@ FaultHandler(int type /* MMU_INT */,
     MboxSend(faultMboxID, &pidMsg, sizeof(int));
     MboxReceive(tempMbox, (void *) &pidMsg, sizeof(int));
     int pageToMap = (int) ((long) offset / USLOSS_MmuPageSize()), framePtr, protPtr;
+    if (processes[getpid() % MAXPROC].pageTable[pageToMap].state == EMPTY) {
+        // this page has never been used before, increment new
+        vmStats.new++;
+    }
     processes[getpid() % MAXPROC].pageTable[pageToMap].frame = pidMsg;
     processes[getpid() % MAXPROC].pageTable[pageToMap].state = INCORE;
     //processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
@@ -418,9 +422,6 @@ FaultHandler(int type /* MMU_INT */,
 
             result = USLOSS_MmuUnmap(TAG, frameTable[pidMsg].page);
         }
-    } else {
-        vmStats.new++;
-
     }
     frameTable[pidMsg].page = pageToMap;
     result = USLOSS_MmuMap(TAG, pageToMap, pidMsg, USLOSS_MMU_PROT_RW);
