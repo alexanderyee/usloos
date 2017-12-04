@@ -41,7 +41,7 @@ int runningSem;
 Frame *frameTable;
 
 static void FaultHandler(int type, void * offset);
-static int Pager(char *buf)
+static int Pager(char *buf);
 void * vmInitReal(int, int, int, int, int *);
 static void vmInit(USLOSS_Sysargs *USLOSS_SysargsPtr);
 static void vmDestroy(USLOSS_Sysargs *USLOSS_SysargsPtr);
@@ -373,7 +373,7 @@ FaultHandler(int type /* MMU_INT */,
     int pidMsg = getpid();
     MboxSend(faultMboxID, (void *) &pidMsg, sizeof(int));
     MboxReceive(result, (void *) &pidMsg, sizeof(int));
-    int pageToMap = (int) (long) (offset / USLOSS_MmuPageSize());
+    int pageToMap = (int) ((long) offset / USLOSS_MmuPageSize());
     processes[getpid() % MAXPROC].pageTable[pageToMap].frame = pidMsg;
     processes[getpid() % MAXPROC].pageTable[pageToMap].state = INCORE;
     processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
