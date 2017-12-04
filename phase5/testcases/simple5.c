@@ -3,7 +3,7 @@
  *
  * One process writes every page, where frames = pages-1. If the clock
  * algorithm starts with frame 0, this will cause a page fault on every
- * access. 
+ * access.
  */
 #include <usloss.h>
 #include <usyscall.h>

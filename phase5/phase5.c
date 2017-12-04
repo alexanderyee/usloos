@@ -52,9 +52,6 @@ void * vmInitReal(int, int, int, int, int *);
 static void vmInit(USLOSS_Sysargs *USLOSS_SysargsPtr);
 static void vmDestroy(USLOSS_Sysargs *USLOSS_SysargsPtr);
 void vmDestroyReal(void);
-void leDumperinoFrameTable();
-void leDumperinoPageTable();
-void leDumperinoProcessTable();
 /*
  *----------------------------------------------------------------------
  *
@@ -398,15 +395,17 @@ FaultHandler(int type /* MMU_INT */,
      * Fill in faults[pid % MAXPROC], send it to the pagers, and wait for the
      * reply.
      */
+    int pageToMap = (int) ((long) offset / USLOSS_MmuPageSize()), framePtr, protPtr;
     faults[getpid() % MAXPROC].pid = getpid();
     faults[getpid() % MAXPROC].addr = offset;
     int tempMbox = MboxCreate(1, sizeof(int));
     faults[getpid() % MAXPROC].replyMbox = tempMbox;
+    faults[getpid() % MAXPROC].page = pageToMap;
+
     int pidMsg = getpid();
 
     MboxSend(faultMboxID, &pidMsg, sizeof(int));
     MboxReceive(tempMbox, (void *) &pidMsg, sizeof(int));
-    int pageToMap = (int) ((long) offset / USLOSS_MmuPageSize()), framePtr, protPtr;
     if (processes[getpid() % MAXPROC].pageTable[pageToMap].state == EMPTY) {
         // this page has never been used before, increment new
         vmStats.new++;
@@ -472,6 +471,26 @@ Pager(char *buf)
 		}
         int faultedPid = *((int *) msgPtr);
         PTE *currentPT = processes[faultedPid % MAXPROC].pageTable;
+        /* THIS SHOULD NOT BE HERE. SHOULD BE BEFORE EVERY BREAK? idk*/
+        if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
+            // read from disk to load page
+            char buf[USLOSS_MmuPageSize()];
+            int blockToRead = currentPT[faults[faultedPid % MAXPROC].page].diskBlock;
+            diskReadReal(1, (int) (blockToRead / SECTORS),
+                    blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
+            USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
+            void *region = USLOSS_MmuRegion(&result);
+            memcpy(region, buf, USLOSS_MmuPageSize());
+            USLOSS_MmuUnmap(TAG, 0);
+            USLOSS_MmuSetAccess(0, 0);
+            frameTable[i].status = IN_MEM;
+            MboxSend(faults[faultedPid % MAXPROC].replyMbox,
+                    &something, sizeof(int)); // TODO change
+            processes[faultedPid % MAXPROC].lastRef = (i + 1) % vmStats.frames;
+            mappedFlag = 1;
+            vmStats.pageIns++;
+            continue;
+        }
         /* Look for free frame */
         int i;
         for (i = 0; i < vmStats.frames; i++) {
@@ -551,6 +570,7 @@ Pager(char *buf)
                     .pageTable[frameTable[frameIndex].page]
                     .diskBlock = currentBlock;
                 currentBlock += SECTORS_PER_PAGE;
+                vmStats.pageOuts++;
                 memset(region, 0, USLOSS_MmuPageSize());
                 USLOSS_MmuUnmap(TAG, 0);
                 USLOSS_MmuSetAccess(frameIndex, 0);
@@ -613,6 +633,7 @@ Pager(char *buf)
             .pageTable[frameTable[0].page]
             .diskBlock = currentBlock;
         currentBlock += SECTORS_PER_PAGE;
+        vmStats.pageOuts++;
         USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
         region = USLOSS_MmuRegion(&result);
         memset(region, 0, USLOSS_MmuPageSize());
@@ -800,37 +821,4 @@ void mbox_condreceive_real(USLOSS_Sysargs *args) {
     }
 
     args->arg4 = (void *)(long) 0;
-}
-
-void leDumperinoPageTable(){
-    //curr process
-    int i;
-    USLOSS_Console("leDumperinoPageTable\n");
-    for(i = 0; i < vmStats.pages; i++){
-        USLOSS_Console("state      %d\n", processes[getpid() % MAXPROC].pageTable[i].state);
-        USLOSS_Console("frame       %d\n", processes[getpid() % MAXPROC].pageTable[i].frame);
-        USLOSS_Console("diskBlock   %d\n", processes[getpid() % MAXPROC].pageTable[i].diskBlock);
-    }
-}
-
-void leDumperinoProcessTable(){
-    int i;
-    USLOSS_Console("leDumperinoProcessTable\n");
-    for(i = 0; i < MAXPROC; i++){
-        USLOSS_Console("pid         %d\n", processes[getpid() % MAXPROC].pid);
-        USLOSS_Console("numPages    %d\n", processes[getpid() % MAXPROC].numPages);
-        leDumperinoPageTable();
-        USLOSS_Console("mboxID      %d\n", processes[getpid() % MAXPROC].mboxID);
-        USLOSS_Console("lastRef     %d\n", processes[getpid() % MAXPROC].lastRef);
-    }
-}
-
-void leDumperinoFrameTable(){
-    int i;
-    USLOSS_Console("leDumperinoFrameTable\n");
-    for(i = 0; i < vmStats.frames; i++){
-        USLOSS_Console("status         %d\n", frameTable[getpid() % MAXPROC].status);
-        USLOSS_Console("pid    %d\n", frameTable[getpid() % MAXPROC].pid);
-        USLOSS_Console("page      %d\n", frameTable[getpid() % MAXPROC].page);
-    }
 }

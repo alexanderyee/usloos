@@ -32,7 +32,8 @@ typedef struct PTE {
     int  diskBlock;  // Disk block that stores the page (if any). -1 if none.
     // Add more stuff here
 } PTE;
-
+for vmStats.pages
+ processes[getpid() %].pageTable[i].*
 /*
  * Per-process information.
  */
@@ -53,6 +54,7 @@ typedef struct FaultMsg {
     int  pid;        // Process with the problem.
     void *addr;      // Address that caused the fault.
     int  replyMbox;  // Mailbox to send reply.
+    int  page;
     // Add more stuff here.
 } FaultMsg;
 
