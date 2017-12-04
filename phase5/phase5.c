@@ -403,12 +403,15 @@ FaultHandler(int type /* MMU_INT */,
 
     MboxSend(faultMboxID, &pidMsg, sizeof(int));
     MboxReceive(tempMbox, (void *) &pidMsg, sizeof(int));
-    int pageToMap = (int) ((long) offset / USLOSS_MmuPageSize());
+    int pageToMap = (int) ((long) offset / USLOSS_MmuPageSize()), framePtr, protPtr;
     processes[getpid() % MAXPROC].pageTable[pageToMap].frame = pidMsg;
     processes[getpid() % MAXPROC].pageTable[pageToMap].state = INCORE;
     processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
     frameTable[pidMsg].pid = getpid();
     frameTable[pidMsg].page = pageToMap;
+    if (USLOSS_MmuGetMap(TAG, pageToMap, &framePtr, &protPtr) != USLOSS_MMU_ERR_NOMAP) {
+        result = USLOSS_MmuUnmap(TAG, i);
+
     result = USLOSS_MmuMap(TAG, pageToMap, pidMsg, USLOSS_MMU_PROT_RW);
     if (isDebug) {
         USLOSS_Console("Mapping %d to frame %d\n", pageToMap, pidMsg);
@@ -565,7 +568,7 @@ Pager(char *buf)
 
         if (mappedFlag)
            continue;
-           
+
         if (isDebug) {
             USLOSS_Console("Checking for referenced and dirty frames...\n");
         }
