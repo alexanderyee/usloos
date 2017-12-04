@@ -46,6 +46,7 @@ static int Pager(char *buf);
 void * vmInitReal(int, int, int, int, int *);
 static void vmInit(USLOSS_Sysargs *USLOSS_SysargsPtr);
 static void vmDestroy(USLOSS_Sysargs *USLOSS_SysargsPtr);
+void vmDestroyReal(void);
 /*
  *----------------------------------------------------------------------
  *
@@ -239,7 +240,7 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
     vmStats.freeFrames = frames;
     vmStats.freeDiskBlocks = vmStats.diskBlocks;
 
-    *firstByteAddy = USLOSS_MmuRegion(&numPages);
+    *firstByteAddy = (int) (long) USLOSS_MmuRegion(&numPages);
     return;
 } /* vmInitReal */
 
@@ -430,7 +431,7 @@ Pager(char *buf)
                 // set the frame, state and map later, for now just unblock
                 Mbox_Send(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
-                return;
+                return 0; //might need to change to a diff return val?
             }
         }
         /* If there isn't one then use clock algorithm to
