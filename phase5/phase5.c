@@ -471,35 +471,30 @@ Pager(char *buf)
 		}
         int faultedPid = *((int *) msgPtr);
         PTE *currentPT = processes[faultedPid % MAXPROC].pageTable;
-        /* THIS SHOULD NOT BE HERE. SHOULD BE BEFORE EVERY BREAK? idk*/
-        if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
-            // read from disk to load page
-            char buf[USLOSS_MmuPageSize()];
-            int blockToRead = currentPT[faults[faultedPid % MAXPROC].page].diskBlock;
-            diskReadReal(1, (int) (blockToRead / SECTORS),
-                    blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
-            USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
-            void *region = USLOSS_MmuRegion(&result);
-            memcpy(region, buf, USLOSS_MmuPageSize());
-            USLOSS_MmuUnmap(TAG, 0);
-            USLOSS_MmuSetAccess(0, 0);
-            frameTable[i].status = IN_MEM;
-            MboxSend(faults[faultedPid % MAXPROC].replyMbox,
-                    &something, sizeof(int)); // TODO change
-            processes[faultedPid % MAXPROC].lastRef = (i + 1) % vmStats.frames;
-            mappedFlag = 1;
-            vmStats.pageIns++;
-            continue;
-        }
+        
         /* Look for free frame */
         int i;
         for (i = 0; i < vmStats.frames; i++) {
             if (frameTable[i].status == EMPTY) {
                 //currentPT[faults[faultedPid % MAXPROC]].frame = i;
                 // set the frame, state and map later, for now just unblock
+
                 USLOSS_MmuMap(TAG, 0, i, USLOSS_MMU_PROT_RW);
                 void *region = USLOSS_MmuRegion(&result);
-                memset(region, 0, USLOSS_MmuPageSize());
+                if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
+                    char buf[USLOSS_MmuPageSize()];
+                    bzero(buf, sizeof(buf));
+                    int blockToRead = currentPT[faults[faultedPid % MAXPROC].page].diskBlock;
+                    diskReadReal(1, (int) (blockToRead / SECTORS),
+                            blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
+                    USLOSS_MmuMap(TAG, 0, i, USLOSS_MMU_PROT_RW);
+                    region = USLOSS_MmuRegion(&result);
+                    memcpy(region, buf, USLOSS_MmuPageSize());
+                    vmStats.pageIns++;
+                }
+                else {
+                    memset(region, 0, USLOSS_MmuPageSize());
+                }
                 USLOSS_MmuUnmap(TAG, 0);
                 USLOSS_MmuSetAccess(i, 0);
                 frameTable[i].status = IN_MEM;
@@ -529,7 +524,19 @@ Pager(char *buf)
                 // don't have to write to disk
                 USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
                 void *region = USLOSS_MmuRegion(&result);
-                memset(region, 0, USLOSS_MmuPageSize());
+                if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
+                    char buf[USLOSS_MmuPageSize()];
+                    bzero(buf, sizeof(buf));
+                    int blockToRead = currentPT[faults[faultedPid % MAXPROC].page].diskBlock;
+                    diskReadReal(1, (int) (blockToRead / SECTORS),
+                            blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
+                    USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                    region = USLOSS_MmuRegion(&result);
+                    memcpy(region, buf, USLOSS_MmuPageSize());
+                    vmStats.pageIns++;
+                } else {
+                    memset(region, 0, USLOSS_MmuPageSize());
+                }
                 USLOSS_MmuUnmap(TAG, 0);
                 USLOSS_MmuSetAccess(frameIndex, 0);
                 frameTable[frameIndex].status = IN_MEM;
@@ -571,7 +578,21 @@ Pager(char *buf)
                     .diskBlock = currentBlock;
                 currentBlock += SECTORS_PER_PAGE;
                 vmStats.pageOuts++;
-                memset(region, 0, USLOSS_MmuPageSize());
+                if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
+                    char buf[USLOSS_MmuPageSize()];
+                    bzero(buf, sizeof(buf));
+                    int blockToRead = currentPT[faults[faultedPid % MAXPROC].page].diskBlock;
+                    diskReadReal(1, (int) (blockToRead / SECTORS),
+                            blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
+                    USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                    region = USLOSS_MmuRegion(&result);
+                    memcpy(region, buf, USLOSS_MmuPageSize());
+                    vmStats.pageIns++;
+                } else {
+                    USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                    region = USLOSS_MmuRegion(&result);
+                    memset(region, 0, USLOSS_MmuPageSize());
+                }
                 USLOSS_MmuUnmap(TAG, 0);
                 USLOSS_MmuSetAccess(frameIndex, 0);
                 frameTable[frameIndex].status = IN_MEM;
@@ -599,7 +620,19 @@ Pager(char *buf)
                 // don't have to write to disk
                 USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
                 void *region = USLOSS_MmuRegion(&result);
-                memset(region, 0, USLOSS_MmuPageSize());
+                if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
+                    char buf[USLOSS_MmuPageSize()];
+                    bzero(buf, sizeof(buf));
+                    int blockToRead = currentPT[faults[faultedPid % MAXPROC].page].diskBlock;
+                    diskReadReal(1, (int) (blockToRead / SECTORS),
+                            blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
+                    USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                    region = USLOSS_MmuRegion(&result);
+                    memcpy(region, buf, USLOSS_MmuPageSize());
+                    vmStats.pageIns++;
+                } else {
+                    memset(region, 0, USLOSS_MmuPageSize());
+                }
                 USLOSS_MmuUnmap(TAG, 0);
                 USLOSS_MmuSetAccess(frameIndex, 0);
                 frameTable[frameIndex].status = IN_MEM;
@@ -636,7 +669,17 @@ Pager(char *buf)
         vmStats.pageOuts++;
         USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
         region = USLOSS_MmuRegion(&result);
-        memset(region, 0, USLOSS_MmuPageSize());
+        if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
+            char buf[USLOSS_MmuPageSize()];
+            bzero(buf, sizeof(buf));
+            int blockToRead = currentPT[faults[faultedPid % MAXPROC].page].diskBlock;
+            diskReadReal(1, (int) (blockToRead / SECTORS),
+                    blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
+            memcpy(region, buf, USLOSS_MmuPageSize());
+            vmStats.pageIns++;
+        } else {
+            memset(region, 0, USLOSS_MmuPageSize());
+        ]
         USLOSS_MmuUnmap(TAG, 0);
         USLOSS_MmuSetAccess(0, 0);
         frameTable[0].status = IN_MEM;
