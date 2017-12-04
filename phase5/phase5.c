@@ -45,6 +45,7 @@ static int Pager(char *buf);
 void * vmInitReal(int, int, int, int, int *);
 static void vmInit(USLOSS_Sysargs *USLOSS_SysargsPtr);
 static void vmDestroy(USLOSS_Sysargs *USLOSS_SysargsPtr);
+void vmDestroyReal(void);
 /*
  *----------------------------------------------------------------------
  *
@@ -238,7 +239,7 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
     vmStats.freeFrames = frames;
     vmStats.freeDiskBlocks = vmStats.diskBlocks;
 
-    *firstByteAddy = USLOSS_MmuRegion(&numPages);
+    *firstByteAddy = (int) (long) USLOSS_MmuRegion(&numPages);
     return;
 } /* vmInitReal */
 

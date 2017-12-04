@@ -46,7 +46,7 @@ extern VmStats	vmStats;
 extern int  start5(char *);
 extern int vmInitFlag;
 extern Process processes[MAXPROC];
-extern int VmInit(int mappings, int pages, int frames, int pagers, void **region); 
+extern int VmInit(int mappings, int pages, int frames, int pagers, void **region);
 extern int VmDestroy(void);
 extern int  SemCreate(int init_value, int *);
 extern int  SemP(int semaphore);
