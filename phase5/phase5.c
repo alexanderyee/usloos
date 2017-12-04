@@ -389,6 +389,7 @@ FaultHandler(int type /* MMU_INT */,
     cause = USLOSS_MmuGetCause();
     assert(cause == USLOSS_MMU_FAULT);
     vmStats.faults++;
+    printf("vmStats.fault increased %d\n", vmStats.faults);
 	vmStats.new++;
     /*
      * Fill in faults[pid % MAXPROC], send it to the pagers, and wait for the
