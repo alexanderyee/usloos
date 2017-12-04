@@ -41,6 +41,8 @@ int faultMboxID;
 int runningSem;
 Frame *frameTable;
 
+// disk variables
+int currentTrack = 0;
 static void FaultHandler(int type, void * offset);
 static int Pager(char *buf);
 void * vmInitReal(int, int, int, int, int *);
@@ -239,6 +241,13 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
     */
     int sectorSize, numSectors, numTracks;
     status = diskSizeReal(1, &sectorSize, &numSectors, &numTracks);
+    if (isDebug) {
+        USLOSS_Console("Disk info:\n");
+        USLOSS_Console("\tSector size: %d\n", sectorSize);
+        USLOSS_Console("\t# of sectors per track: %d\n", numSectors);
+        USLOSS_Console("\t# of tracks: %d\n", numTracks);
+
+    }
     memset((char *) &vmStats, 0, sizeof(VmStats));
     vmStats.pages = pages;
     vmStats.frames = frames;
@@ -414,10 +423,11 @@ FaultHandler(int type /* MMU_INT */,
 static int
 Pager(char *buf)
 {
-	int result;
+	int result, mappedFlag;
 	void *msgPtr = malloc(sizeof(int));
 	MboxSend(runningSem, msgPtr, sizeof(int));
     while(1) {
+        mappedFlag = 0
 		/* Wait for fault to occur (receive from mailbox) */
 		MboxReceive(faultMboxID, msgPtr, sizeof(int));
 		if (isDebug) {
@@ -444,11 +454,58 @@ Pager(char *buf)
                 USLOSS_MmuUnmap(TAG, 0);
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
-				break; //might need to change to a diff return val?
+                mappedFlag = 1;
+				break;
             }
         }
-        /* If there isn't one then use clock algorithm to
+        /* if page was already mapped to an empty frame, then skip
+            doing other stuff and wait for next fault*/
+        if (mappedFlag)
+            continue;
+
+        /* If there isn't a free frame then use clock algorithm to
          * replace a page (perhaps write to disk) */
+        int access, lastReferenced = processes[faultedPid % MAXPROC].lastRef;
+        // first check for unreferenced and clean (00)
+        for (i = 0; i < vmStats.frames; i++) {
+            int frameIndex = (i + lastReferenced) % vmStats.frames;
+            result = USLOSS_MmuGetAccess(frameIndex, &access);
+            if (access == 0) {
+                // don't have to write to disk
+                USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                void *region = USLOSS_MmuRegion(&result);
+                memset(region, 0, USLOSS_MmuPageSize());
+                USLOSS_MmuUnmap(TAG, 0);
+                MboxSend(faults[faultedPid % MAXPROC].replyMbox,
+                        &frameIndex, sizeof(int));
+                mappedFlag = 1;
+				break;
+            }
+        }
+        if (mappedFlag)
+            continue;
+
+        /* now check for unreferenced and dirty, set the access
+           bits to unreferenced along the way? */
+        for (i = 0; i < vmStats.frames; i++) {
+            int frameIndex = (i + lastReferenced) % vmStats.frames;
+            result = USLOSS_MmuGetAccess(frameIndex, &access);
+            if (access == 2) {
+                // write to disk. have to coordinate with diskDriver
+
+                USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                void *region = USLOSS_MmuRegion(&result);
+                memset(region, 0, USLOSS_MmuPageSize());
+                USLOSS_MmuUnmap(TAG, 0);
+                MboxSend(faults[faultedPid % MAXPROC].replyMbox,
+                        &frameIndex, sizeof(int));
+                mappedFlag = 1;
+    		    break;
+            }
+
+        }
+        if (mappedFlag)
+           continue;
         /* Load page into frame from disk, if necessary */
         /* Unblock waiting (faulting) process */
     }

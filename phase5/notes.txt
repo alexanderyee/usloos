@@ -42,3 +42,8 @@ tag == 0 (doesn't matter)
 notes on killing pagers for syncing purposes.
 pagers run at higher priority than user level process that calls vmdestroy.
 instead of zapping, just send a message that tells it to quit basically
+
+0. disk stuff
+1. simple page replacement
+2. more complex page replacement
+3. mutex on frame stuff
