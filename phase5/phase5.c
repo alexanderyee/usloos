@@ -52,6 +52,9 @@ void * vmInitReal(int, int, int, int, int *);
 static void vmInit(USLOSS_Sysargs *USLOSS_SysargsPtr);
 static void vmDestroy(USLOSS_Sysargs *USLOSS_SysargsPtr);
 void vmDestroyReal(void);
+void leDumperinoFrameTable();
+void leDumperinoPageTable();
+void leDumperinoProcessTable();
 /*
  *----------------------------------------------------------------------
  *
@@ -791,4 +794,37 @@ void mbox_condreceive_real(USLOSS_Sysargs *args) {
     }
 
     args->arg4 = (void *)(long) 0;
+}
+
+void leDumperinoPageTable(){
+    //curr process
+    int i;
+    USLOSS_Console("leDumperinoPageTable\n");
+    for(i = 0; i < vmStats.pages; i++){
+        USLOSS_Console("status      %d\n", processes[getpid() % MAXPROC].pageTable[i].status);
+        USLOSS_Console("frame       %d\n", processes[getpid() % MAXPROC].pageTable[i].frame);
+        USLOSS_Console("diskBlock   %d\n", processes[getpid() % MAXPROC].pageTable[i].diskBlock);
+    }
+}
+
+void leDumperinoProcessTable(){
+    int i;
+    USLOSS_Console("leDumperinoProcessTable\n");
+    for(i = 0; i < MAXPROC; i++){
+        USLOSS_Console("pid         %d\n", processes[getpid() % MAXPROC].pid);
+        USLOSS_Console("numPages    %d\n", processes[getpid() % MAXPROC].numPages);
+        leDumperinoPageTable();
+        USLOSS_Console("mboxID      %d\n", processes[getpid() % MAXPROC].mboxID);
+        USLOSS_Console("lastRef     %d\n", processes[getpid() % MAXPROC].lastRef);
+    }
+}
+
+void leDumperinoFrameTable(){
+    int i;
+    USLOSS_Console("leDumperinoFrameTable\n");
+    for(i = 0; i < vmStats.frames; i++){
+        USLOSS_Console("status         %d\n", frameTable[getpid() % MAXPROC].status);
+        USLOSS_Console("pid    %d\n", frameTable[getpid() % MAXPROC].pid);
+        USLOSS_Console("page      %d\n", frameTable[getpid() % MAXPROC].page);
+    }
 }
