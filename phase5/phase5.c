@@ -413,6 +413,9 @@ FaultHandler(int type /* MMU_INT */,
     }
     processes[getpid() % MAXPROC].pageTable[pageToMap].frame = pidMsg;
     processes[getpid() % MAXPROC].pageTable[pageToMap].state = INCORE;
+    if (isDebug) {
+        USLOSS_Console("Mapping %d to frame %d\n", pageToMap, pidMsg);
+    }
     //processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
     frameTable[pidMsg].pid = getpid();
     if (frameTable[pidMsg].page != -1) {
@@ -428,9 +431,7 @@ FaultHandler(int type /* MMU_INT */,
     }
     frameTable[pidMsg].page = pageToMap;
     result = USLOSS_MmuMap(TAG, pageToMap, pidMsg, USLOSS_MMU_PROT_RW);
-    if (isDebug) {
-        USLOSS_Console("Mapping %d to frame %d\n", pageToMap, pidMsg);
-    }
+
     //mbox_receive_real(mboxID, 0, 0);
 } /* FaultHandler */
 
@@ -532,6 +533,9 @@ Pager(char *buf)
         for (i = 0; i < vmStats.frames; i++) {
             int frameIndex = (i + lastReferenced) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
+            if (isDebug) {
+                USLOSS_Console("Frame %d has access %d\n", frameIndex, access);
+            }
             if (access == 2) {
                 // write to disk. have to coordinate with diskDriver
 
@@ -592,7 +596,7 @@ Pager(char *buf)
            continue;
 
         if (isDebug) {
-            USLOSS_Console("Checking for referenced and dirty frames...\n");
+            USLOSS_Console("Checking for referenced and dirty frames... just use frame 0\n");
         }
         // case where all referenced and dirty. just use frame 0
 
