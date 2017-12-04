@@ -21,7 +21,6 @@
  */
 #define EMPTY 69
 #define IN_MEM 70
-#define ON_DISK 71
 
 /*
  * Page table entry.
