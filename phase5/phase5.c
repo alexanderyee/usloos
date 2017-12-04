@@ -466,6 +466,7 @@ Pager(char *buf)
                 frameTable[i].status = IN_MEM;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
+                processes[faultedPid % MAXPROC].lastRef = i + 1 % vmStats.frames;
                 mappedFlag = 1;
 				break;
             }
@@ -474,7 +475,9 @@ Pager(char *buf)
             doing other stuff and wait for next fault*/
         if (mappedFlag)
             continue;
-
+        if (isDebug) {
+            USLOSS_Console("Checking for unreferenced and clean frames...\n");
+        }
         /* If there isn't a free frame then use clock algorithm to
          * replace a page (perhaps write to disk) */
         int access, lastReferenced = processes[faultedPid % MAXPROC].lastRef;
@@ -498,6 +501,9 @@ Pager(char *buf)
         if (mappedFlag)
             continue;
 
+            if (isDebug) {
+            USLOSS_Console("Checking for unreferenced and dirty frames...\n");
+            }
         /* now check for unreferenced and dirty, set the access
            bits to unreferenced along the way? */
         for (i = 0; i < vmStats.frames; i++) {
