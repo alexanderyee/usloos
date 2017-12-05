@@ -479,10 +479,7 @@ Pager(char *buf)
         MboxSend(frameSem, &dummyMsg, sizeof(int));
         for (i = 0; i < vmStats.frames; i++) {
             if (frameTable[i].status == EMPTY) {
-                //currentPT[faults[faultedPid % MAXPROC]].frame = i;
                 // set the frame, state and map later, for now just unblock
-
-
 
                 USLOSS_MmuMap(TAG, 0, i, USLOSS_MMU_PROT_RW);
                 void *region = USLOSS_MmuRegion(&result);
@@ -526,6 +523,9 @@ Pager(char *buf)
         for (i = 0; i < vmStats.frames; i++) {
             int frameIndex = (i + lastReferenced) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
+            if (isDebug) {
+                USLOSS_Console("Access for frame %d: %d\n", frameIndex, access);
+            }
             if (access == 0) {
                 // don't have to write to disk
                 USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
@@ -563,7 +563,7 @@ Pager(char *buf)
             USLOSS_Console("Checking for unreferenced and dirty frames...\n");
         }
         /* now check for unreferenced and dirty, set the access
-           bits to unreferenced along the way? */
+           bits to unreferenced along the way */
         for (i = 0; i < vmStats.frames; i++) {
             int frameIndex = (i + lastReferenced) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
@@ -621,7 +621,7 @@ Pager(char *buf)
         if (isDebug) {
             USLOSS_Console("Checking for referenced and clean frames...\n");
         }
-
+        // REFERENCED AND CLEAN CASE, NO WRITE TO DISK
         for (i = 0; i < vmStats.frames; i++) {
             int frameIndex = (i + lastReferenced) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
