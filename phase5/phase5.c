@@ -524,7 +524,7 @@ Pager(char *buf)
             int frameIndex = (i + lastReferenced) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
             if (isDebug) {
-                USLOSS_Console("Access for frame %d: %d\n", frameIndex, access);
+                USLOSS_Console("Access for frame %d for proc %d: %d\n", frameIndex, faultedPid, access);
             }
             if (access == 0) {
                 // don't have to write to disk
