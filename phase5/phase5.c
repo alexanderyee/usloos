@@ -514,10 +514,10 @@ Pager(char *buf)
                 processes[faultedPid % MAXPROC].lastRef = (i + 1) % vmStats.frames;
                 mappedFlag = 1;
                 if (isDebug)
-                    USLOSS_Console("beforee the mbox recv for %d\n", getpid());
+                    USLOSS_Console("beforee the mbox recv for %d\n", faultedPid);
                 MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
                 if (isDebug)
-                    USLOSS_Console("afterr the mbox recv for %d\n", getpid());
+                    USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
 				break;
             }
         }
@@ -567,10 +567,10 @@ Pager(char *buf)
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
                 if (isDebug)
-                    USLOSS_Console("beforee the mbox recv for %d\n", getpid());
+                    USLOSS_Console("beforee the mbox recv for %d\n", faultedPid);
                 MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
                 if (isDebug)
-                    USLOSS_Console("afterr the mbox recv for %d\n", getpid());
+                    USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
 				break;
             }
         }
@@ -632,10 +632,10 @@ Pager(char *buf)
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
                 if (isDebug)
-                    USLOSS_Console("beforee the mbox recv for %d\n", getpid());
+                    USLOSS_Console("beforee the mbox recv for %d\n", faultedPid);
                 MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
                 if (isDebug)
-                    USLOSS_Console("afterr the mbox recv for %d\n", getpid());
+                    USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
     		    break;
             }
             USLOSS_MmuSetAccess(frameIndex, access & USLOSS_MMU_DIRTY);
@@ -680,10 +680,10 @@ Pager(char *buf)
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
                 if (isDebug)
-                    USLOSS_Console("beforee the mbox recv for %d\n", getpid());
+                    USLOSS_Console("beforee the mbox recv for %d\n", faultedPid);
                 MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
                 if (isDebug)
-                    USLOSS_Console("afterr the mbox recv for %d\n", getpid());
+                    USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
 				break;
             }
         }
@@ -742,10 +742,10 @@ Pager(char *buf)
         mappedFlag = 1;
         processes[faultedPid % MAXPROC].lastRef = 1;
         if (isDebug)
-            USLOSS_Console("beforee the mbox recv for %d\n", getpid());
+            USLOSS_Console("beforee the mbox recv for %d\n", faultedPid);
         MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
         if (isDebug)
-            USLOSS_Console("afterr the mbox recv for %d\n", getpid());
+            USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
 
         /* Load page into frame from disk, if necessary */
         /* Unblock waiting (faulting) process */
