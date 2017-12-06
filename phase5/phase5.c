@@ -399,14 +399,14 @@ FaultHandler(int type /* MMU_INT */,
     int pageToMap = (int) ((long) offset / USLOSS_MmuPageSize()), framePtr, protPtr;
     faults[getpid() % MAXPROC].pid = getpid();
     faults[getpid() % MAXPROC].addr = offset;
-    int tempMbox = MboxCreate(1, sizeof(int));
+    int tempMbox = MboxCreate(0, sizeof(int));
     faults[getpid() % MAXPROC].replyMbox = tempMbox;
     faults[getpid() % MAXPROC].page = pageToMap;
 
     int pidMsg = getpid();
-
     MboxSend(faultMboxID, &pidMsg, sizeof(int));
-    MboxReceive(tempMbox, (void *) &pidMsg, sizeof(int));
+    MboxSend(frameSem, &pidMsg, sizeof(int));
+	MboxReceive(tempMbox, (void *) &pidMsg, sizeof(int));
     if (processes[getpid() % MAXPROC].pageTable[pageToMap].state == EMPTY) {
         // this page has never been used before, increment new
         vmStats.new++;
@@ -417,7 +417,6 @@ FaultHandler(int type /* MMU_INT */,
         USLOSS_Console("Mapping %d to frame %d\n", pageToMap, pidMsg);
     }
     //processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
-    MboxSend(frameSem, &pidMsg, sizeof(int));
     frameTable[pidMsg].pid = getpid();
     if (frameTable[pidMsg].page != -1) {
         if (USLOSS_MmuGetMap(TAG, frameTable[pidMsg].page, &framePtr, &protPtr) != USLOSS_MMU_ERR_NOMAP) {
