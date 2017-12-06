@@ -33,7 +33,7 @@ FaultMsg faults[MAXPROC]; /* Note that a process can have only
                            * and index them by pid. */
 VmStats  vmStats;
 void *vmRegion;
-int isDebug = 1;
+int isDebug = 0;
 int vmInitFlag = 0;
 int *pagerPids;
 int numPagers = 0;
@@ -143,6 +143,9 @@ vmInit(USLOSS_Sysargs *args)
 	else {
     	int status = (int) (long) (vmInitReal((int) (long) args->arg1, (int) (long) args->arg2,
                     (int) (long) args->arg3, (int) (long) args->arg4, &firstByteAddy));
+        if(status == -2){
+            USLOSS_Console("vmInitReal isn't ok!\n");
+        }
     	args->arg1 = (void *) (long) firstByteAddy;
     	args->arg4 = (void *) (long) 0;
 	}
@@ -240,12 +243,18 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
 			USLOSS_Console("Forked pager %d, pid = %d\n", i, status);
 		}
 		status = MboxReceive(runningSem, &dummyMsg, sizeof(int));
+        if(status == USLOSS_DEV_ERROR){
+            USLOSS_Console("Oh No! MboxReceive error\n");
+        }
     }
 	/*
     * Zero out, then initialize, the vmStats structure
     */
     int sectorSize, numSectors, numTracks;
     status = diskSizeReal(1, &sectorSize, &numSectors, &numTracks);
+    if(status == USLOSS_DEV_ERROR){
+        USLOSS_Console("Oh No! MboxReceive error\n");
+    }
     if (isDebug) {
         USLOSS_Console("Disk info:\n");
         USLOSS_Console("\tSector size: %d\n", sectorSize);
@@ -350,6 +359,9 @@ vmDestroyReal(void)
             USLOSS_Console("Quitting pager %d\n", i);
 		//mbox send to pagers to unblock them
         status = MboxSend(faultMboxID, &quitMsg, sizeof(int));
+        if(status == USLOSS_DEV_ERROR){
+            USLOSS_Console("Oh No! MboxReceive error\n");
+        }
 		zap(pagerPids[i]);
 	}
 	free(pagerPids);
@@ -427,10 +439,17 @@ FaultHandler(int type /* MMU_INT */,
             processes[getpid() % MAXPROC].pageTable[frameTable[pidMsg].page].state = ON_DISK;
 
             result = USLOSS_MmuUnmap(TAG, frameTable[pidMsg].page);
+            if(result != USLOSS_MMU_OK){
+                USLOSS_Console("Mapping isn't okay :( \n");
+            }
         }
     }
     frameTable[pidMsg].page = pageToMap;
     result = USLOSS_MmuMap(TAG, pageToMap, pidMsg, USLOSS_MMU_PROT_RW);
+    if(result != USLOSS_MMU_OK){
+        USLOSS_Console("Mapping isn't okay :( \n");
+    }
+
     // if (isDebug)
     //     USLOSS_Console("b4 the mbox send for %d\n", getpid());
     // MboxSend(processes[getpid() % MAXPROC].mboxID, NULL, 0);
@@ -585,10 +604,6 @@ Pager(char *buf)
                 }
                 frameTable[frameIndex].status = IN_MEM;
 
-                // tell the process that had this frame before to get their page
-                // outta here
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
 
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
@@ -669,10 +684,6 @@ Pager(char *buf)
                 }
                 frameTable[frameIndex].status = IN_MEM;
 
-                // tell the process that had this frame before to get their page
-                // outta here
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
 
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
@@ -743,10 +754,6 @@ Pager(char *buf)
                 }
                 frameTable[frameIndex].status = IN_MEM;
 
-                // tell the process that had this frame before to get their page
-                // outta here
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
 
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
@@ -826,10 +833,7 @@ Pager(char *buf)
         frameTable[0].status = IN_MEM;
         int dummy0Msg = 0;
 
-        // tell the process that had this frame before to get their page
-        // outta here
-        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].frame = -1;
-        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].state = ON_DISK;
+
         mappedFlag = 1;
         processes[faultedPid % MAXPROC].lastRef = 1;
         // if (isDebug)
