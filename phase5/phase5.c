@@ -433,6 +433,11 @@ FaultHandler(int type /* MMU_INT */,
     frameTable[pidMsg].page = pageToMap;
     result = USLOSS_MmuMap(TAG, pageToMap, pidMsg, USLOSS_MMU_PROT_RW);
     MboxReceive(frameSem, &pidMsg, sizeof(int));
+    if (isDebug)
+        USLOSS_Console("b4 the mbox send for %d\n", getpid());
+    MboxSend(processes[getpid() % MAXPROC].mboxID, NULL, 0);
+    if (isDebug)
+        USLOSS_Console("after the mbox send for %d\n", getpid());
     //mbox_receive_real(mboxID, 0, 0);
 } /* FaultHandler */
 
@@ -508,7 +513,11 @@ Pager(char *buf)
 
                 processes[faultedPid % MAXPROC].lastRef = (i + 1) % vmStats.frames;
                 mappedFlag = 1;
-
+                if (isDebug)
+                    USLOSS_Console("beforee the mbox recv for %d\n", getpid());
+                MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
+                if (isDebug)
+                    USLOSS_Console("afterr the mbox recv for %d\n", getpid());
 				break;
             }
         }
@@ -557,7 +566,11 @@ Pager(char *buf)
                 MboxReceive(frameSem, &dummyMsg, sizeof(int));
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
-
+                if (isDebug)
+                    USLOSS_Console("beforee the mbox recv for %d\n", getpid());
+                MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
+                if (isDebug)
+                    USLOSS_Console("afterr the mbox recv for %d\n", getpid());
 				break;
             }
         }
@@ -618,7 +631,11 @@ Pager(char *buf)
 
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
-
+                if (isDebug)
+                    USLOSS_Console("beforee the mbox recv for %d\n", getpid());
+                MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
+                if (isDebug)
+                    USLOSS_Console("afterr the mbox recv for %d\n", getpid());
     		    break;
             }
             USLOSS_MmuSetAccess(frameIndex, access & USLOSS_MMU_DIRTY);
@@ -662,7 +679,11 @@ Pager(char *buf)
                 MboxReceive(frameSem, &dummyMsg, sizeof(int));
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
-
+                if (isDebug)
+                    USLOSS_Console("beforee the mbox recv for %d\n", getpid());
+                MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
+                if (isDebug)
+                    USLOSS_Console("afterr the mbox recv for %d\n", getpid());
 				break;
             }
         }
@@ -676,8 +697,8 @@ Pager(char *buf)
         // case where all referenced and dirty. just use frame 0
 
 
-            if (isDebug)
-                USLOSS_Console("(%d) Performing disk write...\n", faultedPid);
+        if (isDebug)
+            USLOSS_Console("(%d) Performing disk write...\n", faultedPid);
         USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
         char buf[USLOSS_MmuPageSize()];
         void *region = USLOSS_MmuRegion(&result);
@@ -720,7 +741,11 @@ Pager(char *buf)
 
         mappedFlag = 1;
         processes[faultedPid % MAXPROC].lastRef = 1;
-
+        if (isDebug)
+            USLOSS_Console("beforee the mbox recv for %d\n", getpid());
+        MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
+        if (isDebug)
+            USLOSS_Console("afterr the mbox recv for %d\n", getpid());
 
         /* Load page into frame from disk, if necessary */
         /* Unblock waiting (faulting) process */
