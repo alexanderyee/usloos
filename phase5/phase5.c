@@ -482,7 +482,7 @@ Pager(char *buf)
 
         /* Look for free frame */
         int i;
-        MboxSend(frameSem, &dummyMsg, sizeof(int));
+        //MboxSend(frameSem, &dummyMsg, sizeof(int));
         for (i = 0; i < vmStats.frames; i++) {
             if (frameTable[i].status == EMPTY) {
                 // set the frame, state and map later, for now just unblock
@@ -518,7 +518,7 @@ Pager(char *buf)
                 MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
                 if (isDebug)
                     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
-                MboxReceive(frameSem, &dummyMsg, sizeof(int));
+                //MboxReceive(frameSem, &dummyMsg, sizeof(int));
 
 				break;
             }
@@ -572,7 +572,7 @@ Pager(char *buf)
                 MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
                 if (isDebug)
                     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
-                MboxReceive(frameSem, &dummyMsg, sizeof(int));
+                //MboxReceive(frameSem, &dummyMsg, sizeof(int));
                 break;
 
             }
@@ -638,7 +638,7 @@ Pager(char *buf)
                 MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
                 if (isDebug)
                     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
-                MboxReceive(frameSem, &dummyMsg, sizeof(int));
+                //MboxReceive(frameSem, &dummyMsg, sizeof(int));
 
     		    break;
             }
@@ -687,7 +687,7 @@ Pager(char *buf)
                 MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
                 if (isDebug)
                     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
-                MboxReceive(frameSem, &dummyMsg, sizeof(int));
+                //MboxReceive(frameSem, &dummyMsg, sizeof(int));
                 break;
             }
         }
@@ -749,7 +749,7 @@ Pager(char *buf)
         MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
         if (isDebug)
             USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
-        MboxReceive(frameSem, &dummyMsg, sizeof(int));
+        //MboxReceive(frameSem, &dummyMsg, sizeof(int));
 
         /* Load page into frame from disk, if necessary */
         /* Unblock waiting (faulting) process */
