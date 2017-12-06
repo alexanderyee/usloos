@@ -417,7 +417,7 @@ FaultHandler(int type /* MMU_INT */,
 
     int pidMsg = getpid();
     MboxSend(faultMboxID, &pidMsg, sizeof(int));
-    //MboxSend(frameSem, &pidMsg, sizeof(int));
+    MboxSend(frameSem, &pidMsg, sizeof(int));
 	MboxReceive(tempMbox, (void *) &pidMsg, sizeof(int));
     if (processes[getpid() % MAXPROC].pageTable[pageToMap].state == EMPTY) {
         // this page has never been used before, increment new
@@ -426,7 +426,7 @@ FaultHandler(int type /* MMU_INT */,
     processes[getpid() % MAXPROC].pageTable[pageToMap].frame = pidMsg;
     processes[getpid() % MAXPROC].pageTable[pageToMap].state = INCORE;
     if (isDebug) {
-        USLOSS_Console("Mapping %d to frame %d\n", pageToMap, pidMsg);
+        USLOSS_Console("%d: Mapping %d to frame %d\n", getpid(), pageToMap, pidMsg);
     }
     //processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
     frameTable[pidMsg].pid = getpid();
@@ -455,7 +455,7 @@ FaultHandler(int type /* MMU_INT */,
     // MboxSend(processes[getpid() % MAXPROC].mboxID, NULL, 0);
     // if (isDebug)
     //     USLOSS_Console("after the mbox send for %d\n", getpid());
-    //MboxReceive(frameSem, &pidMsg, sizeof(int));
+    MboxReceive(frameSem, &pidMsg, sizeof(int));
 
     //mbox_receive_real(mboxID, 0, 0);
 } /* FaultHandler */
