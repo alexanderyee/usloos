@@ -71,7 +71,6 @@ p1_switch(int old, int new)
         for (i = 0; i < vmStats.pages; i++) {
             if (currPT[i].state == INCORE) {
                 result = USLOSS_MmuMap(TAG, i, currPT[i].frame, USLOSS_MMU_PROT_RW);
-                // for now, have this mapping.
                 if (result) {
                     USLOSS_Console("p1_switch(): mapping error, status code: %d\n", result);
                 }
