@@ -584,7 +584,9 @@ Pager(char *buf)
         }
         /* now check for unreferenced and dirty, set the access
            bits to unreferenced along the way */
+        int val;
         for (i = 0; i < vmStats.frames; i++) {
+
             int frameIndex = (i + lastReferenced) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
             if (isDebug) {
@@ -594,7 +596,7 @@ Pager(char *buf)
                 // write to disk. have to coordinate with diskDriver
                 if (isDebug)
                     USLOSS_Console("(%d) Performing disk write...\n", faultedPid);
-                USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                result = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
                 char buf[USLOSS_MmuPageSize()];
                 void *region = USLOSS_MmuRegion(&result);
                 memcpy(buf, region, USLOSS_MmuPageSize());
@@ -615,16 +617,16 @@ Pager(char *buf)
                     int blockToRead = currentPT[faults[faultedPid % MAXPROC].page].diskBlock;
                     diskReadReal(1, (int) (blockToRead / SECTORS),
                             blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
-                    int val = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                    val = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
                     region = USLOSS_MmuRegion(&result);
                     memcpy(region, buf, USLOSS_MmuPageSize());
                     vmStats.pageIns++;
                 } else {
-                    int val = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                    val = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
                     region = USLOSS_MmuRegion(&result);
                     memset(region, 0, USLOSS_MmuPageSize());
                 }
-                int val = USLOSS_MmuUnmap(TAG, 0);
+                val = USLOSS_MmuUnmap(TAG, 0);
                 val = USLOSS_MmuSetAccess(frameIndex, 0);
                 frameTable[frameIndex].status = IN_MEM;
 
@@ -641,7 +643,7 @@ Pager(char *buf)
                         &frameIndex, sizeof(int));
     		    break;
             }
-            int val = USLOSS_MmuSetAccess(frameIndex, access & USLOSS_MMU_DIRTY);
+            val = USLOSS_MmuSetAccess(frameIndex, access & USLOSS_MMU_DIRTY);
         }
 
         if (mappedFlag)
@@ -924,4 +926,3 @@ void mbox_condreceive_real(USLOSS_Sysargs *args) {
 
     args->arg4 = (void *)(long) 0;
 }
-
