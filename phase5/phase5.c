@@ -143,6 +143,9 @@ vmInit(USLOSS_Sysargs *args)
 	else {
     	int status = (int) (long) (vmInitReal((int) (long) args->arg1, (int) (long) args->arg2,
                     (int) (long) args->arg3, (int) (long) args->arg4, &firstByteAddy));
+        if(status == -2){
+            USLOSS_Console("vmInitReal isn't ok!\n");
+        }
     	args->arg1 = (void *) (long) firstByteAddy;
     	args->arg4 = (void *) (long) 0;
 	}
@@ -436,10 +439,17 @@ FaultHandler(int type /* MMU_INT */,
             processes[getpid() % MAXPROC].pageTable[frameTable[pidMsg].page].state = ON_DISK;
 
             result = USLOSS_MmuUnmap(TAG, frameTable[pidMsg].page);
+            if(result != USLOSS_MMU_OK){
+                USLOSS_Console("Mapping isn't okay :( \n");
+            }
         }
     }
     frameTable[pidMsg].page = pageToMap;
     result = USLOSS_MmuMap(TAG, pageToMap, pidMsg, USLOSS_MMU_PROT_RW);
+    if(result != USLOSS_MMU_OK){
+        USLOSS_Console("Mapping isn't okay :( \n");
+    }
+
     // if (isDebug)
     //     USLOSS_Console("b4 the mbox send for %d\n", getpid());
     // MboxSend(processes[getpid() % MAXPROC].mboxID, NULL, 0);
