@@ -33,7 +33,7 @@ FaultMsg faults[MAXPROC]; /* Note that a process can have only
                            * and index them by pid. */
 VmStats  vmStats;
 void *vmRegion;
-int isDebug = 0;
+int isDebug = 1;
 int vmInitFlag = 0;
 int *pagerPids;
 int numPagers = 0;
@@ -459,7 +459,7 @@ FaultHandler(int type /* MMU_INT */,
 static int
 Pager(char *buf)
 {
-	int result, mappedFlag, dummyMsg;
+	int result, mappedFlag, dummyMsg, val;
 	void *msgPtr = malloc(sizeof(int));
 	MboxSend(runningSem, msgPtr, sizeof(int));
     while(1) {
@@ -486,7 +486,7 @@ Pager(char *buf)
             if (frameTable[i].status == EMPTY) {
                 // set the frame, state and map later, for now just unblock
 
-                int val = USLOSS_MmuMap(TAG, 0, i, USLOSS_MMU_PROT_RW);
+                val = USLOSS_MmuMap(TAG, 0, i, USLOSS_MMU_PROT_RW);
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
                     if (isDebug)
@@ -540,7 +540,7 @@ Pager(char *buf)
             }
             if (access == 0) {
                 // don't have to write to disk
-                int val = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                val = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
                     if (isDebug)
@@ -584,7 +584,6 @@ Pager(char *buf)
         }
         /* now check for unreferenced and dirty, set the access
            bits to unreferenced along the way */
-        int val;
         for (i = 0; i < vmStats.frames; i++) {
 
             int frameIndex = (i + lastReferenced) % vmStats.frames;
@@ -658,7 +657,7 @@ Pager(char *buf)
             result = USLOSS_MmuGetAccess(frameIndex, &access);
             if (access == 0) {
                 // don't have to write to disk
-                int val = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                val = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
                     if (isDebug)
@@ -703,7 +702,7 @@ Pager(char *buf)
         // case where all referenced and dirty. just use frame 0
         if (isDebug)
             USLOSS_Console("(%d) Performing disk write...\n", faultedPid);
-        int val = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
+        val = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
         char buf[USLOSS_MmuPageSize()];
         void *region = USLOSS_MmuRegion(&result);
         memcpy(buf, region, USLOSS_MmuPageSize());
