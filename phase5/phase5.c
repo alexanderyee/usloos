@@ -604,7 +604,8 @@ Pager(char *buf)
                 }
                 frameTable[frameIndex].status = IN_MEM;
 
-
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
                 // if (isDebug)
@@ -684,7 +685,8 @@ Pager(char *buf)
                 }
                 frameTable[frameIndex].status = IN_MEM;
 
-
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
                 // if (isDebug)
@@ -755,6 +757,8 @@ Pager(char *buf)
                 frameTable[frameIndex].status = IN_MEM;
 
 
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
                 // if (isDebug)
@@ -822,6 +826,7 @@ Pager(char *buf)
         } else {
             memset(region, 0, USLOSS_MmuPageSize());
         }
+
         val = USLOSS_MmuUnmap(TAG, 0);
         if(val != USLOSS_MMU_OK){
             USLOSS_Console("Mapping isn't okay :( \n");
@@ -833,7 +838,8 @@ Pager(char *buf)
         frameTable[0].status = IN_MEM;
         int dummy0Msg = 0;
 
-
+        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].frame = -1;
+        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].state = ON_DISK;
         mappedFlag = 1;
         processes[faultedPid % MAXPROC].lastRef = 1;
         // if (isDebug)
