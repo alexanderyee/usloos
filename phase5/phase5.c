@@ -432,12 +432,13 @@ FaultHandler(int type /* MMU_INT */,
     }
     frameTable[pidMsg].page = pageToMap;
     result = USLOSS_MmuMap(TAG, pageToMap, pidMsg, USLOSS_MMU_PROT_RW);
-    MboxReceive(frameSem, &pidMsg, sizeof(int));
     if (isDebug)
         USLOSS_Console("b4 the mbox send for %d\n", getpid());
     MboxSend(processes[getpid() % MAXPROC].mboxID, NULL, 0);
     if (isDebug)
         USLOSS_Console("after the mbox send for %d\n", getpid());
+    MboxReceive(frameSem, &pidMsg, sizeof(int));
+
     //mbox_receive_real(mboxID, 0, 0);
 } /* FaultHandler */
 
@@ -509,7 +510,6 @@ Pager(char *buf)
                 frameTable[i].status = IN_MEM;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
-                MboxReceive(frameSem, &dummyMsg, sizeof(int));
 
                 processes[faultedPid % MAXPROC].lastRef = (i + 1) % vmStats.frames;
                 mappedFlag = 1;
@@ -518,6 +518,8 @@ Pager(char *buf)
                 MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
                 if (isDebug)
                     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
+                MboxReceive(frameSem, &dummyMsg, sizeof(int));
+
 				break;
             }
         }
@@ -563,7 +565,6 @@ Pager(char *buf)
 
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
-                MboxReceive(frameSem, &dummyMsg, sizeof(int));
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
                 if (isDebug)
@@ -571,7 +572,9 @@ Pager(char *buf)
                 MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
                 if (isDebug)
                     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
-				break;
+                MboxReceive(frameSem, &dummyMsg, sizeof(int));
+                break;
+
             }
         }
         if (mappedFlag)
@@ -627,7 +630,6 @@ Pager(char *buf)
                 frameTable[frameIndex].status = IN_MEM;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
-                MboxReceive(frameSem, &dummyMsg, sizeof(int));
 
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
@@ -636,6 +638,8 @@ Pager(char *buf)
                 MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
                 if (isDebug)
                     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
+                MboxReceive(frameSem, &dummyMsg, sizeof(int));
+
     		    break;
             }
             USLOSS_MmuSetAccess(frameIndex, access & USLOSS_MMU_DIRTY);
@@ -676,7 +680,6 @@ Pager(char *buf)
 
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
-                MboxReceive(frameSem, &dummyMsg, sizeof(int));
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
                 if (isDebug)
@@ -684,7 +687,8 @@ Pager(char *buf)
                 MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
                 if (isDebug)
                     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
-				break;
+                MboxReceive(frameSem, &dummyMsg, sizeof(int));
+                break;
             }
         }
 
@@ -737,7 +741,6 @@ Pager(char *buf)
         int dummy0Msg = 0;
         MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                 &dummy0Msg, sizeof(int));
-        MboxReceive(frameSem, &dummyMsg, sizeof(int));
 
         mappedFlag = 1;
         processes[faultedPid % MAXPROC].lastRef = 1;
@@ -746,6 +749,7 @@ Pager(char *buf)
         MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
         if (isDebug)
             USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
+        MboxReceive(frameSem, &dummyMsg, sizeof(int));
 
         /* Load page into frame from disk, if necessary */
         /* Unblock waiting (faulting) process */
