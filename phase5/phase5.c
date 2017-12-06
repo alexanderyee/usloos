@@ -33,7 +33,7 @@ FaultMsg faults[MAXPROC]; /* Note that a process can have only
                            * and index them by pid. */
 VmStats  vmStats;
 void *vmRegion;
-int isDebug = 1;
+int isDebug = 0;
 int vmInitFlag = 0;
 int *pagerPids;
 int numPagers = 0;
