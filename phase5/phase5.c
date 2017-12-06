@@ -484,6 +484,8 @@ Pager(char *buf)
                 USLOSS_MmuMap(TAG, 0, i, USLOSS_MMU_PROT_RW);
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
+                    if (isDebug)
+                        USLOSS_Console("(%d) Performing disk read...\n", faultedPid);
                     char buf[USLOSS_MmuPageSize()];
                     bzero(buf, sizeof(buf));
                     int blockToRead = currentPT[faults[faultedPid % MAXPROC].page].diskBlock;
@@ -500,9 +502,10 @@ Pager(char *buf)
                 USLOSS_MmuUnmap(TAG, 0);
                 USLOSS_MmuSetAccess(i, 0);
                 frameTable[i].status = IN_MEM;
-                MboxReceive(frameSem, &dummyMsg, sizeof(int));
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
+                MboxReceive(frameSem, &dummyMsg, sizeof(int));
+
                 processes[faultedPid % MAXPROC].lastRef = (i + 1) % vmStats.frames;
                 mappedFlag = 1;
 
@@ -531,6 +534,8 @@ Pager(char *buf)
                 USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
+                    if (isDebug)
+                        USLOSS_Console("(%d) Performing disk read...\n", faultedPid);
                     char buf[USLOSS_MmuPageSize()];
                     bzero(buf, sizeof(buf));
                     int blockToRead = currentPT[faults[faultedPid % MAXPROC].page].diskBlock;
@@ -572,7 +577,8 @@ Pager(char *buf)
             }
             if (access == 2) {
                 // write to disk. have to coordinate with diskDriver
-
+                if (isDebug)
+                    USLOSS_Console("(%d) Performing disk write...\n", faultedPid);
                 USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
                 char buf[USLOSS_MmuPageSize()];
                 void *region = USLOSS_MmuRegion(&result);
@@ -587,6 +593,8 @@ Pager(char *buf)
                 currentBlock += SECTORS_PER_PAGE;
                 vmStats.pageOuts++;
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
+                    if (isDebug)
+                        USLOSS_Console("(%d) Performing disk read...\n", faultedPid);
                     char buf[USLOSS_MmuPageSize()];
                     bzero(buf, sizeof(buf));
                     int blockToRead = currentPT[faults[faultedPid % MAXPROC].page].diskBlock;
@@ -630,6 +638,8 @@ Pager(char *buf)
                 USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
+                    if (isDebug)
+                        USLOSS_Console("(%d) Performing disk read...\n", faultedPid);
                     char buf[USLOSS_MmuPageSize()];
                     bzero(buf, sizeof(buf));
                     int blockToRead = currentPT[faults[faultedPid % MAXPROC].page].diskBlock;
@@ -645,9 +655,10 @@ Pager(char *buf)
                 USLOSS_MmuUnmap(TAG, 0);
                 USLOSS_MmuSetAccess(frameIndex, 0);
                 frameTable[frameIndex].status = IN_MEM;
-                MboxReceive(frameSem, &dummyMsg, sizeof(int));
+
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
+                MboxReceive(frameSem, &dummyMsg, sizeof(int));
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
 
@@ -664,6 +675,8 @@ Pager(char *buf)
         // case where all referenced and dirty. just use frame 0
 
 
+            if (isDebug)
+                USLOSS_Console("(%d) Performing disk write...\n", faultedPid);
         USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
         char buf[USLOSS_MmuPageSize()];
         void *region = USLOSS_MmuRegion(&result);
@@ -680,6 +693,9 @@ Pager(char *buf)
         USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
         region = USLOSS_MmuRegion(&result);
         if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
+
+            if (isDebug)
+                USLOSS_Console("(%d) Performing disk read...\n", faultedPid);
             char buf[USLOSS_MmuPageSize()];
             bzero(buf, sizeof(buf));
             int blockToRead = currentPT[faults[faultedPid % MAXPROC].page].diskBlock;
