@@ -240,12 +240,16 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
 			USLOSS_Console("Forked pager %d, pid = %d\n", i, status);
 		}
 		status = MboxReceive(runningSem, &dummyMsg, sizeof(int));
+        if(status == USLOSS_DEV_ERROR){
+            USLOSS_Console("Oh No! MboxReceive error\n");
+        }
     }
 	/*
     * Zero out, then initialize, the vmStats structure
     */
     int sectorSize, numSectors, numTracks;
     status = diskSizeReal(1, &sectorSize, &numSectors, &numTracks);
+    if(status != )
     if (isDebug) {
         USLOSS_Console("Disk info:\n");
         USLOSS_Console("\tSector size: %d\n", sectorSize);
