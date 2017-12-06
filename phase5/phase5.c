@@ -589,6 +589,10 @@ Pager(char *buf)
                 }
                 frameTable[frameIndex].status = IN_MEM;
 
+                // tell the process that had this frame before to get their page
+                // outta here
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
 
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
@@ -669,6 +673,10 @@ Pager(char *buf)
                 }
                 frameTable[frameIndex].status = IN_MEM;
 
+                // tell the process that had this frame before to get their page
+                // outta here
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
 
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
@@ -739,6 +747,10 @@ Pager(char *buf)
                 }
                 frameTable[frameIndex].status = IN_MEM;
 
+                // tell the process that had this frame before to get their page
+                // outta here
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
 
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
@@ -818,7 +830,10 @@ Pager(char *buf)
         frameTable[0].status = IN_MEM;
         int dummy0Msg = 0;
 
-
+        // tell the process that had this frame before to get their page
+        // outta here
+        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].frame = -1;
+        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].state = ON_DISK;
         mappedFlag = 1;
         processes[faultedPid % MAXPROC].lastRef = 1;
         // if (isDebug)
