@@ -487,6 +487,9 @@ Pager(char *buf)
                 // set the frame, state and map later, for now just unblock
 
                 val = USLOSS_MmuMap(TAG, 0, i, USLOSS_MMU_PROT_RW);
+                if(val != USLOSS_MMU_OK){
+                    USLOSS_Console("Mapping isn't okay :( \n");
+                }
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
                     if (isDebug)
@@ -497,6 +500,9 @@ Pager(char *buf)
                     diskReadReal(1, (int) (blockToRead / SECTORS),
                             blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
                     val = USLOSS_MmuMap(TAG, 0, i, USLOSS_MMU_PROT_RW);
+                    if(val != USLOSS_MMU_OK){
+                        USLOSS_Console("Mapping isn't okay :( \n");
+                    }
                     region = USLOSS_MmuRegion(&result);
                     memcpy(region, buf, USLOSS_MmuPageSize());
                     vmStats.pageIns++;
@@ -505,7 +511,13 @@ Pager(char *buf)
                     memset(region, 0, USLOSS_MmuPageSize());
                 }
                 val = USLOSS_MmuUnmap(TAG, 0);
+                if(val != USLOSS_MMU_OK){
+                    USLOSS_Console("Mapping isn't okay :( \n");
+                }
                 val = USLOSS_MmuSetAccess(i, 0);
+                if(val != USLOSS_MMU_OK){
+                    USLOSS_Console("Mapping isn't okay :( \n");
+                }
                 frameTable[i].status = IN_MEM;
 
                 processes[faultedPid % MAXPROC].lastRef = (i + 1) % vmStats.frames;
@@ -541,6 +553,9 @@ Pager(char *buf)
             if (access == 0) {
                 // don't have to write to disk
                 val = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                if(val != USLOSS_MMU_OK){
+                    USLOSS_Console("Mapping isn't okay :( \n");
+                }
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
                     if (isDebug)
@@ -551,6 +566,9 @@ Pager(char *buf)
                     diskReadReal(1, (int) (blockToRead / SECTORS),
                             blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
                     val = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                    if(val != USLOSS_MMU_OK){
+                        USLOSS_Console("Mapping isn't okay :( \n");
+                    }
                     region = USLOSS_MmuRegion(&result);
                     memcpy(region, buf, USLOSS_MmuPageSize());
                     vmStats.pageIns++;
@@ -558,7 +576,13 @@ Pager(char *buf)
                     memset(region, 0, USLOSS_MmuPageSize());
                 }
                 val = USLOSS_MmuUnmap(TAG, 0);
+                if(val != USLOSS_MMU_OK){
+                    USLOSS_Console("Mapping isn't okay :( \n");
+                }
                 val = USLOSS_MmuSetAccess(frameIndex, 0);
+                if(val != USLOSS_MMU_OK){
+                    USLOSS_Console("Mapping isn't okay :( \n");
+                }
                 frameTable[frameIndex].status = IN_MEM;
 
 
@@ -617,16 +641,28 @@ Pager(char *buf)
                     diskReadReal(1, (int) (blockToRead / SECTORS),
                             blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
                     val = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                    if(val != USLOSS_MMU_OK){
+                        USLOSS_Console("Mapping isn't okay :( \n");
+                    }
                     region = USLOSS_MmuRegion(&result);
                     memcpy(region, buf, USLOSS_MmuPageSize());
                     vmStats.pageIns++;
                 } else {
                     val = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                    if(val != USLOSS_MMU_OK){
+                        USLOSS_Console("Mapping isn't okay :( \n");
+                    }
                     region = USLOSS_MmuRegion(&result);
                     memset(region, 0, USLOSS_MmuPageSize());
                 }
                 val = USLOSS_MmuUnmap(TAG, 0);
+                if(val != USLOSS_MMU_OK){
+                    USLOSS_Console("Mapping isn't okay :( \n");
+                }
                 val = USLOSS_MmuSetAccess(frameIndex, 0);
+                if(val != USLOSS_MMU_OK){
+                    USLOSS_Console("Mapping isn't okay :( \n");
+                }
                 frameTable[frameIndex].status = IN_MEM;
 
 
@@ -643,6 +679,9 @@ Pager(char *buf)
     		    break;
             }
             val = USLOSS_MmuSetAccess(frameIndex, access & USLOSS_MMU_DIRTY);
+            if(val != USLOSS_MMU_OK){
+                USLOSS_Console("Mapping isn't okay :( \n");
+            }
         }
 
         if (mappedFlag)
@@ -655,9 +694,15 @@ Pager(char *buf)
         for (i = 0; i < vmStats.frames; i++) {
             int frameIndex = (i + lastReferenced) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
+            if(val != USLOSS_MMU_OK){
+                USLOSS_Console("Mapping isn't okay :( \n");
+            }
             if (access == 0) {
                 // don't have to write to disk
                 val = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                if(val != USLOSS_MMU_OK){
+                    USLOSS_Console("Mapping isn't okay :( \n");
+                }
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
                     if (isDebug)
@@ -668,14 +713,26 @@ Pager(char *buf)
                     diskReadReal(1, (int) (blockToRead / SECTORS),
                             blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
                     val = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
+                    if(val != USLOSS_MMU_OK){
+                        USLOSS_Console("Mapping isn't okay :( \n");
+                    }
                     region = USLOSS_MmuRegion(&result);
+                    if(region != USLOSS_MMU_OK){
+                        USLOSS_Console("Mapping isn't okay :( \n");
+                    }
                     memcpy(region, buf, USLOSS_MmuPageSize());
                     vmStats.pageIns++;
                 } else {
                     memset(region, 0, USLOSS_MmuPageSize());
                 }
                 val = USLOSS_MmuUnmap(TAG, 0);
+                if(val != USLOSS_MMU_OK){
+                    USLOSS_Console("Mapping isn't okay :( \n");
+                }
                 val = USLOSS_MmuSetAccess(frameIndex, 0);
+                if(val != USLOSS_MMU_OK){
+                    USLOSS_Console("Mapping isn't okay :( \n");
+                }
                 frameTable[frameIndex].status = IN_MEM;
 
 
@@ -703,6 +760,9 @@ Pager(char *buf)
         if (isDebug)
             USLOSS_Console("(%d) Performing disk write...\n", faultedPid);
         val = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
+        if(val != USLOSS_MMU_OK){
+            USLOSS_Console("Mapping isn't okay :( \n");
+        }
         char buf[USLOSS_MmuPageSize()];
         void *region = USLOSS_MmuRegion(&result);
         memcpy(buf, region, USLOSS_MmuPageSize());
@@ -716,6 +776,9 @@ Pager(char *buf)
         currentBlock += SECTORS_PER_PAGE;
         vmStats.pageOuts++;
         val = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
+        if(val != USLOSS_MMU_OK){
+            USLOSS_Console("Mapping isn't okay :( \n");
+        }
         region = USLOSS_MmuRegion(&result);
         if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
 
@@ -728,14 +791,26 @@ Pager(char *buf)
                     blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
 
             val = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
+            if(val != USLOSS_MMU_OK){
+                USLOSS_Console("Mapping isn't okay :( \n");
+            }
             region = USLOSS_MmuRegion(&result);
+            if(region != USLOSS_MMU_OK){
+                USLOSS_Console("Mapping isn't okay :( \n");
+            }
             memcpy(region, buf, USLOSS_MmuPageSize());
             vmStats.pageIns++;
         } else {
             memset(region, 0, USLOSS_MmuPageSize());
         }
         val = USLOSS_MmuUnmap(TAG, 0);
+        if(val != USLOSS_MMU_OK){
+            USLOSS_Console("Mapping isn't okay :( \n");
+        }
         val = USLOSS_MmuSetAccess(0, 0);
+        if(val != USLOSS_MMU_OK){
+            USLOSS_Console("Mapping isn't okay :( \n");
+        }
         frameTable[0].status = IN_MEM;
         int dummy0Msg = 0;
 
