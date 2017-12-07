@@ -3,7 +3,6 @@
  *
  * As found via the specs:
  *
- * This is a skeleton + filled out functions for phase5 of the programming assignment.
  * For this phase of the project, we will implement a virtual memory (VM) system
  * that supports demand paging. The USLOSS MMU is used to configure a region
  * of virtual memory whose contents are process-specific.
@@ -46,7 +45,7 @@ FaultMsg faults[MAXPROC]; /* Note that a process can have only
                            * and index them by pid. */
 VmStats  vmStats;
 void *vmRegion;
-int isDebug = 1;
+int isDebug = 0;
 int vmInitFlag = 0;
 int *pagerPids;
 int numPagers = 0;
@@ -56,8 +55,6 @@ Frame *frameTable;
 int frameSem;
 // disk variables
 int currentBlock = 0;
-int clockHead = 0;
-
 int TRACKS;
 int SECTORS;
 int SECTORS_PER_PAGE;
@@ -289,7 +286,7 @@ vmInitReal(int mappings, int pages, int frames, int pagers, int *firstByteAddy)
     vmStats.freeDiskBlocks = vmStats.diskBlocks;
 	numPagers = pagers;
     *firstByteAddy = (int) (long) USLOSS_MmuRegion(&numPages);
-    return;
+    return 0;
 } /* vmInitReal */
 
 
@@ -451,7 +448,6 @@ FaultHandler(int type /* MMU_INT */,
     if (isDebug) {
         USLOSS_Console("%d: Mapping %d to frame %d\n", getpid(), pageToMap, pidMsg);
     }
-    //processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
 
     if (frameTable[pidMsg].page != -1) {
         if (USLOSS_MmuGetMap(TAG, frameTable[pidMsg].page, &framePtr, &protPtr) != USLOSS_MMU_ERR_NOMAP) {
@@ -474,11 +470,6 @@ FaultHandler(int type /* MMU_INT */,
         USLOSS_Console("FaultHandler: Mapping isn't okay :( %d %d\n", pageToMap, pidMsg);
     }
 
-    // if (isDebug)
-    //     USLOSS_Console("b4 the mbox send for %d\n", getpid());
-    // MboxSend(processes[getpid() % MAXPROC].mboxID, NULL, 0);
-    // if (isDebug)
-    //     USLOSS_Console("after the mbox send for %d\n", getpid());
     MboxReceive(frameSem, 0, 0);
 	if (isDebug)
 		USLOSS_Console("%d recvd from framesem\n", getpid());
@@ -504,7 +495,7 @@ FaultHandler(int type /* MMU_INT */,
 static int
 Pager(char *buf)
 {
-	int result, mappedFlag, dummyMsg, val;
+	int result, mappedFlag, val;
 	void *msgPtr = malloc(sizeof(int));
 	MboxSend(runningSem, msgPtr, sizeof(int));
     while(1) {
@@ -526,7 +517,6 @@ Pager(char *buf)
 
         /* Look for free frame */
         int i;
-        //MboxSend(frameSem, &dummyMsg, sizeof(int));
         for (i = 0; i < vmStats.frames; i++) {
             if (frameTable[i].status == EMPTY) {
                 // set the frame, state and map later, for now just unblock
@@ -565,15 +555,7 @@ Pager(char *buf)
                 }
                 frameTable[i].status = LOCKED;
                 processes[faultedPid % MAXPROC].lastRef = (i + 1) % vmStats.frames;
-
-                clockHead = (i + 1) % vmStats.frames;
                 mappedFlag = 1;
-                // if (isDebug)
-                //     USLOSS_Console("beforee the mbox recv for %d\n", faultedPid);
-                // MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
-                // if (isDebug)
-                //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
-                //MboxReceive(frameSem, &dummyMsg, sizeof(int));
                 frameTable[i].pid = faultedPid;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
@@ -589,10 +571,10 @@ Pager(char *buf)
         }
         /* If there isn't a free frame then use clock algorithm to
          * replace a page (perhaps write to disk) */
-        int access;
+        int access, lastReferenced = processes[faultedPid % MAXPROC].lastRef;
         // first check for unreferenced and clean (00)
         for (i = 0; i < vmStats.frames; i++) {
-            int frameIndex = (i + clockHead) % vmStats.frames;
+            int frameIndex = (i + lastReferenced) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
             if (isDebug) {
                 USLOSS_Console("Access for frame %d for proc %d: %d\n", frameIndex, faultedPid, access);
@@ -605,9 +587,6 @@ Pager(char *buf)
                 }
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
-                    frameTable[frameIndex].status = LOCKED;
-                    processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
-                    processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                     if (isDebug)
                         USLOSS_Console("(%d) Performing disk read...\n", faultedPid);
                     char buf[USLOSS_MmuPageSize()];
@@ -639,13 +618,6 @@ Pager(char *buf)
                 processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
-                clockHead = (frameIndex + 1) % vmStats.frames;
-                // if (isDebug)
-                //     USLOSS_Console("beforee the mbox recv for %d\n", faultedPid);
-                // MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
-                // if (isDebug)
-                //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
-                //MboxReceive(frameSem, &dummyMsg, sizeof(int));
                 frameTable[frameIndex].pid = faultedPid;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
@@ -663,7 +635,7 @@ Pager(char *buf)
            bits to unreferenced along the way */
         for (i = 0; i < vmStats.frames; i++) {
 
-            int frameIndex = (i + clockHead) % vmStats.frames;
+            int frameIndex = (i + lastReferenced) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
             if (isDebug) {
                 USLOSS_Console("Frame %d has access %d\n", frameIndex, access);
@@ -676,9 +648,6 @@ Pager(char *buf)
                 char buf[USLOSS_MmuPageSize()];
                 void *region = USLOSS_MmuRegion(&result);
                 memcpy(buf, region, USLOSS_MmuPageSize());
-                frameTable[frameIndex].status = LOCKED;
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 diskWriteReal(1, (int) (currentBlock / SECTORS),
                         currentBlock % SECTORS, SECTORS_PER_PAGE, buf);
                 // the next line is kinda disgusting, but it's setting the disk
@@ -689,7 +658,6 @@ Pager(char *buf)
                 currentBlock += SECTORS_PER_PAGE;
                 vmStats.pageOuts++;
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
-                    frameTable[frameIndex].status = LOCKED;
                     if (isDebug)
                         USLOSS_Console("(%d) Performing disk read...\n", faultedPid);
                     char buf[USLOSS_MmuPageSize()];
@@ -726,13 +694,6 @@ Pager(char *buf)
                 processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
-                clockHead = (frameIndex + 1) % vmStats.frames;
-                // if (isDebug)
-                //     USLOSS_Console("beforee the mbox recv for %d\n", faultedPid);
-                // MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
-                // if (isDebug)
-                //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
-                //MboxReceive(frameSem, &dummyMsg, sizeof(int));
                 frameTable[frameIndex].pid = faultedPid;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
@@ -752,7 +713,7 @@ Pager(char *buf)
         }
         // REFERENCED AND CLEAN CASE, NO WRITE TO DISK
         for (i = 0; i < vmStats.frames; i++) {
-            int frameIndex = (i + clockHead) % vmStats.frames;
+            int frameIndex = (i + lastReferenced) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
             if(val != USLOSS_MMU_OK){
                 USLOSS_Console("ref and clean access get Mapping isn't okay :( \n");
@@ -765,9 +726,6 @@ Pager(char *buf)
                 }
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
-                    frameTable[frameIndex].status = LOCKED;
-                    processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
-                    processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                     if (isDebug)
                         USLOSS_Console("(%d) Performing disk read...\n", faultedPid);
                     char buf[USLOSS_MmuPageSize()];
@@ -802,14 +760,6 @@ Pager(char *buf)
                 processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
-
-                clockHead = (frameIndex + 1) % vmStats.frames;
-                // if (isDebug)
-                //     USLOSS_Console("beforee the mbox recv for %d\n", faultedPid);
-                // MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
-                // if (isDebug)
-                //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
-                //MboxReceive(frameSem, &dummyMsg, sizeof(int));
                 frameTable[frameIndex].pid = faultedPid;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
@@ -823,17 +773,15 @@ Pager(char *buf)
         if (isDebug) {
             USLOSS_Console("Checking for referenced and dirty frames... just use frame 0\n");
         }
-        // case where all referenced and dirty. just use frame on clockHead
-
-		if (isDebug)
+        // case where all referenced and dirty. just use frame 0
+        if (isDebug)
             USLOSS_Console("(%d) Performing disk write...\n", faultedPid);
-        val = USLOSS_MmuMap(TAG, 0, clockHead, USLOSS_MMU_PROT_RW);
+        val = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
         if(val != USLOSS_MMU_OK){
             USLOSS_Console("frame 0 Mapping isn't okay :( \n");
         }
-        frameTable[clockHead].status = LOCKED;
-        processes[frameTable[clockHead].pid % MAXPROC].pageTable[frameTable[clockHead].page].frame = -1;
-        processes[frameTable[clockHead].pid % MAXPROC].pageTable[frameTable[clockHead].page].state = ON_DISK;
+        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].frame = -1;
+        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].state = ON_DISK;
         char buf[USLOSS_MmuPageSize()];
         void *region = USLOSS_MmuRegion(&result);
         memcpy(buf, region, USLOSS_MmuPageSize());
@@ -841,12 +789,12 @@ Pager(char *buf)
                 currentBlock % SECTORS, SECTORS_PER_PAGE, buf);
         // the next line is kinda disgusting, but it's setting the disk
         // block of the page that is being saved to disk to currentBlock
-        processes[frameTable[clockHead].pid % MAXPROC]
-            .pageTable[frameTable[clockHead].page]
+        processes[frameTable[0].pid % MAXPROC]
+            .pageTable[frameTable[0].page]
             .diskBlock = currentBlock;
         currentBlock += SECTORS_PER_PAGE;
         vmStats.pageOuts++;
-        val = USLOSS_MmuMap(TAG, 0, clockHead, USLOSS_MMU_PROT_RW);
+        val = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
         if(val != USLOSS_MMU_OK){
             USLOSS_Console("0Mapping isn't okay :( \n");
         }
@@ -861,7 +809,7 @@ Pager(char *buf)
             diskReadReal(1, (int) (blockToRead / SECTORS),
                     blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
 
-            val = USLOSS_MmuMap(TAG, 0, clockHead, USLOSS_MMU_PROT_RW);
+            val = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
             if(val != USLOSS_MMU_OK){
                 USLOSS_Console("0 read Mapping isn't okay 1:( \n");
             }
@@ -875,24 +823,17 @@ Pager(char *buf)
         if(val != USLOSS_MMU_OK){
             USLOSS_Console("Mapping isn't okay 3:( \n");
         }
-        val = USLOSS_MmuSetAccess(clockHead, 0);
+        val = USLOSS_MmuSetAccess(0, 0);
         if(val != USLOSS_MMU_OK){
             USLOSS_Console("Mapping isn't okay 4 :( \n");
         }
-        frameTable[clockHead].status = IN_MEM;
-        int dummy0Msg = clockHead;
+        frameTable[0].status = IN_MEM;
+        int dummy0Msg = 0;
 
 
         mappedFlag = 1;
-        processes[faultedPid % MAXPROC].lastRef = (clockHead + 1) % vmStats.frames;
-        // if (isDebug)
-        //     USLOSS_Console("beforee the mbox recv for %d\n", faultedPid);
-        // MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
-        // if (isDebug)
-        //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
-        //MboxReceive(frameSem, &dummyMsg, sizeof(int));
-        frameTable[clockHead].pid = faultedPid;
-        clockHead = (clockHead + 1) % vmStats.frames;
+        processes[faultedPid % MAXPROC].lastRef = 1;
+        frameTable[0].pid = faultedPid;
         MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                 &dummy0Msg, sizeof(int));
         /* Load page into frame from disk, if necessary */
