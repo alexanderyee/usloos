@@ -1,8 +1,20 @@
 /*
  * phase5.c
- * TODO CHANGE HDR COMMENT
- * This is a skeleton for phase5 of the programming assignment. It
- * doesn't do much -- it is just intended to get you started.
+ *
+ * As found via the specs:
+ *
+ * This is a skeleton + filled out functions for phase5 of the programming assignment.
+ * For this phase of the project, we will implement a virtual memory (VM) system
+ * that supports demand paging. The USLOSS MMU is used to configure a region
+ * of virtual memory whose contents are process-specific.
+ *
+ * The basic idea is to use the MMU to implement a single-level page table,
+ * so that each process will have its own page table for the VM region and
+ * will therefore have its own view of what the VM region contains. The fancy
+ * features of the MMU, such as the tags and the protection bits, will
+ * not be needed.
+ *
+ * Each function will give me a more desciptive explanation of the Purpose
  */
 
 #include <usloss.h>
@@ -18,6 +30,7 @@
 #include <string.h>
 #include <providedPrototypes.h>
 
+// declare externs
 extern void mbox_create_real(USLOSS_Sysargs *args_ptr);
 extern void mbox_release_real(USLOSS_Sysargs *args_ptr);
 extern void mbox_send_real(USLOSS_Sysargs *args_ptr);
@@ -33,7 +46,7 @@ FaultMsg faults[MAXPROC]; /* Note that a process can have only
                            * and index them by pid. */
 VmStats  vmStats;
 void *vmRegion;
-int isDebug = 0;
+int isDebug = 1;
 int vmInitFlag = 0;
 int *pagerPids;
 int numPagers = 0;
@@ -423,7 +436,7 @@ FaultHandler(int type /* MMU_INT */,
 
     int pidMsg = getpid();
     MboxSend(faultMboxID, &pidMsg, sizeof(int));
-    //MboxSend(frameSem, &pidMsg, sizeof(int));
+    MboxSend(frameSem, &pidMsg, sizeof(int));
 	MboxReceive(tempMbox, (void *) &pidMsg, sizeof(int));
     if (processes[getpid() % MAXPROC].pageTable[pageToMap].state == EMPTY) {
         // this page has never been used before, increment new
@@ -432,9 +445,10 @@ FaultHandler(int type /* MMU_INT */,
     processes[getpid() % MAXPROC].pageTable[pageToMap].frame = pidMsg;
     processes[getpid() % MAXPROC].pageTable[pageToMap].state = INCORE;
     if (isDebug) {
-        USLOSS_Console("Mapping %d to frame %d\n", pageToMap, pidMsg);
+        USLOSS_Console("%d: Mapping %d to frame %d\n", getpid(), pageToMap, pidMsg);
     }
     //processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
+    frameTable[pidMsg].pid = getpid();
     if (frameTable[pidMsg].page != -1) {
         if (USLOSS_MmuGetMap(TAG, frameTable[pidMsg].page, &framePtr, &protPtr) != USLOSS_MMU_ERR_NOMAP) {
             if (isDebug) {
@@ -460,7 +474,7 @@ FaultHandler(int type /* MMU_INT */,
     // MboxSend(processes[getpid() % MAXPROC].mboxID, NULL, 0);
     // if (isDebug)
     //     USLOSS_Console("after the mbox send for %d\n", getpid());
-    //MboxReceive(frameSem, &pidMsg, sizeof(int));
+    MboxReceive(frameSem, &pidMsg, sizeof(int));
 
     //mbox_receive_real(mboxID, 0, 0);
 } /* FaultHandler */
@@ -552,8 +566,6 @@ Pager(char *buf)
                 // if (isDebug)
                 //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
                 //MboxReceive(frameSem, &dummyMsg, sizeof(int));
-                frameTable[i].pid = faultedPid;
-
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
 				break;
@@ -611,8 +623,7 @@ Pager(char *buf)
                 }
                 frameTable[frameIndex].status = IN_MEM;
 
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
+
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
                 // if (isDebug)
@@ -621,8 +632,6 @@ Pager(char *buf)
                 // if (isDebug)
                 //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
                 //MboxReceive(frameSem, &dummyMsg, sizeof(int));
-                frameTable[frameIndex].pid = faultedPid;
-
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
                 break;
@@ -694,8 +703,7 @@ Pager(char *buf)
                 }
                 frameTable[frameIndex].status = IN_MEM;
 
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
+
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
                 // if (isDebug)
@@ -704,7 +712,6 @@ Pager(char *buf)
                 // if (isDebug)
                 //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
                 //MboxReceive(frameSem, &dummyMsg, sizeof(int));
-                frameTable[frameIndex].pid = faultedPid;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
     		    break;
@@ -767,8 +774,6 @@ Pager(char *buf)
                 frameTable[frameIndex].status = IN_MEM;
 
 
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
                 // if (isDebug)
@@ -777,7 +782,6 @@ Pager(char *buf)
                 // if (isDebug)
                 //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
                 //MboxReceive(frameSem, &dummyMsg, sizeof(int));
-                frameTable[frameIndex].pid = faultedPid;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
                 break;
@@ -826,31 +830,26 @@ Pager(char *buf)
 
             val = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
             if(val != USLOSS_MMU_OK){
-                USLOSS_Console("Mapping isn't okay :( \n");
+                USLOSS_Console("Mapping isn't okay 1:( \n");
             }
             region = USLOSS_MmuRegion(&result);
-            if(region != USLOSS_MMU_OK){
-                USLOSS_Console("Mapping isn't okay :( \n");
-            }
             memcpy(region, buf, USLOSS_MmuPageSize());
             vmStats.pageIns++;
         } else {
             memset(region, 0, USLOSS_MmuPageSize());
         }
-
         val = USLOSS_MmuUnmap(TAG, 0);
         if(val != USLOSS_MMU_OK){
-            USLOSS_Console("Mapping isn't okay :( \n");
+            USLOSS_Console("Mapping isn't okay 3:( \n");
         }
         val = USLOSS_MmuSetAccess(0, 0);
         if(val != USLOSS_MMU_OK){
-            USLOSS_Console("Mapping isn't okay :( \n");
+            USLOSS_Console("Mapping isn't okay 4 :( \n");
         }
         frameTable[0].status = IN_MEM;
         int dummy0Msg = 0;
 
-        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].frame = -1;
-        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].state = ON_DISK;
+
         mappedFlag = 1;
         processes[faultedPid % MAXPROC].lastRef = 1;
         // if (isDebug)
@@ -859,7 +858,6 @@ Pager(char *buf)
         // if (isDebug)
         //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
         //MboxReceive(frameSem, &dummyMsg, sizeof(int));
-        frameTable[0].pid = faultedPid;
         MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                 &dummy0Msg, sizeof(int));
         /* Load page into frame from disk, if necessary */
@@ -869,6 +867,9 @@ Pager(char *buf)
     return 0;
 } /* Pager */
 
+//creates mailbox by running MBoxCreate, which is already given to us
+//returns -1 if invalid sizes, values, etc
+//else returns the int from MBoxCreate
 void mbox_create_real(USLOSS_Sysargs *args) {
     //check if args are correct
     int numSlot = (int) (long) args->arg1;
@@ -888,6 +889,9 @@ void mbox_create_real(USLOSS_Sysargs *args) {
     return;
 }
 
+//releases mailbox by running MboxRelease, which is already given to us
+//returns -1 if invalid sizes, values, etc
+//else returns the int from MboxRelease
 void mbox_release_real(USLOSS_Sysargs *args) {
     int mboxID = (int) (long) args->arg1;
 
@@ -900,6 +904,9 @@ void mbox_release_real(USLOSS_Sysargs *args) {
     args->arg4 = (void *)(long) MboxRelease(mboxID);
 }
 
+//sends mailbox by running MboxSend, which is already given to us
+//returns -1 if invalid sizes, values, etc
+//else returns the int from MboxSend
 void mbox_send_real(USLOSS_Sysargs *args) {
     int mboxID = (int) (long) args->arg1;
     void *msgPtr = (void*) (long) args->arg2;
@@ -931,6 +938,9 @@ void mbox_send_real(USLOSS_Sysargs *args) {
     args->arg4 = (void *)(long) 0;
 }
 
+//receive mailbox by running MboxReceive, which is already given to us
+//returns -1 if invalid sizes, values, etc
+//else returns the int from MboxReceive
 void mbox_receive_real(USLOSS_Sysargs *args) {
     int mboxID = (int) (long) args->arg1;
     void *msgPtr = (void*) (long) args->arg2;
@@ -962,6 +972,9 @@ void mbox_receive_real(USLOSS_Sysargs *args) {
     args->arg4 = (void *)(long) 0;
 }
 
+//condsend mailbox by running MboxCondSend, which is already given to us
+//returns -1 if invalid sizes, values, etc
+//else returns the int from MboxCondSend
 void mbox_condsend_real(USLOSS_Sysargs *args) {
     int mboxID = (int) (long) args->arg1;
     void *msgPtr = (void*) (long) args->arg2;
@@ -1000,6 +1013,9 @@ void mbox_condsend_real(USLOSS_Sysargs *args) {
     args->arg4 = (void *)(long) 0;
 }
 
+//condrec mailbox by running MboxCondReceive, which is already given to us
+//returns -1 if invalid sizes, values, etc
+//else returns the int from MboxCondReceive
 void mbox_condreceive_real(USLOSS_Sysargs *args) {
     int mboxID = (int) (long) args->arg1;
     void *msgPtr = (void*) (long) args->arg2;
