@@ -195,4 +195,4 @@ Child(12): page 3, value 0
 Child(12): vmStats.faults = 80
 
 start5(): done
-testphase5.ksh: line 27: 29838: Abort(coredump)
+testphase5.ksh: line 27: 3316: Abort(coredump)

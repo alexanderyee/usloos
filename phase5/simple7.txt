@@ -39,4 +39,4 @@ Child(13): checking various vmStats
 Child(13): terminating
 
 start5(): done
-testphase5.ksh: line 27: 29771: Abort(coredump)
+testphase5.ksh: line 27: 3291: Abort(coredump)

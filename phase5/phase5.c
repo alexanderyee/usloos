@@ -46,7 +46,7 @@ FaultMsg faults[MAXPROC]; /* Note that a process can have only
                            * and index them by pid. */
 VmStats  vmStats;
 void *vmRegion;
-int isDebug = 1;
+int isDebug = 0;
 int vmInitFlag = 0;
 int *pagerPids;
 int numPagers = 0;
@@ -557,8 +557,6 @@ Pager(char *buf)
                     USLOSS_Console("Mapping isn't okay :( \n");
                 }
                 frameTable[i].status = IN_MEM;
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 processes[faultedPid % MAXPROC].lastRef = (i + 1) % vmStats.frames;
                 mappedFlag = 1;
                 // if (isDebug)
@@ -567,7 +565,7 @@ Pager(char *buf)
                 // if (isDebug)
                 //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
                 //MboxReceive(frameSem, &dummyMsg, sizeof(int));
-                frameTable[frameIndex].pid = faultedPid;
+                frameTable[i].pid = faultedPid;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
 				break;
