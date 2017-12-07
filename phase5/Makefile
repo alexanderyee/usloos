@@ -17,7 +17,7 @@ PHASE4LIB = patrickphase4
 #PHASE3LIB = patrickphase3debug
 #PHASE4LIB = patrickphase4debug
 
-HDRS = vm.h providedPrototypes.h
+HDRS = vm.h providedPrototypes.h phase5.h phase4.h phase3.h phase2.h phase1.h
 
 INCLUDE = ${PREFIX}/include
 
