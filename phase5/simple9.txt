@@ -37,7 +37,7 @@ frames:         2
 diskBlocks:     64
 freeFrames:     2
 freeDiskBlocks: 64
-switches:       17
+switches:       20
 faults:         2
 new:            2
 pageIns:        0

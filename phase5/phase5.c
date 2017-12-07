@@ -46,7 +46,7 @@ FaultMsg faults[MAXPROC]; /* Note that a process can have only
                            * and index them by pid. */
 VmStats  vmStats;
 void *vmRegion;
-int isDebug = 0;
+int isDebug = 1;
 int vmInitFlag = 0;
 int *pagerPids;
 int numPagers = 0;
@@ -355,7 +355,7 @@ vmDestroyReal(void)
     }
     if (isDebug)
         USLOSS_Console("Freeing frametable...\n");
-	free(frameTable);
+	//free(frameTable);
     // find all procs that use the vmRegion, free their page tables
 
     if (isDebug)
@@ -364,7 +364,7 @@ vmDestroyReal(void)
 
 		PTE *currentPT = processes[i].pageTable;
 		if (currentPT != NULL) {
-			free(currentPT);
+			//free(currentPT);
 		}
 	}
 
@@ -383,7 +383,7 @@ vmDestroyReal(void)
         }
 		zap(pagerPids[i]);
 	}
-	free(pagerPids);
+	//free(pagerPids);
     /*
      * Print vm statistics.
      */
@@ -871,7 +871,7 @@ Pager(char *buf)
         /* Load page into frame from disk, if necessary */
         /* Unblock waiting (faulting) process */
     }
-	free(msgPtr);
+//	free(msgPtr);
     return 0;
 } /* Pager */
 
