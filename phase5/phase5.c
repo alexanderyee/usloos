@@ -429,7 +429,6 @@ FaultHandler(int type /* MMU_INT */,
         USLOSS_Console("%d: Mapping %d to frame %d\n", getpid(), pageToMap, pidMsg);
     }
     //processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
-    frameTable[pidMsg].pid = getpid();
     if (frameTable[pidMsg].page != -1) {
         if (USLOSS_MmuGetMap(TAG, frameTable[pidMsg].page, &framePtr, &protPtr) != USLOSS_MMU_ERR_NOMAP) {
             if (isDebug) {
@@ -547,6 +546,8 @@ Pager(char *buf)
                 // if (isDebug)
                 //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
                 //MboxReceive(frameSem, &dummyMsg, sizeof(int));
+                frameTable[i].pid = faultedPid;
+
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
 				break;
@@ -614,6 +615,8 @@ Pager(char *buf)
                 // if (isDebug)
                 //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
                 //MboxReceive(frameSem, &dummyMsg, sizeof(int));
+                frameTable[frameIndex].pid = faultedPid;
+
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
                 break;
@@ -695,6 +698,7 @@ Pager(char *buf)
                 // if (isDebug)
                 //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
                 //MboxReceive(frameSem, &dummyMsg, sizeof(int));
+                frameTable[frameIndex].pid = faultedPid;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
     		    break;
@@ -767,6 +771,7 @@ Pager(char *buf)
                 // if (isDebug)
                 //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
                 //MboxReceive(frameSem, &dummyMsg, sizeof(int));
+                frameTable[frameIndex].pid = faultedPid;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
                 break;
@@ -848,6 +853,7 @@ Pager(char *buf)
         // if (isDebug)
         //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
         //MboxReceive(frameSem, &dummyMsg, sizeof(int));
+        frameTable[0].pid = faultedPid;
         MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                 &dummy0Msg, sizeof(int));
         /* Load page into frame from disk, if necessary */
