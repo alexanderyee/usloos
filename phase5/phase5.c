@@ -605,7 +605,7 @@ Pager(char *buf)
                 }
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
-
+                    frameTable[frameIndex].status = LOCKED;
                     processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
                     processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                     if (isDebug)
@@ -676,7 +676,7 @@ Pager(char *buf)
                 char buf[USLOSS_MmuPageSize()];
                 void *region = USLOSS_MmuRegion(&result);
                 memcpy(buf, region, USLOSS_MmuPageSize());
-
+                frameTable[frameIndex].status = LOCKED;
                 processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
                 processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 diskWriteReal(1, (int) (currentBlock / SECTORS),
@@ -689,6 +689,7 @@ Pager(char *buf)
                 currentBlock += SECTORS_PER_PAGE;
                 vmStats.pageOuts++;
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
+                    frameTable[frameIndex].status = LOCKED;
                     if (isDebug)
                         USLOSS_Console("(%d) Performing disk read...\n", faultedPid);
                     char buf[USLOSS_MmuPageSize()];
@@ -764,7 +765,7 @@ Pager(char *buf)
                 }
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
-
+                    frameTable[frameIndex].status = LOCKED;
                     processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
                     processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                     if (isDebug)
@@ -830,6 +831,7 @@ Pager(char *buf)
         if(val != USLOSS_MMU_OK){
             USLOSS_Console("frame 0 Mapping isn't okay :( \n");
         }
+        frameTable[clockHead].status = LOCKED;
         processes[frameTable[clockHead].pid % MAXPROC].pageTable[frameTable[clockHead].page].frame = -1;
         processes[frameTable[clockHead].pid % MAXPROC].pageTable[frameTable[clockHead].page].state = ON_DISK;
         char buf[USLOSS_MmuPageSize()];
