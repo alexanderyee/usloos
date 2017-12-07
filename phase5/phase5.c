@@ -601,6 +601,9 @@ Pager(char *buf)
                 }
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
+    
+                    processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
+                    processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                     if (isDebug)
                         USLOSS_Console("(%d) Performing disk read...\n", faultedPid);
                     char buf[USLOSS_MmuPageSize()];
@@ -668,6 +671,9 @@ Pager(char *buf)
                 char buf[USLOSS_MmuPageSize()];
                 void *region = USLOSS_MmuRegion(&result);
                 memcpy(buf, region, USLOSS_MmuPageSize());
+
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 diskWriteReal(1, (int) (currentBlock / SECTORS),
                         currentBlock % SECTORS, SECTORS_PER_PAGE, buf);
                 // the next line is kinda disgusting, but it's setting the disk
@@ -752,6 +758,9 @@ Pager(char *buf)
                 }
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
+
+                    processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
+                    processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                     if (isDebug)
                         USLOSS_Console("(%d) Performing disk read...\n", faultedPid);
                     char buf[USLOSS_MmuPageSize()];
