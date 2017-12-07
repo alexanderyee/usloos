@@ -466,6 +466,7 @@ FaultHandler(int type /* MMU_INT */,
         }
     }
     frameTable[pidMsg].page = pageToMap;
+    frameTable[pidMsg].status = IN_MEM;
     result = USLOSS_MmuMap(TAG, pageToMap, pidMsg, USLOSS_MMU_PROT_RW);
     if(result != USLOSS_MMU_OK){
         USLOSS_Console("FaultHandler: Mapping isn't okay :( %d %d\n", pageToMap, pidMsg);
@@ -560,7 +561,7 @@ Pager(char *buf)
                 if(val != USLOSS_MMU_OK){
                     USLOSS_Console("emptyframe setaccess isn't okay :( \n");
                 }
-                frameTable[i].status = IN_MEM;
+                frameTable[i].status = LOCKED;
                 processes[faultedPid % MAXPROC].lastRef = (i + 1) % vmStats.frames;
                 mappedFlag = 1;
                 // if (isDebug)
@@ -592,7 +593,7 @@ Pager(char *buf)
             if (isDebug) {
                 USLOSS_Console("Access for frame %d for proc %d: %d\n", frameIndex, faultedPid, access);
             }
-            if (access == 0) {
+            if (access == 0 && frameTable[frameIndex].status != LOCKED) {
                 // don't have to write to disk
                 val = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
                 if(val != USLOSS_MMU_OK){
@@ -625,7 +626,7 @@ Pager(char *buf)
                 if(val != USLOSS_MMU_OK){
                     USLOSS_Console("00 setaccess isn't okay :( \n");
                 }
-                frameTable[frameIndex].status = IN_MEM;
+                frameTable[frameIndex].status = LOCKED;
 
                 processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
                 processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
@@ -659,7 +660,7 @@ Pager(char *buf)
             if (isDebug) {
                 USLOSS_Console("Frame %d has access %d\n", frameIndex, access);
             }
-            if (access == 2) {
+            if (access == 2 && frameTable[frameIndex].status != LOCKED) {
                 // write to disk. have to coordinate with diskDriver
                 if (isDebug)
                     USLOSS_Console("(%d) Performing disk write...\n", faultedPid);
@@ -707,7 +708,7 @@ Pager(char *buf)
                 if(val != USLOSS_MMU_OK){
                     USLOSS_Console("10 set access Mapping isn't okay :( \n");
                 }
-                frameTable[frameIndex].status = IN_MEM;
+                frameTable[frameIndex].status = LOCKED;
 
                 processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
                 processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
@@ -743,7 +744,7 @@ Pager(char *buf)
             if(val != USLOSS_MMU_OK){
                 USLOSS_Console("ref and clean access get Mapping isn't okay :( \n");
             }
-            if (access == 0) {
+            if (access == 0 && frameTable[frameIndex].status != LOCKED) {
                 // don't have to write to disk
                 val = USLOSS_MmuMap(TAG, 0, frameIndex, USLOSS_MMU_PROT_RW);
                 if(val != USLOSS_MMU_OK){
@@ -779,7 +780,7 @@ Pager(char *buf)
                 if(val != USLOSS_MMU_OK){
                     USLOSS_Console("val set access Mapping isn't okay :( \n");
                 }
-                frameTable[frameIndex].status = IN_MEM;
+                frameTable[frameIndex].status = LOCKED;
 
                 processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
                 processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;

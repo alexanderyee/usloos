@@ -22,7 +22,7 @@
  */
 #define EMPTY 69
 #define IN_MEM 70
-
+#define LOCKED 74
 /*
  * Page table entry.
  */
