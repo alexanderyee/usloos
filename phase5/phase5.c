@@ -448,7 +448,7 @@ FaultHandler(int type /* MMU_INT */,
         USLOSS_Console("%d: Mapping %d to frame %d\n", getpid(), pageToMap, pidMsg);
     }
     //processes[getpid() % MAXPROC].pageTable[pageToMap].diskBlock = -1;
-    frameTable[pidMsg].pid = getpid();
+
     if (frameTable[pidMsg].page != -1) {
         if (USLOSS_MmuGetMap(TAG, frameTable[pidMsg].page, &framePtr, &protPtr) != USLOSS_MMU_ERR_NOMAP) {
             if (isDebug) {
@@ -557,7 +557,8 @@ Pager(char *buf)
                     USLOSS_Console("Mapping isn't okay :( \n");
                 }
                 frameTable[i].status = IN_MEM;
-
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 processes[faultedPid % MAXPROC].lastRef = (i + 1) % vmStats.frames;
                 mappedFlag = 1;
                 // if (isDebug)
@@ -566,6 +567,7 @@ Pager(char *buf)
                 // if (isDebug)
                 //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
                 //MboxReceive(frameSem, &dummyMsg, sizeof(int));
+                frameTable[frameIndex].pid = faultedPid;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &i, sizeof(int));
 				break;
@@ -623,7 +625,8 @@ Pager(char *buf)
                 }
                 frameTable[frameIndex].status = IN_MEM;
 
-
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
                 // if (isDebug)
@@ -632,6 +635,7 @@ Pager(char *buf)
                 // if (isDebug)
                 //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
                 //MboxReceive(frameSem, &dummyMsg, sizeof(int));
+                frameTable[frameIndex].pid = faultedPid;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
                 break;
@@ -703,7 +707,8 @@ Pager(char *buf)
                 }
                 frameTable[frameIndex].status = IN_MEM;
 
-
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
                 // if (isDebug)
@@ -712,6 +717,7 @@ Pager(char *buf)
                 // if (isDebug)
                 //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
                 //MboxReceive(frameSem, &dummyMsg, sizeof(int));
+                frameTable[frameIndex].pid = faultedPid;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
     		    break;
@@ -773,7 +779,8 @@ Pager(char *buf)
                 }
                 frameTable[frameIndex].status = IN_MEM;
 
-
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
+                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
                 // if (isDebug)
@@ -782,6 +789,7 @@ Pager(char *buf)
                 // if (isDebug)
                 //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
                 //MboxReceive(frameSem, &dummyMsg, sizeof(int));
+                frameTable[frameIndex].pid = faultedPid;
                 MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                         &frameIndex, sizeof(int));
                 break;
@@ -849,7 +857,8 @@ Pager(char *buf)
         frameTable[0].status = IN_MEM;
         int dummy0Msg = 0;
 
-
+        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].frame = -1;
+        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].state = ON_DISK;
         mappedFlag = 1;
         processes[faultedPid % MAXPROC].lastRef = 1;
         // if (isDebug)
@@ -858,6 +867,7 @@ Pager(char *buf)
         // if (isDebug)
         //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
         //MboxReceive(frameSem, &dummyMsg, sizeof(int));
+        frameTable[0].pid = faultedPid;
         MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                 &dummy0Msg, sizeof(int));
         /* Load page into frame from disk, if necessary */
