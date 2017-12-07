@@ -812,6 +812,8 @@ Pager(char *buf)
         if(val != USLOSS_MMU_OK){
             USLOSS_Console("frame 0 Mapping isn't okay :( \n");
         }
+        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].frame = -1;
+        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].state = ON_DISK;
         char buf[USLOSS_MmuPageSize()];
         void *region = USLOSS_MmuRegion(&result);
         memcpy(buf, region, USLOSS_MmuPageSize());
@@ -860,8 +862,7 @@ Pager(char *buf)
         frameTable[0].status = IN_MEM;
         int dummy0Msg = 0;
 
-        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].frame = -1;
-        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].state = ON_DISK;
+
         mappedFlag = 1;
         processes[faultedPid % MAXPROC].lastRef = 1;
         // if (isDebug)
