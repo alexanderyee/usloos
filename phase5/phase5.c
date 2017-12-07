@@ -436,7 +436,8 @@ FaultHandler(int type /* MMU_INT */,
 
     int pidMsg = getpid();
     MboxSend(faultMboxID, &pidMsg, sizeof(int));
-    MboxSend(frameSem, &pidMsg, sizeof(int));
+    USLOSS_Console("%d sent to framesem\n", getpid());
+	MboxSend(frameSem, &pidMsg, sizeof(int));
 	MboxReceive(tempMbox, (void *) &pidMsg, sizeof(int));
     if (processes[getpid() % MAXPROC].pageTable[pageToMap].state == EMPTY) {
         // this page has never been used before, increment new
@@ -475,6 +476,7 @@ FaultHandler(int type /* MMU_INT */,
     // if (isDebug)
     //     USLOSS_Console("after the mbox send for %d\n", getpid());
     MboxReceive(frameSem, &pidMsg, sizeof(int));
+	USLOSS_Console("%d recvd from framesem\n", getpid());
 
     //mbox_receive_real(mboxID, 0, 0);
 } /* FaultHandler */
