@@ -340,9 +340,15 @@ vmDestroyReal(void)
         USLOSS_Console("vmDestroyReal(): TODO %d\n", result);
         abort();
     }
+    if (isDebug)
+        USLOSS_Console("Freeing frametable...\n");
 	free(frameTable);
     // find all procs that use the vmRegion, free their page tables
+
+    if (isDebug)
+        USLOSS_Console("Freeing pagetables...\n");
 	for (i = 0; i < MAXPROC; i++) {
+
 		PTE *currentPT = processes[i].pageTable;
 		if (currentPT != NULL) {
 			free(currentPT);
