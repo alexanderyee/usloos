@@ -565,6 +565,8 @@ Pager(char *buf)
                 }
                 frameTable[i].status = LOCKED;
                 processes[faultedPid % MAXPROC].lastRef = (i + 1) % vmStats.frames;
+
+                clockHead = (i + 1) % vmStats.frames;
                 mappedFlag = 1;
                 // if (isDebug)
                 //     USLOSS_Console("beforee the mbox recv for %d\n", faultedPid);
@@ -587,10 +589,10 @@ Pager(char *buf)
         }
         /* If there isn't a free frame then use clock algorithm to
          * replace a page (perhaps write to disk) */
-        int access, lastReferenced = processes[faultedPid % MAXPROC].lastRef;
+        int access;
         // first check for unreferenced and clean (00)
         for (i = 0; i < vmStats.frames; i++) {
-            int frameIndex = (i + lastReferenced) % vmStats.frames;
+            int frameIndex = (i + clockHead) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
             if (isDebug) {
                 USLOSS_Console("Access for frame %d for proc %d: %d\n", frameIndex, faultedPid, access);
@@ -637,6 +639,7 @@ Pager(char *buf)
                 processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
+                clockHead = (frameIndex + 1) % vmStats.frames;
                 // if (isDebug)
                 //     USLOSS_Console("beforee the mbox recv for %d\n", faultedPid);
                 // MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
@@ -660,7 +663,7 @@ Pager(char *buf)
            bits to unreferenced along the way */
         for (i = 0; i < vmStats.frames; i++) {
 
-            int frameIndex = (i + lastReferenced) % vmStats.frames;
+            int frameIndex = (i + clockHead) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
             if (isDebug) {
                 USLOSS_Console("Frame %d has access %d\n", frameIndex, access);
@@ -722,6 +725,7 @@ Pager(char *buf)
                 processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
+                clockHead = (frameIndex + 1) % vmStats.frames;
                 // if (isDebug)
                 //     USLOSS_Console("beforee the mbox recv for %d\n", faultedPid);
                 // MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
@@ -747,7 +751,7 @@ Pager(char *buf)
         }
         // REFERENCED AND CLEAN CASE, NO WRITE TO DISK
         for (i = 0; i < vmStats.frames; i++) {
-            int frameIndex = (i + lastReferenced) % vmStats.frames;
+            int frameIndex = (i + clockHead) % vmStats.frames;
             result = USLOSS_MmuGetAccess(frameIndex, &access);
             if(val != USLOSS_MMU_OK){
                 USLOSS_Console("ref and clean access get Mapping isn't okay :( \n");
@@ -797,6 +801,8 @@ Pager(char *buf)
                 processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 mappedFlag = 1;
                 processes[faultedPid % MAXPROC].lastRef = (frameIndex + 1) % vmStats.frames;
+
+                clockHead = (frameIndex + 1) % vmStats.frames;
                 // if (isDebug)
                 //     USLOSS_Console("beforee the mbox recv for %d\n", faultedPid);
                 // MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
@@ -817,7 +823,7 @@ Pager(char *buf)
             USLOSS_Console("Checking for referenced and dirty frames... just use frame 0\n");
         }
         // case where all referenced and dirty. just use frame on clockHead
-        clockHead = processes[faultedPid % MAXPROC].lastRef;
+
 		if (isDebug)
             USLOSS_Console("(%d) Performing disk write...\n", faultedPid);
         val = USLOSS_MmuMap(TAG, 0, clockHead, USLOSS_MMU_PROT_RW);
