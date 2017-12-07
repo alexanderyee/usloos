@@ -437,7 +437,6 @@ FaultHandler(int type /* MMU_INT */,
     int pidMsg = getpid();
     MboxSend(faultMboxID, &pidMsg, sizeof(int));
     USLOSS_Console("%d sent to framesem\n", getpid());
-	MboxSend(frameSem, &pidMsg, sizeof(int));
 	MboxReceive(tempMbox, (void *) &pidMsg, sizeof(int));
     if (processes[getpid() % MAXPROC].pageTable[pageToMap].state == EMPTY) {
         // this page has never been used before, increment new
@@ -518,6 +517,7 @@ Pager(char *buf)
 		}
         int faultedPid = *((int *) msgPtr);
         PTE *currentPT = processes[faultedPid % MAXPROC].pageTable;
+        MboxSend(frameSem, &pidMsg, sizeof(int));
 
         /* Look for free frame */
         int i;
