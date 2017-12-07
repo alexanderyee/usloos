@@ -56,8 +56,6 @@ Frame *frameTable;
 int frameSem;
 // disk variables
 int currentBlock = 0;
-int clockHead = 0;
-
 int TRACKS;
 int SECTORS;
 int SECTORS_PER_PAGE;
@@ -603,9 +601,6 @@ Pager(char *buf)
                 }
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
-
-                    processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
-                    processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                     if (isDebug)
                         USLOSS_Console("(%d) Performing disk read...\n", faultedPid);
                     char buf[USLOSS_MmuPageSize()];
@@ -673,9 +668,6 @@ Pager(char *buf)
                 char buf[USLOSS_MmuPageSize()];
                 void *region = USLOSS_MmuRegion(&result);
                 memcpy(buf, region, USLOSS_MmuPageSize());
-
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
-                processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                 diskWriteReal(1, (int) (currentBlock / SECTORS),
                         currentBlock % SECTORS, SECTORS_PER_PAGE, buf);
                 // the next line is kinda disgusting, but it's setting the disk
@@ -760,9 +752,6 @@ Pager(char *buf)
                 }
                 void *region = USLOSS_MmuRegion(&result);
                 if (currentPT[faults[faultedPid % MAXPROC].page].diskBlock != -1) {
-
-                    processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].frame = -1;
-                    processes[frameTable[frameIndex].pid % MAXPROC].pageTable[frameTable[frameIndex].page].state = ON_DISK;
                     if (isDebug)
                         USLOSS_Console("(%d) Performing disk read...\n", faultedPid);
                     char buf[USLOSS_MmuPageSize()];
@@ -816,16 +805,15 @@ Pager(char *buf)
         if (isDebug) {
             USLOSS_Console("Checking for referenced and dirty frames... just use frame 0\n");
         }
-        // case where all referenced and dirty. just use frame on clockHead
-        clockHead = processes[faultedPid % MAXPROC].lastRef;
-		if (isDebug)
+        // case where all referenced and dirty. just use frame 0
+        if (isDebug)
             USLOSS_Console("(%d) Performing disk write...\n", faultedPid);
-        val = USLOSS_MmuMap(TAG, 0, clockHead, USLOSS_MMU_PROT_RW);
+        val = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
         if(val != USLOSS_MMU_OK){
             USLOSS_Console("frame 0 Mapping isn't okay :( \n");
         }
-        processes[frameTable[clockHead].pid % MAXPROC].pageTable[frameTable[clockHead].page].frame = -1;
-        processes[frameTable[clockHead].pid % MAXPROC].pageTable[frameTable[clockHead].page].state = ON_DISK;
+        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].frame = -1;
+        processes[frameTable[0].pid % MAXPROC].pageTable[frameTable[0].page].state = ON_DISK;
         char buf[USLOSS_MmuPageSize()];
         void *region = USLOSS_MmuRegion(&result);
         memcpy(buf, region, USLOSS_MmuPageSize());
@@ -833,12 +821,12 @@ Pager(char *buf)
                 currentBlock % SECTORS, SECTORS_PER_PAGE, buf);
         // the next line is kinda disgusting, but it's setting the disk
         // block of the page that is being saved to disk to currentBlock
-        processes[frameTable[clockHead].pid % MAXPROC]
-            .pageTable[frameTable[clockHead].page]
+        processes[frameTable[0].pid % MAXPROC]
+            .pageTable[frameTable[0].page]
             .diskBlock = currentBlock;
         currentBlock += SECTORS_PER_PAGE;
         vmStats.pageOuts++;
-        val = USLOSS_MmuMap(TAG, 0, clockHead, USLOSS_MMU_PROT_RW);
+        val = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
         if(val != USLOSS_MMU_OK){
             USLOSS_Console("0Mapping isn't okay :( \n");
         }
@@ -853,7 +841,7 @@ Pager(char *buf)
             diskReadReal(1, (int) (blockToRead / SECTORS),
                     blockToRead % SECTORS, SECTORS_PER_PAGE, buf);
 
-            val = USLOSS_MmuMap(TAG, 0, clockHead, USLOSS_MMU_PROT_RW);
+            val = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
             if(val != USLOSS_MMU_OK){
                 USLOSS_Console("0 read Mapping isn't okay 1:( \n");
             }
@@ -867,24 +855,23 @@ Pager(char *buf)
         if(val != USLOSS_MMU_OK){
             USLOSS_Console("Mapping isn't okay 3:( \n");
         }
-        val = USLOSS_MmuSetAccess(clockHead, 0);
+        val = USLOSS_MmuSetAccess(0, 0);
         if(val != USLOSS_MMU_OK){
             USLOSS_Console("Mapping isn't okay 4 :( \n");
         }
-        frameTable[clockHead].status = IN_MEM;
-        int dummy0Msg = clockHead;
+        frameTable[0].status = IN_MEM;
+        int dummy0Msg = 0;
 
 
         mappedFlag = 1;
-        processes[faultedPid % MAXPROC].lastRef = (clockHead + 1) % vmStats.frames;
+        processes[faultedPid % MAXPROC].lastRef = 1;
         // if (isDebug)
         //     USLOSS_Console("beforee the mbox recv for %d\n", faultedPid);
         // MboxReceive(processes[faultedPid % MAXPROC].mboxID, NULL, 0);
         // if (isDebug)
         //     USLOSS_Console("afterr the mbox recv for %d\n", faultedPid);
         //MboxReceive(frameSem, &dummyMsg, sizeof(int));
-        frameTable[clockHead].pid = faultedPid;
-        clockHead = (clockHead + 1) % vmStats.frames;
+        frameTable[0].pid = faultedPid;
         MboxSend(faults[faultedPid % MAXPROC].replyMbox,
                 &dummy0Msg, sizeof(int));
         /* Load page into frame from disk, if necessary */

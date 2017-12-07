@@ -24,19 +24,19 @@ Child(11): after memcpy
 Child(11): strcmp first attempt worked!
 Child(12): after memcpy
 Child(12): strcmp first attempt worked!
-Child(11): strcmp second attempt worked!
-Child(11): checking various vmStats
-Child(11): terminating
-
-Child(13): after memcpy
-Child(13): strcmp first attempt worked!
 Child(12): strcmp second attempt worked!
 Child(12): checking various vmStats
 Child(12): terminating
 
+Child(13): after memcpy
+Child(13): strcmp first attempt worked!
 Child(13): strcmp second attempt worked!
 Child(13): checking various vmStats
 Child(13): terminating
+
+Child(11): strcmp second attempt worked!
+Child(11): checking various vmStats
+Child(11): terminating
 
 start5(): done
 VmStats
@@ -45,10 +45,10 @@ frames:         2
 diskBlocks:     64
 freeFrames:     2
 freeDiskBlocks: 64
-switches:       28
-faults:         3
-new:            3
-pageIns:        0
-pageOuts:       0
+switches:       71
+faults:         4
+new:            2
+pageIns:        1
+pageOuts:       1
 replaced:       0
 All processes completed.
