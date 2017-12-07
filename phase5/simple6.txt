@@ -106,7 +106,7 @@ frames:         6
 diskBlocks:     64
 freeFrames:     6
 freeDiskBlocks: 64
-switches:       3163
+switches:       3175
 faults:         70
 new:            7
 pageIns:        63

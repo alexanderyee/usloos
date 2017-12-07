@@ -33,7 +33,7 @@ FaultMsg faults[MAXPROC]; /* Note that a process can have only
                            * and index them by pid. */
 VmStats  vmStats;
 void *vmRegion;
-int isDebug = 0;
+int isDebug = 1;
 int vmInitFlag = 0;
 int *pagerPids;
 int numPagers = 0;
@@ -820,12 +820,9 @@ Pager(char *buf)
 
             val = USLOSS_MmuMap(TAG, 0, 0, USLOSS_MMU_PROT_RW);
             if(val != USLOSS_MMU_OK){
-                USLOSS_Console("Mapping isn't okay :( \n");
+                USLOSS_Console("Mapping isn't okay 1:( \n");
             }
             region = USLOSS_MmuRegion(&result);
-            if(region != USLOSS_MMU_OK){
-                USLOSS_Console("Mapping isn't okay :( \n");
-            }
             memcpy(region, buf, USLOSS_MmuPageSize());
             vmStats.pageIns++;
         } else {
@@ -834,11 +831,11 @@ Pager(char *buf)
 
         val = USLOSS_MmuUnmap(TAG, 0);
         if(val != USLOSS_MMU_OK){
-            USLOSS_Console("Mapping isn't okay :( \n");
+            USLOSS_Console("Mapping isn't okay 3:( \n");
         }
         val = USLOSS_MmuSetAccess(0, 0);
         if(val != USLOSS_MMU_OK){
-            USLOSS_Console("Mapping isn't okay :( \n");
+            USLOSS_Console("Mapping isn't okay 4 :( \n");
         }
         frameTable[0].status = IN_MEM;
         int dummy0Msg = 0;
